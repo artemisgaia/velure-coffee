@@ -1,16 +1,55 @@
-# React + Vite
+# Velure Coffee
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + Vite storefront for Velure Coffee.
 
-Currently, two official plugins are available:
+## Scripts
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- `npm run dev` starts the local app.
+- `npm run build` creates the production build in `dist/`.
+- `npm run preview` serves the production build locally.
+- `npm run lint` runs ESLint.
 
-## React Compiler
+## Forms API
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+The project includes a built-in forms endpoint at `/api/forms`:
 
-## Expanding the ESLint configuration
+- `api/forms.js` validates `contact` and `newsletter` submissions.
+- It applies a basic per-IP rate limit.
+- It supports honeypot fields to reduce bot spam.
+- It can enforce an origin allowlist.
+- It can enforce a shared challenge token.
+- If `FORMS_WEBHOOK_URL` is set in your server environment, validated submissions are forwarded there.
+- If `FORMS_WEBHOOK_SECRET` is set, webhook payloads are signed.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Frontend form requests use `VITE_FORMS_ENDPOINT`, defaulting to `/api/forms`.
+
+## Checkout API
+
+The project also includes `/api/checkout`:
+
+- Recalculates totals server-side from trusted product IDs and quantities.
+- Returns a checkout URL to open in PayPal.
+- Supports origin allowlisting with `CHECKOUT_ALLOWED_ORIGINS` (or `FORMS_ALLOWED_ORIGINS` fallback).
+- Uses `PAYPAL_CHECKOUT_EMAIL` (or `PAYPAL_EMAIL`) from server environment.
+
+## Environment Variables
+
+Copy `.env.example` to `.env.local` for local overrides:
+
+- `VITE_FORMS_ENDPOINT` (frontend): endpoint for form submissions.
+- `VITE_FORMS_CHALLENGE_TOKEN` (frontend): optional token sent with form requests.
+- `FORMS_WEBHOOK_URL` (server): optional webhook target for validated submissions.
+- `FORMS_ALLOWED_ORIGINS` (server): comma-separated allowed origins for `/api/forms`.
+- `FORMS_CHALLENGE_TOKEN` (server): optional token required on incoming form requests.
+- `FORMS_WEBHOOK_SECRET` (server): optional HMAC secret for signed webhook forwarding.
+- `PAYPAL_CHECKOUT_EMAIL` (server): PayPal recipient email for checkout URL generation.
+- `CHECKOUT_ALLOWED_ORIGINS` (server): optional allowlist for `/api/checkout`.
+
+## Webhook Signature
+
+When `FORMS_WEBHOOK_SECRET` is configured, forwarded webhook requests include:
+
+- `X-Velure-Timestamp`
+- `X-Velure-Signature` (hex HMAC-SHA256 of the raw JSON body)
+
+Verify the signature in your webhook consumer using the same secret before processing.

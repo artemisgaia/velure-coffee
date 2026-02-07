@@ -1,10 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { ShoppingBag, Menu, X, Star, Coffee, Leaf, Award, Check, Trash2, Mail, MapPin, Phone, ArrowLeft } from 'lucide-react';
 
 // --- BRAND ASSETS & DATA ---
-
-// Replace with your actual PayPal Merchant ID or Email
-const PAYPAL_EMAIL = "sales@artemisgaia.co"; 
 
 const PRODUCTS = [
   {
@@ -29,6 +26,16 @@ const PRODUCTS = [
       roast: "Medium",
       ingredients: "70% Roasted Arabica Coffee, 15% Organic Lion’s Mane Powder, 15% Organic Chaga Mushroom Powder",
       weight: "1.9oz / 54g"
+    },
+    nutritionSpecs: {
+      ingredients: "70% Roasted Instant Coffee, 15% Organic Lion’s Mane Powder, 15% Organic Chaga Mushroom Powder",
+      varietals: "Bourbon, Typica, Catuaí, Mundo Novo",
+      manufacturerCountry: "USA",
+      region: "Papua New Guinea (Single Origin)",
+      productAmount: "1.9 oz",
+      grossWeight: "3.2 oz",
+      suggestedUse: "Add one tablespoon to a cup and pour in 8-10 fl oz of hot or cold water. Stir and enjoy.",
+      hasNutritionPanelImage: true
     }
   },
   {
@@ -52,6 +59,15 @@ const PRODUCTS = [
       grade: "Ceremonial",
       ingredients: "100% Matcha Tea Powder",
       weight: "1.9oz / 54g"
+    },
+    nutritionSpecs: {
+      ingredients: "100% Matcha Tea Powder",
+      manufacturerCountry: "USA",
+      region: "Japan, Kagoshima",
+      productAmount: "1.9 oz",
+      grossWeight: "2.54 oz",
+      suggestedUse: "Add one tablespoon of matcha to your cup and pour in hot water. Stir until smooth.",
+      cleanLabelClaims: ["Vegetarian", "Vegan"]
     }
   },
   {
@@ -76,6 +92,15 @@ const PRODUCTS = [
       roast: "Dark",
       ingredients: "100% Arabica",
       weight: "1.9oz / 54g"
+    },
+    nutritionSpecs: {
+      ingredients: "100% Arabica Instant Coffee",
+      varietals: "Arusha, Bourbon, Typica, Blue Mountain",
+      manufacturerCountry: "USA",
+      region: "Papua New Guinea (Single Origin)",
+      productAmount: "1.9 oz",
+      grossWeight: "3.2 oz",
+      suggestedUse: "Add one tablespoon to a cup and pour in 8-10 fl oz of hot or cold water. Stir and enjoy."
     }
   },
   {
@@ -100,6 +125,17 @@ const PRODUCTS = [
       roast: "Medium",
       ingredients: "90% Roasted Arabica Coffee, 5% Lion’s Mane, 5% Chaga",
       weight: "12oz / 340g"
+    },
+    nutritionSpecs: {
+      ingredients: "90% Roasted Ground Arabica Coffee, 5% Lion’s Mane Powder, 5% Chaga Powder",
+      varietals: "Catuaí, Catucaí",
+      manufacturerCountry: "USA",
+      region: "Brazil, Minas Gerais; Mexico, Chiapas",
+      productAmount: "12 oz",
+      grossWeight: "15.17 oz",
+      suggestedUse: "Pour two tablespoons of medium ground coffee into 6 fl oz of hot water and brew.",
+      cleanLabelClaims: ["Vegetarian", "Vegan"],
+      hasNutritionPanelImage: true
     }
   },
   {
@@ -124,6 +160,17 @@ const PRODUCTS = [
       roast: "Medium",
       ingredients: "91% Roasted Arabica Coffee, 9% Hemp Protein Powder",
       weight: "12oz / 340g"
+    },
+    nutritionSpecs: {
+      ingredients: "91% Roasted Ground Arabica Coffee, 9% Hemp Protein Powder",
+      varietals: "Catuaí, Catucaí",
+      manufacturerCountry: "USA",
+      region: "Brazil, Minas Gerais; Mexico, Chiapas",
+      productAmount: "12 oz",
+      grossWeight: "15.17 oz",
+      suggestedUse: "Pour two tablespoons of medium ground coffee into 6 fl oz of hot water and brew.",
+      cleanLabelClaims: ["Vegetarian", "Vegan"],
+      hasNutritionPanelImage: true
     }
   },
   {
@@ -148,75 +195,281 @@ const PRODUCTS = [
       roast: "Medium",
       ingredients: "100% Arabica Whole Beans",
       weight: "12oz / 340g"
+    },
+    nutritionSpecs: {
+      ingredients: "100% Arabica Whole Coffee Beans",
+      varietals: "Catuaí, Catucaí, Catigua, Topázio",
+      manufacturerCountry: "USA",
+      region: "Brazil, Cerrado",
+      productAmount: "12 oz",
+      grossWeight: "15.17 oz",
+      suggestedUse: "Pour two tablespoons of medium ground coffee into 6 fl oz of hot water and brew.",
+      cleanLabelClaims: ["Non-GMO", "Soy-Free", "Vegetarian", "Vegan", "Gluten-Free", "Dairy-Free"]
     }
   }
 ];
 
+const ROUTE_PATHS = {
+  home: '/',
+  shop_all: '/collections',
+  shop_functional: '/collections/functional',
+  shop_single_origin: '/collections/single-origin',
+  rewards: '/rewards',
+  about: '/about',
+  sourcing: '/sourcing',
+  wholesale: '/wholesale',
+  subscription: '/subscription',
+  contact: '/contact',
+  privacy: '/privacy',
+  terms: '/terms',
+};
+
+const getRouteFromPath = (pathname) => {
+  const normalizedPathname = pathname !== '/' ? pathname.replace(/\/+$/, '') : pathname;
+  const productMatch = normalizedPathname.match(/^\/products\/([^/]+)$/);
+  if (productMatch) {
+    const productId = decodeURIComponent(productMatch[1]);
+    const hasProduct = PRODUCTS.some((product) => product.id === productId);
+
+    if (!hasProduct) {
+      return {
+        view: 'shop_all',
+        productId: null,
+      };
+    }
+
+    return {
+      view: 'product_detail',
+      productId,
+    };
+  }
+
+  const matchedView = Object.entries(ROUTE_PATHS).find(([, path]) => path === normalizedPathname)?.[0];
+  return {
+    view: matchedView || 'home',
+    productId: null,
+  };
+};
+
+const getPathForView = (view, options = {}) => {
+  if (view === 'product_detail' && options.productId) {
+    return `/products/${encodeURIComponent(options.productId)}`;
+  }
+
+  return ROUTE_PATHS[view] || ROUTE_PATHS.home;
+};
+
+const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+const getNutritionPanelImage = (product) => product.nutritionImage || product.images[product.images.length - 1];
+const upsertMetaByName = (name, content) => {
+  if (typeof document === 'undefined') return;
+  let tag = document.querySelector(`meta[name="${name}"]`);
+  if (!tag) {
+    tag = document.createElement('meta');
+    tag.setAttribute('name', name);
+    document.head.appendChild(tag);
+  }
+  tag.setAttribute('content', content);
+};
+
+const upsertMetaByProperty = (property, content) => {
+  if (typeof document === 'undefined') return;
+  let tag = document.querySelector(`meta[property="${property}"]`);
+  if (!tag) {
+    tag = document.createElement('meta');
+    tag.setAttribute('property', property);
+    document.head.appendChild(tag);
+  }
+  tag.setAttribute('content', content);
+};
+
+const upsertCanonical = (href) => {
+  if (typeof document === 'undefined') return;
+  let link = document.querySelector('link[rel="canonical"]');
+  if (!link) {
+    link = document.createElement('link');
+    link.setAttribute('rel', 'canonical');
+    document.head.appendChild(link);
+  }
+  link.setAttribute('href', href);
+};
+
+const upsertStructuredData = (payload) => {
+  if (typeof document === 'undefined') return;
+  const scriptId = 'velure-json-ld';
+  let script = document.getElementById(scriptId);
+  if (!script) {
+    script = document.createElement('script');
+    script.id = scriptId;
+    script.type = 'application/ld+json';
+    document.head.appendChild(script);
+  }
+  script.textContent = JSON.stringify(payload);
+};
+
+const trackEvent = (eventName, payload = {}) => {
+  if (typeof window === 'undefined') return;
+
+  const eventPayload = {
+    event: eventName,
+    ...payload,
+    timestamp: new Date().toISOString(),
+  };
+
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push(eventPayload);
+
+  if (typeof window.gtag === 'function') {
+    window.gtag('event', eventName, payload);
+  }
+};
+
+const submitFormPayload = async (formType, payload) => {
+  const endpoint = import.meta.env.VITE_FORMS_ENDPOINT || '/api/forms';
+  const challengeToken = import.meta.env.VITE_FORMS_CHALLENGE_TOKEN;
+
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify({
+      formType,
+      ...payload,
+      ...(challengeToken ? { challengeToken } : {}),
+      submittedAt: new Date().toISOString(),
+    }),
+  });
+
+  if (!response.ok) {
+    let message = 'Unable to submit form right now.';
+    try {
+      const errorPayload = await response.json();
+      if (typeof errorPayload?.error === 'string' && errorPayload.error) {
+        message = errorPayload.error;
+      }
+    } catch {
+      // Keep default message when error response is not JSON.
+    }
+
+    throw new Error(message);
+  }
+
+  try {
+    return await response.json();
+  } catch {
+    return { ok: true };
+  }
+};
+
 // --- SUB-COMPONENTS ---
 
 const ProductCard = ({ product, openProductDetail }) => (
-  <div className="group cursor-pointer" onClick={() => openProductDetail(product)}>
+  <button
+    type="button"
+    className="group cursor-pointer text-left w-full"
+    onClick={() => openProductDetail(product)}
+    aria-label={`View details for ${product.name}`}
+  >
     <div className="relative overflow-hidden bg-[#1A1A1A] aspect-[4/5] mb-6">
-      <img src={product.images[0]} alt={product.name} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-90 group-hover:opacity-100" />
+      <img
+        src={product.images[0]}
+        alt={`${product.name} product image`}
+        loading="lazy"
+        decoding="async"
+        className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-90 group-hover:opacity-100"
+      />
       <div className="absolute top-4 left-4 bg-[#D4AF37] text-[#0B0C0C] text-xs font-bold px-3 py-1 uppercase tracking-wider">{product.tag}</div>
       <div className="absolute bottom-0 left-0 w-full p-4 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-        <button className="w-full bg-[#F9F6F0] text-[#0B0C0C] py-3 font-sans font-bold tracking-wider hover:bg-[#D4AF37] transition-colors shadow-lg">
+        <span className="block w-full text-center bg-[#F9F6F0] text-[#0B0C0C] py-3 font-sans font-bold tracking-wider group-hover:bg-[#D4AF37] transition-colors shadow-lg">
           VIEW RITUAL
-        </button>
+        </span>
       </div>
     </div>
     <div className="text-center">
       <h3 className="text-[#F9F6F0] font-serif text-2xl mb-1">{product.name}</h3>
       <p className="text-gray-400 font-sans text-sm mb-2">{product.subtitle}</p>
-      <div className="flex justify-center mb-2">
+      <div className="flex justify-center mb-2" aria-hidden="true">
           {[...Array(5)].map((_, i) => (
              <Star key={i} size={12} fill={i < product.rating ? "#D4AF37" : "none"} color={i < product.rating ? "#D4AF37" : "#4b5563"} />
           ))}
       </div>
       <p className="text-[#F9F6F0] font-sans font-medium">${product.price.toFixed(2)}</p>
     </div>
-  </div>
+  </button>
 );
 
-const ProductDetailView = ({ product, addToCart, onBack }) => {
+const ProductDetailView = ({ product, addToCart, onBack, isCartOpen }) => {
   const [mainImage, setMainImage] = useState(product.images[0]);
+  const nutritionImage = getNutritionPanelImage(product);
+  const nutritionSpecs = product.nutritionSpecs || null;
+  const ingredientText = product.details.ingredients || '';
+  const hasOrganicIngredients = /organic/i.test(ingredientText);
+  const hasSyntheticFlavoring = /(artificial|flavor)/i.test(ingredientText);
+  const hasAddedSweetener = /(sugar|syrup|sucralose|aspartame|stevia)/i.test(ingredientText);
+  const cleanLabelClaims = nutritionSpecs?.cleanLabelClaims?.length
+    ? nutritionSpecs.cleanLabelClaims
+    : [
+        hasOrganicIngredients ? 'Organic ingredients listed' : 'No organic claim listed',
+        'No GMO ingredients listed',
+        hasSyntheticFlavoring ? 'Synthetic flavoring listed' : 'No synthetic flavoring listed',
+        hasAddedSweetener ? 'Added sweeteners listed' : 'No added sweeteners listed',
+      ];
+  const nutritionRows = nutritionSpecs
+    ? [
+        nutritionSpecs.ingredients ? { label: 'Ingredients', value: nutritionSpecs.ingredients } : null,
+        nutritionSpecs.varietals ? { label: 'Varietals', value: nutritionSpecs.varietals } : null,
+        nutritionSpecs.manufacturerCountry ? { label: 'Produced In', value: nutritionSpecs.manufacturerCountry } : null,
+        nutritionSpecs.region ? { label: 'Region', value: nutritionSpecs.region } : null,
+        nutritionSpecs.productAmount ? { label: 'Net Amount', value: nutritionSpecs.productAmount } : null,
+        nutritionSpecs.grossWeight ? { label: 'Package Weight', value: nutritionSpecs.grossWeight } : null,
+        nutritionSpecs.suggestedUse ? { label: 'Suggested Use', value: nutritionSpecs.suggestedUse } : null,
+      ].filter(Boolean)
+    : [];
+  const detailsRows = [
+    { label: 'Origin', value: product.details.origin },
+    product.details.roast ? { label: 'Roast', value: product.details.roast } : null,
+    product.details.grade ? { label: 'Grade', value: product.details.grade } : null,
+    { label: 'Weight', value: product.details.weight },
+  ].filter(Boolean);
 
   useEffect(() => {
     window.scrollTo(0,0);
   }, [product]);
 
   return (
-    <div className="bg-[#0B0C0C] min-h-screen pt-32 pb-24 text-[#F9F6F0]">
-      <div className="max-w-7xl mx-auto px-6">
+    <div className="bg-[#0B0C0C] min-h-screen pt-28 md:pt-32 pb-36 md:pb-24 text-[#F9F6F0]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <button onClick={onBack} className="flex items-center text-[#D4AF37] mb-8 hover:text-[#F9F6F0] transition-colors font-sans text-sm tracking-widest uppercase">
           <ArrowLeft size={16} className="mr-2" /> Back to Collection
         </button>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16">
           {/* Image Section */}
           <div className="flex flex-col gap-6">
             <div className="w-full aspect-[4/5] bg-[#1a1a1a] relative overflow-hidden">
-              <img src={mainImage} alt={product.name} className="w-full h-full object-cover" />
+              <img src={mainImage} alt={`${product.name} detail image`} className="w-full h-full object-cover" decoding="async" />
             </div>
             <div className="flex gap-4 overflow-x-auto pb-2">
               {product.images.map((img, idx) => (
-                <div 
+                <button
+                  type="button"
                   key={idx} 
+                  aria-label={`View image ${idx + 1} of ${product.name}`}
                   className={`w-20 h-20 flex-shrink-0 cursor-pointer border-2 ${mainImage === img ? 'border-[#D4AF37]' : 'border-transparent'} hover:border-[#D4AF37]`}
                   onClick={() => setMainImage(img)}
                 >
-                  <img src={img} alt={`Thumb ${idx}`} className="w-full h-full object-cover" />
-                </div>
+                  <img src={img} alt={`${product.name} thumbnail ${idx + 1}`} className="w-full h-full object-cover" loading="lazy" decoding="async" />
+                </button>
               ))}
             </div>
           </div>
 
           {/* Info Section */}
-          <div>
+          <div className="lg:sticky lg:top-28 self-start">
             <span className="text-[#D4AF37] font-sans tracking-[0.2em] text-xs uppercase mb-2 block">{product.category.replace('_', ' ')} Series</span>
-            <h1 className="text-5xl md:text-6xl font-serif text-[#F9F6F0] mb-4">{product.name}</h1>
-            <p className="text-xl text-gray-400 font-sans mb-6">{product.subtitle}</p>
-            <div className="flex items-center gap-4 mb-8 border-b border-gray-800 pb-8">
+            <h1 className="text-4xl md:text-6xl font-serif text-[#F9F6F0] mb-4">{product.name}</h1>
+            <p className="text-lg md:text-xl text-gray-400 font-sans mb-6">{product.subtitle}</p>
+            <div className="flex items-center gap-4 mb-6 border-b border-gray-800 pb-6">
               <span className="text-3xl font-serif text-[#D4AF37]">${product.price.toFixed(2)}</span>
               <div className="flex items-center gap-1">
                 {[...Array(5)].map((_, i) => (
@@ -226,6 +479,18 @@ const ProductDetailView = ({ product, addToCart, onBack }) => {
               </div>
             </div>
 
+            <button
+              onClick={() => addToCart(product)}
+              className="hidden md:block w-full bg-[#D4AF37] text-[#0B0C0C] py-4 font-sans font-bold tracking-widest uppercase hover:bg-[#b5952f] transition-colors mb-8"
+            >
+              Add to Cart — ${product.price.toFixed(2)}
+            </button>
+            <div className="hidden md:grid grid-cols-1 gap-2 mb-8 text-xs text-gray-400">
+              <p className="flex items-center gap-2"><Check size={14} className="text-[#D4AF37]" /> Free shipping on orders over $50</p>
+              <p className="flex items-center gap-2"><Check size={14} className="text-[#D4AF37]" /> 30-day return window on unopened products</p>
+              <p className="flex items-center gap-2"><Check size={14} className="text-[#D4AF37]" /> Secure checkout processing</p>
+            </div>
+
             <p className="text-gray-300 font-sans leading-relaxed mb-8 whitespace-pre-line">
               {product.description}
             </p>
@@ -233,9 +498,12 @@ const ProductDetailView = ({ product, addToCart, onBack }) => {
             <div className="bg-[#151515] p-6 mb-8 border border-gray-800">
               <h3 className="font-serif text-[#D4AF37] mb-4">The Details</h3>
               <ul className="space-y-3 text-sm text-gray-400 font-sans">
-                <li className="flex justify-between border-b border-gray-800 pb-2"><span>Origin</span> <span className="text-[#F9F6F0] text-right">{product.details.origin}</span></li>
-                <li className="flex justify-between border-b border-gray-800 pb-2"><span>Roast</span> <span className="text-[#F9F6F0] text-right">{product.details.roast}</span></li>
-                <li className="flex justify-between border-b border-gray-800 pb-2"><span>Weight</span> <span className="text-[#F9F6F0] text-right">{product.details.weight}</span></li>
+                {detailsRows.map((row) => (
+                  <li key={row.label} className="flex justify-between border-b border-gray-800 pb-2">
+                    <span>{row.label}</span>
+                    <span className="text-[#F9F6F0] text-right">{row.value}</span>
+                  </li>
+                ))}
                 <li className="pt-2">
                   <span className="block mb-1">Ingredients</span>
                   <span className="text-[#F9F6F0] leading-snug">{product.details.ingredients}</span>
@@ -243,16 +511,70 @@ const ProductDetailView = ({ product, addToCart, onBack }) => {
               </ul>
             </div>
 
+            <div className="bg-[#151515] p-6 mb-8 border border-gray-800">
+              <h3 className="font-serif text-[#D4AF37] mb-4">Nutrition & Clean Label</h3>
+              <div className="grid grid-cols-1 md:grid-cols-[160px,1fr] gap-5 items-start">
+                <img
+                  src={nutritionImage}
+                  alt={`${product.name} nutrition panel`}
+                  loading="lazy"
+                  decoding="async"
+                  className="w-40 h-40 object-cover border border-gray-700"
+                />
+                <ul className="space-y-2 text-sm text-gray-300 font-sans">
+                  {nutritionRows.map((row) => (
+                    <li key={row.label} className="flex justify-between border-b border-gray-800 pb-2 gap-3">
+                      <span>{row.label}</span>
+                      <span className="text-[#F9F6F0] text-right">{row.value}</span>
+                    </li>
+                  ))}
+                  <li className="pt-1">
+                    <span className="block mb-2 text-gray-400">Clean Label Claims</span>
+                    <div className="flex flex-wrap gap-2">
+                      {cleanLabelClaims.map((claim) => (
+                        <span key={claim} className="px-2 py-1 border border-gray-700 text-xs text-[#F9F6F0]">
+                          {claim}
+                        </span>
+                      ))}
+                    </div>
+                  </li>
+                </ul>
+              </div>
+              <p className="text-xs text-gray-500 mt-4">
+                Nutrition values are shown from verified product specifications and label data.
+              </p>
+            </div>
+
             <button 
               onClick={() => addToCart(product)}
-              className="w-full bg-[#D4AF37] text-[#0B0C0C] py-4 font-sans font-bold tracking-widest uppercase hover:bg-[#b5952f] transition-all transform hover:scale-[1.01]"
+              className="md:hidden w-full bg-[#D4AF37] text-[#0B0C0C] py-4 font-sans font-bold tracking-widest uppercase hover:bg-[#b5952f] transition-colors"
             >
               Add to Cart — ${product.price.toFixed(2)}
             </button>
-            <p className="text-center text-xs text-gray-500 mt-4">Free shipping on orders over $50</p>
+            <div className="md:hidden mt-4 space-y-2">
+              <p className="text-center text-xs text-gray-500">Free shipping on orders over $50</p>
+              <p className="text-center text-xs text-gray-500">Secure checkout processing</p>
+            </div>
           </div>
         </div>
       </div>
+
+      {!isCartOpen && (
+      <div className="fixed md:hidden bottom-0 left-0 right-0 z-40 border-t border-gray-800 bg-[#0B0C0C]/95 backdrop-blur-sm px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-xs text-gray-400 uppercase tracking-wider truncate">{product.name}</p>
+            <p className="text-lg font-serif text-[#D4AF37]">${product.price.toFixed(2)}</p>
+          </div>
+          <button
+            onClick={() => addToCart(product)}
+            className="bg-[#D4AF37] text-[#0B0C0C] px-5 py-3 text-sm font-bold tracking-widest uppercase whitespace-nowrap hover:bg-[#b5952f] transition-colors"
+          >
+            Add to Cart
+          </button>
+        </div>
+      </div>
+      )}
     </div>
   );
 };
@@ -270,7 +592,6 @@ const Navigation = ({ currentView, cartCount, setView, toggleCart }) => {
   const handleNav = (viewName) => {
     setView(viewName);
     setMobileMenuOpen(false);
-    window.scrollTo(0, 0);
   };
 
   const isTransparent = currentView === 'home' && !isScrolled;
@@ -278,11 +599,18 @@ const Navigation = ({ currentView, cartCount, setView, toggleCart }) => {
   return (
     <nav className={`fixed w-full z-50 transition-all duration-300 ${isTransparent ? 'bg-transparent py-6' : 'bg-[#0B0C0C] shadow-lg py-4'}`}>
       <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
-        <button className="md:hidden text-[#F9F6F0]" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+        <button
+          type="button"
+          className="md:hidden text-[#F9F6F0]"
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+          aria-expanded={mobileMenuOpen}
+          aria-controls="mobile-navigation"
+        >
           {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
 
-        <div className="h-10 md:h-12 w-auto cursor-pointer" onClick={() => handleNav('home')}>
+        <button type="button" className="h-10 md:h-12 w-auto cursor-pointer" onClick={() => handleNav('home')} aria-label="Go to homepage">
            <svg 
              xmlns="http://www.w3.org/2000/svg" 
              viewBox="0 0 232.5 89.249998" 
@@ -327,27 +655,34 @@ const Navigation = ({ currentView, cartCount, setView, toggleCart }) => {
                </g>
              </g>
            </svg>
-        </div>
+        </button>
 
         <div className="hidden md:flex space-x-8 text-sm font-sans tracking-widest text-[#F9F6F0] opacity-80">
           <button onClick={() => handleNav('shop_all')} className="hover:text-[#D4AF37] transition-colors uppercase">Shop</button>
+          <button onClick={() => handleNav('rewards')} className="hover:text-[#D4AF37] transition-colors uppercase">Rewards</button>
           <button onClick={() => handleNav('about')} className="hover:text-[#D4AF37] transition-colors uppercase">Our Story</button>
           <button onClick={() => handleNav('subscription')} className="hover:text-[#D4AF37] transition-colors uppercase">Subscription</button>
         </div>
 
-        <div className="relative cursor-pointer text-[#F9F6F0] hover:text-[#D4AF37] transition-colors" onClick={toggleCart}>
+        <button
+          type="button"
+          className="relative cursor-pointer text-[#F9F6F0] hover:text-[#D4AF37] transition-colors"
+          onClick={toggleCart}
+          aria-label={`Open cart${cartCount > 0 ? ` with ${cartCount} items` : ''}`}
+        >
           <ShoppingBag size={24} />
           {cartCount > 0 && (
             <span className="absolute -top-2 -right-2 bg-[#D4AF37] text-[#0B0C0C] text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
               {cartCount}
             </span>
           )}
-        </div>
+        </button>
       </div>
 
       {mobileMenuOpen && (
-        <div className="absolute top-full left-0 w-full bg-[#0B0C0C] border-t border-gray-800 p-6 md:hidden flex flex-col space-y-4 shadow-2xl z-50">
+        <div id="mobile-navigation" className="absolute top-full left-0 w-full bg-[#0B0C0C] border-t border-gray-800 p-6 md:hidden flex flex-col space-y-4 shadow-2xl z-50">
            <button onClick={() => handleNav('shop_all')} className="text-[#F9F6F0] text-left font-sans tracking-widest">SHOP</button>
+           <button onClick={() => handleNav('rewards')} className="text-[#F9F6F0] text-left font-sans tracking-widest">REWARDS</button>
            <button onClick={() => handleNav('about')} className="text-[#F9F6F0] text-left font-sans tracking-widest">OUR STORY</button>
            <button onClick={() => handleNav('subscription')} className="text-[#F9F6F0] text-left font-sans tracking-widest">SUBSCRIPTION</button>
            <button onClick={() => handleNav('contact')} className="text-[#F9F6F0] text-left font-sans tracking-widest">CONTACT</button>
@@ -358,23 +693,117 @@ const Navigation = ({ currentView, cartCount, setView, toggleCart }) => {
 };
 
 const CartDrawer = ({ isOpen, closeCart, cart, removeFromCart }) => {
+  const drawerRef = useRef(null);
   const total = cart.reduce((sum, item) => sum + item.price, 0);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [checkoutError, setCheckoutError] = useState('');
 
-  const handleCheckout = () => {
-    // Construct PayPal Buy Now Link with specific total
-    // Using _xclick command for simple payment of a specific amount
-    const paypalUrl = `https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=${PAYPAL_EMAIL}&currency_code=USD&amount=${total.toFixed(2)}&item_name=Velure%20Order`;
-    window.open(paypalUrl, '_blank');
+  useEffect(() => {
+    if (!isOpen) return undefined;
+
+    const previousActiveElement = document.activeElement;
+    const focusableElements = drawerRef.current?.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    const firstFocusable = focusableElements?.[0];
+    const lastFocusable = focusableElements?.[focusableElements.length - 1];
+
+    if (firstFocusable instanceof HTMLElement) {
+      firstFocusable.focus();
+    }
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        closeCart();
+        return;
+      }
+
+      if (event.key === 'Tab' && focusableElements?.length) {
+        if (event.shiftKey && document.activeElement === firstFocusable) {
+          event.preventDefault();
+          lastFocusable?.focus();
+        } else if (!event.shiftKey && document.activeElement === lastFocusable) {
+          event.preventDefault();
+          firstFocusable?.focus();
+        }
+      }
+    };
+
+    const previousBodyOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+      document.removeEventListener('keydown', handleKeyDown);
+      if (previousActiveElement instanceof HTMLElement) {
+        previousActiveElement.focus();
+      }
+    };
+  }, [closeCart, isOpen]);
+
+  const handleCheckout = async () => {
+    if (cart.length === 0 || isCheckingOut) return;
+
+    trackEvent('begin_checkout', {
+      currency: 'USD',
+      value: Number(total.toFixed(2)),
+      item_count: cart.length,
+    });
+
+    const itemCounts = cart.reduce((accumulator, item) => {
+      accumulator[item.id] = (accumulator[item.id] || 0) + 1;
+      return accumulator;
+    }, {});
+    const items = Object.entries(itemCounts).map(([productId, quantity]) => ({ productId, quantity }));
+
+    setIsCheckingOut(true);
+    setCheckoutError('');
+
+    try {
+      const response = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ items }),
+      });
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload?.error || 'Unable to start checkout right now.');
+      }
+
+      const payload = await response.json();
+      if (!payload?.checkoutUrl) {
+        throw new Error('Missing checkout URL.');
+      }
+
+      window.open(payload.checkoutUrl, '_blank', 'noopener,noreferrer');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to start checkout right now.';
+      setCheckoutError(message);
+      trackEvent('checkout_error', { message });
+    } finally {
+      setIsCheckingOut(false);
+    }
   };
 
   return (
     <div className={`fixed inset-0 z-[60] flex justify-end transition-opacity duration-300 ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
-      <div className="absolute inset-0 bg-black/50" onClick={closeCart}></div>
-      <div className={`relative w-full max-w-md bg-[#F9F6F0] h-full shadow-2xl transform transition-transform duration-300 flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+      <button type="button" className="absolute inset-0 bg-black/50" onClick={closeCart} aria-label="Close cart drawer" />
+      <div
+        ref={drawerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="cart-drawer-title"
+        className={`relative w-full max-w-md bg-[#F9F6F0] h-full shadow-2xl transform transition-transform duration-300 flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
+      >
         
         <div className="p-6 bg-[#0B0C0C] text-[#F9F6F0] flex justify-between items-center">
-          <h2 className="font-serif text-xl tracking-widest">YOUR RITUAL</h2>
-          <button onClick={closeCart}><X size={24} /></button>
+          <h2 id="cart-drawer-title" className="font-serif text-xl tracking-widest">YOUR RITUAL</h2>
+          <button type="button" onClick={closeCart} aria-label="Close cart">
+            <X size={24} />
+          </button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-6">
@@ -385,12 +814,14 @@ const CartDrawer = ({ isOpen, closeCart, cart, removeFromCart }) => {
               {cart.map((item, index) => (
                 <div key={`${item.id}-${index}`} className="flex gap-4 border-b border-gray-200 pb-4">
                   <div className="w-20 h-20 bg-gray-200 overflow-hidden">
-                    <img src={item.images[0]} alt={item.name} className="w-full h-full object-cover" />
+                    <img src={item.images[0]} alt={`${item.name} in cart`} className="w-full h-full object-cover" loading="lazy" decoding="async" />
                   </div>
                   <div className="flex-1">
                     <div className="flex justify-between items-start">
                       <h3 className="font-serif text-[#0B0C0C] font-bold">{item.name}</h3>
-                      <button onClick={() => removeFromCart(index)} className="text-gray-400 hover:text-red-500"><Trash2 size={16} /></button>
+                      <button type="button" onClick={() => removeFromCart(index)} className="text-gray-400 hover:text-red-500" aria-label={`Remove ${item.name} from cart`}>
+                        <Trash2 size={16} />
+                      </button>
                     </div>
                     <p className="text-xs text-gray-500 font-sans">{item.subtitle}</p>
                     <p className="text-sm font-bold text-[#0B0C0C] mt-2">${item.price.toFixed(2)}</p>
@@ -407,13 +838,17 @@ const CartDrawer = ({ isOpen, closeCart, cart, removeFromCart }) => {
             <span className="font-serif text-xl font-bold text-[#0B0C0C]">${total.toFixed(2)}</span>
           </div>
           <button 
+            type="button"
             onClick={handleCheckout}
-            disabled={cart.length === 0}
-            className={`w-full bg-[#0B0C0C] text-[#D4AF37] py-4 font-sans font-bold tracking-widest transition-colors ${cart.length === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#222]'}`}
+            disabled={cart.length === 0 || isCheckingOut}
+            className={`w-full bg-[#0B0C0C] text-[#D4AF37] py-4 font-sans font-bold tracking-widest transition-colors ${(cart.length === 0 || isCheckingOut) ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#222]'}`}
           >
-            CHECKOUT — ${total.toFixed(2)}
+            {isCheckingOut ? 'STARTING CHECKOUT...' : `CHECKOUT — $${total.toFixed(2)}`}
           </button>
           <p className="text-xs text-center text-gray-400 mt-3">Processed securely by PayPal.</p>
+          {checkoutError && (
+            <p className="text-xs text-center text-red-500 mt-2" role="status">{checkoutError}</p>
+          )}
         </div>
 
       </div>
@@ -458,112 +893,382 @@ const TextView = ({ title, content }) => (
   </div>
 );
 
-const ContactView = () => (
-  <div className="pt-32 pb-24 bg-[#F9F6F0] min-h-screen">
-    <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-16">
-      <div>
-        <h1 className="text-4xl font-serif text-[#0B0C0C] mb-6">Contact Us</h1>
-        <p className="text-gray-700 font-sans mb-8">Have a question about our sourcing, shipping, or wholesale program? We are here to help.</p>
-        <div className="space-y-6">
-          <div className="flex items-center gap-4">
-            <Mail className="text-[#D4AF37]" />
-            <span className="text-[#0B0C0C]">concierge@velureritual.com</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <Phone className="text-[#D4AF37]" />
-            <span className="text-[#0B0C0C]">+1 (555) 123-4567</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <MapPin className="text-[#D4AF37]" />
-            <span className="text-[#0B0C0C]">Los Angeles, CA</span>
-          </div>
-        </div>
-      </div>
-      <form className="bg-white p-8 shadow-lg">
-        <div className="mb-4">
-          <label className="block text-xs font-bold uppercase tracking-widest mb-2">Name</label>
-          <input type="text" className="w-full border border-gray-300 p-3 bg-gray-50 outline-none focus:border-[#D4AF37]" />
-        </div>
-        <div className="mb-4">
-          <label className="block text-xs font-bold uppercase tracking-widest mb-2">Email</label>
-          <input type="email" className="w-full border border-gray-300 p-3 bg-gray-50 outline-none focus:border-[#D4AF37]" />
-        </div>
-        <div className="mb-6">
-          <label className="block text-xs font-bold uppercase tracking-widest mb-2">Message</label>
-          <textarea rows="4" className="w-full border border-gray-300 p-3 bg-gray-50 outline-none focus:border-[#D4AF37]"></textarea>
-        </div>
-        <button className="w-full bg-[#0B0C0C] text-[#D4AF37] py-4 font-bold tracking-widest uppercase hover:bg-gray-800 transition-colors">Send Message</button>
-      </form>
-    </div>
-  </div>
-);
+const ContactView = () => {
+  const [formState, setFormState] = useState({
+    name: '',
+    email: '',
+    message: '',
+    website: '',
+  });
+  const [status, setStatus] = useState({ type: 'idle', message: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-const SubscriptionView = () => (
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setFormState((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    if (formState.website) {
+      return;
+    }
+
+    if (!formState.name.trim() || !formState.email.trim() || !formState.message.trim()) {
+      setStatus({ type: 'error', message: 'Please complete all required fields.' });
+      return;
+    }
+
+    if (!isValidEmail(formState.email)) {
+      setStatus({ type: 'error', message: 'Please provide a valid email address.' });
+      return;
+    }
+
+    setIsSubmitting(true);
+    setStatus({ type: 'idle', message: '' });
+
+    try {
+      await submitFormPayload('contact', {
+        name: formState.name.trim(),
+        email: formState.email.trim(),
+        message: formState.message.trim(),
+      });
+
+      trackEvent('generate_lead', { lead_type: 'contact' });
+      setStatus({ type: 'success', message: 'Message sent. We will reply shortly.' });
+      setFormState({
+        name: '',
+        email: '',
+        message: '',
+        website: '',
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unable to send right now. Please try again.';
+      setStatus({ type: 'error', message: errorMessage });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="pt-32 pb-24 bg-[#F9F6F0] min-h-screen">
+      <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-16">
+        <div>
+          <h1 className="text-4xl font-serif text-[#0B0C0C] mb-6">Contact Us</h1>
+          <p className="text-gray-700 font-sans mb-8">Have a question about our sourcing, shipping, or wholesale program? We are here to help.</p>
+          <div className="space-y-6">
+            <div className="flex items-center gap-4">
+              <Mail className="text-[#D4AF37]" />
+              <span className="text-[#0B0C0C]">concierge@velureritual.com</span>
+            </div>
+            <div className="flex items-center gap-4">
+              <Phone className="text-[#D4AF37]" />
+              <span className="text-[#0B0C0C]">+1 (555) 123-4567</span>
+            </div>
+            <div className="flex items-center gap-4">
+              <MapPin className="text-[#D4AF37]" />
+              <span className="text-[#0B0C0C]">Los Angeles, CA</span>
+            </div>
+          </div>
+        </div>
+        <form className="bg-white p-8 shadow-lg" onSubmit={handleSubmit} noValidate>
+          <div className="mb-4">
+            <label htmlFor="contact-name" className="block text-sm text-[#0B0C0C] font-bold uppercase tracking-widest mb-2">Name</label>
+            <input
+              id="contact-name"
+              name="name"
+              type="text"
+              value={formState.name}
+              onChange={handleChange}
+              required
+              className="w-full border border-gray-300 p-3 bg-gray-50 outline-none focus:border-[#D4AF37]"
+            />
+          </div>
+          <div className="mb-4">
+            <label htmlFor="contact-email" className="block text-sm text-[#0B0C0C] font-bold uppercase tracking-widest mb-2">Email</label>
+            <input
+              id="contact-email"
+              name="email"
+              type="email"
+              value={formState.email}
+              onChange={handleChange}
+              required
+              className="w-full border border-gray-300 p-3 bg-gray-50 outline-none focus:border-[#D4AF37]"
+            />
+          </div>
+          <div className="mb-6">
+            <label htmlFor="contact-message" className="block text-sm text-[#0B0C0C] font-bold uppercase tracking-widest mb-2">Message</label>
+            <textarea
+              id="contact-message"
+              name="message"
+              rows="4"
+              value={formState.message}
+              onChange={handleChange}
+              required
+              className="w-full border border-gray-300 p-3 bg-gray-50 outline-none focus:border-[#D4AF37]"
+            />
+          </div>
+
+          <input
+            type="text"
+            name="website"
+            value={formState.website}
+            onChange={handleChange}
+            tabIndex={-1}
+            autoComplete="off"
+            className="hidden"
+            aria-hidden="true"
+          />
+
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className={`w-full bg-[#0B0C0C] text-[#D4AF37] py-4 font-bold tracking-widest uppercase transition-colors ${isSubmitting ? 'opacity-60 cursor-not-allowed' : 'hover:bg-gray-800'}`}
+          >
+            {isSubmitting ? 'Sending...' : 'Send Message'}
+          </button>
+
+          {status.message && (
+            <p className={`mt-4 text-sm ${status.type === 'error' ? 'text-red-600' : 'text-green-700'}`} role="status">
+              {status.message}
+            </p>
+          )}
+        </form>
+      </div>
+    </div>
+  );
+};
+
+const RewardsView = ({ setView }) => (
   <div className="pt-32 pb-24 bg-[#0B0C0C] min-h-screen text-[#F9F6F0]">
-    <div className="max-w-4xl mx-auto px-6 text-center">
-      <h1 className="text-5xl font-serif text-[#F9F6F0] mb-6">Never Run Out of <br /><span className="text-[#D4AF37] italic">The Ritual</span></h1>
-      <p className="text-gray-400 text-lg mb-12">Join the Velure Club. Save 15% on every order and get exclusive access to small-batch roasts.</p>
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {[1, 2, 3].map((tier) => (
-          <div key={tier} className="border border-gray-800 p-8 hover:border-[#D4AF37] transition-all cursor-pointer bg-[#151515]">
-            <h3 className="font-serif text-2xl mb-2">{tier} Bag{tier > 1 ? 's' : ''} / Month</h3>
-            <p className="text-[#D4AF37] font-bold text-xl mb-4">${(20 * tier).toFixed(2)}</p>
-            <ul className="text-left text-sm text-gray-400 space-y-2 mb-8">
-              <li className="flex gap-2"><Check size={16} /> Free Shipping</li>
-              <li className="flex gap-2"><Check size={16} /> Cancel Anytime</li>
-              <li className="flex gap-2"><Check size={16} /> Exclusive Access</li>
-            </ul>
-            <button className="w-full bg-[#F9F6F0] text-[#0B0C0C] py-3 font-bold uppercase tracking-wider hover:bg-[#D4AF37]">Subscribe</button>
-          </div>
-        ))}
+    <div className="max-w-5xl mx-auto px-6">
+      <h1 className="text-5xl font-serif mb-6">Velure Rewards App</h1>
+      <p className="text-gray-300 text-lg mb-10">
+        Yes, we offer a rewards experience through the Velure web app flow. Save this site to your phone home screen and earn points on purchases.
+      </p>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+        <div className="bg-[#151515] border border-gray-800 p-6">
+          <h2 className="font-serif text-2xl text-[#D4AF37] mb-3">Earn</h2>
+          <p className="text-sm text-gray-300">Get points for every order, referral, and review.</p>
+        </div>
+        <div className="bg-[#151515] border border-gray-800 p-6">
+          <h2 className="font-serif text-2xl text-[#D4AF37] mb-3">Redeem</h2>
+          <p className="text-sm text-gray-300">Use points instantly for discounts and free shipping rewards.</p>
+        </div>
+        <div className="bg-[#151515] border border-gray-800 p-6">
+          <h2 className="font-serif text-2xl text-[#D4AF37] mb-3">Access</h2>
+          <p className="text-sm text-gray-300">Get early-access drops and member-only bundles.</p>
+        </div>
+      </div>
+
+      <div className="bg-[#151515] border border-gray-800 p-6">
+        <p className="text-sm text-gray-300 mb-4">Install steps: open this site on mobile, choose “Add to Home Screen,” then join through rewards/newsletter.</p>
+        <div className="flex flex-wrap gap-4">
+          <button type="button" onClick={() => setView('subscription')} className="bg-[#D4AF37] text-[#0B0C0C] px-6 py-3 font-bold uppercase tracking-wider hover:bg-[#b5952f] transition-colors">
+            Join Rewards
+          </button>
+          <button type="button" onClick={() => setView('contact')} className="border border-[#D4AF37] text-[#D4AF37] px-6 py-3 font-bold uppercase tracking-wider hover:bg-[#D4AF37] hover:text-[#0B0C0C] transition-colors">
+            Ask Questions
+          </button>
+        </div>
       </div>
     </div>
   </div>
 );
 
-const Footer = ({ setView }) => (
-  <footer className="bg-[#050505] text-[#F9F6F0] pt-20 pb-10 border-t border-gray-900">
-    <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
-      <div>
-        <h2 className="font-serif text-2xl font-bold mb-6">VELURE</h2>
-        <p className="text-gray-500 text-sm leading-relaxed">Small batch, artisan coffee sourced with intention and roasted for the discerning palate.</p>
-      </div>
-      <div>
-        <h3 className="text-[#D4AF37] text-xs font-bold uppercase tracking-widest mb-6">Shop</h3>
-        <ul className="space-y-4 text-sm text-gray-400">
-          <li><button onClick={() => setView('shop_all')} className="hover:text-[#F9F6F0]">All Coffee</button></li>
-          <li><button onClick={() => setView('shop_functional')} className="hover:text-[#F9F6F0]">Functional Blends</button></li>
-          <li><button onClick={() => setView('shop_single_origin')} className="hover:text-[#F9F6F0]">Single Origin</button></li>
-          <li><button onClick={() => setView('subscription')} className="hover:text-[#F9F6F0]">Subscriptions</button></li>
-        </ul>
-      </div>
-      <div>
-        <h3 className="text-[#D4AF37] text-xs font-bold uppercase tracking-widest mb-6">Company</h3>
-        <ul className="space-y-4 text-sm text-gray-400">
-          <li><button onClick={() => setView('about')} className="hover:text-[#F9F6F0]">Our Story</button></li>
-          <li><button onClick={() => setView('sourcing')} className="hover:text-[#F9F6F0]">Sourcing</button></li>
-          <li><button onClick={() => setView('wholesale')} className="hover:text-[#F9F6F0]">Wholesale</button></li>
-          <li><button onClick={() => setView('contact')} className="hover:text-[#F9F6F0]">Contact</button></li>
-        </ul>
-      </div>
-      <div>
-        <h3 className="text-[#D4AF37] text-xs font-bold uppercase tracking-widest mb-6">Newsletter</h3>
-        <div className="flex border-b border-gray-700 pb-2">
-          <input type="email" placeholder="Your email address" className="bg-transparent border-none outline-none text-[#F9F6F0] flex-grow placeholder-gray-600 text-sm" />
-          <button className="text-[#D4AF37] font-bold text-sm uppercase">Join</button>
+const SubscriptionView = () => {
+  const [subscriberEmail, setSubscriberEmail] = useState('');
+  const [subscribingTier, setSubscribingTier] = useState(null);
+  const [status, setStatus] = useState({ type: 'idle', message: '' });
+
+  const handleSubscribe = async (tier) => {
+    if (!subscriberEmail.trim() || !isValidEmail(subscriberEmail)) {
+      setStatus({ type: 'error', message: 'Enter a valid email to subscribe.' });
+      return;
+    }
+
+    setSubscribingTier(tier);
+    setStatus({ type: 'idle', message: '' });
+
+    try {
+      await submitFormPayload('newsletter', {
+        email: subscriberEmail.trim(),
+        subscriptionTier: `${tier} bag${tier > 1 ? 's' : ''} / month`,
+      });
+
+      trackEvent('subscribe_plan', {
+        tier,
+        value: Number((20 * tier).toFixed(2)),
+      });
+      setStatus({ type: 'success', message: `Subscribed to ${tier} bag${tier > 1 ? 's' : ''} / month plan updates.` });
+      setSubscriberEmail('');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to subscribe right now.';
+      setStatus({ type: 'error', message });
+    } finally {
+      setSubscribingTier(null);
+    }
+  };
+
+  return (
+    <div className="pt-32 pb-24 bg-[#0B0C0C] min-h-screen text-[#F9F6F0]">
+      <div className="max-w-4xl mx-auto px-6 text-center">
+        <h1 className="text-5xl font-serif text-[#F9F6F0] mb-6">Never Run Out of <br /><span className="text-[#D4AF37] italic">The Ritual</span></h1>
+        <p className="text-gray-400 text-lg mb-8">Join the Velure Club. Save 15% on every order and get exclusive access to small-batch roasts.</p>
+
+        <div className="max-w-md mx-auto mb-10">
+          <label htmlFor="subscription-email" className="sr-only">Subscription email</label>
+          <input
+            id="subscription-email"
+            type="email"
+            value={subscriberEmail}
+            onChange={(event) => setSubscriberEmail(event.target.value)}
+            placeholder="Enter email to subscribe"
+            className="w-full border border-gray-700 bg-[#151515] text-[#F9F6F0] p-3 outline-none focus:border-[#D4AF37]"
+          />
+          {status.message && (
+            <p className={`text-sm mt-3 ${status.type === 'error' ? 'text-red-400' : 'text-green-400'}`} role="status">
+              {status.message}
+            </p>
+          )}
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {[1, 2, 3].map((tier) => (
+            <div key={tier} className="border border-gray-800 p-8 hover:border-[#D4AF37] transition-all cursor-pointer bg-[#151515]">
+              <h3 className="font-serif text-2xl mb-2">{tier} Bag{tier > 1 ? 's' : ''} / Month</h3>
+              <p className="text-[#D4AF37] font-bold text-xl mb-4">${(20 * tier).toFixed(2)}</p>
+              <ul className="text-left text-sm text-gray-400 space-y-2 mb-8">
+                <li className="flex gap-2"><Check size={16} /> Free Shipping</li>
+                <li className="flex gap-2"><Check size={16} /> Cancel Anytime</li>
+                <li className="flex gap-2"><Check size={16} /> Exclusive Access</li>
+              </ul>
+              <button
+                type="button"
+                onClick={() => handleSubscribe(tier)}
+                disabled={subscribingTier === tier}
+                className={`w-full bg-[#F9F6F0] text-[#0B0C0C] py-3 font-bold uppercase tracking-wider hover:bg-[#D4AF37] transition-colors ${subscribingTier === tier ? 'opacity-60 cursor-not-allowed' : ''}`}
+              >
+                {subscribingTier === tier ? 'Subscribing...' : 'Subscribe'}
+              </button>
+            </div>
+          ))}
         </div>
       </div>
     </div>
-    <div className="max-w-7xl mx-auto px-6 pt-8 border-t border-gray-900 flex justify-between items-center text-xs text-gray-600">
-      <p>&copy; 2025 Velure Coffee Co.</p>
-      <div className="flex space-x-6">
-        <button onClick={() => setView('privacy')}>Privacy Policy</button>
-        <button onClick={() => setView('terms')}>Terms of Service</button>
+  );
+};
+
+const Footer = ({ setView }) => {
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [newsletterTrap, setNewsletterTrap] = useState('');
+  const [newsletterStatus, setNewsletterStatus] = useState({ type: 'idle', message: '' });
+  const [isNewsletterSubmitting, setIsNewsletterSubmitting] = useState(false);
+
+  const handleNewsletterSubmit = async (event) => {
+    event.preventDefault();
+
+    if (newsletterTrap) {
+      return;
+    }
+
+    if (!newsletterEmail.trim() || !isValidEmail(newsletterEmail)) {
+      setNewsletterStatus({ type: 'error', message: 'Enter a valid email address.' });
+      return;
+    }
+
+    setIsNewsletterSubmitting(true);
+    setNewsletterStatus({ type: 'idle', message: '' });
+
+    try {
+      await submitFormPayload('newsletter', { email: newsletterEmail.trim() });
+      trackEvent('generate_lead', { lead_type: 'newsletter' });
+      setNewsletterStatus({ type: 'success', message: 'You are subscribed.' });
+      setNewsletterEmail('');
+      setNewsletterTrap('');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Subscription failed. Please try again.';
+      setNewsletterStatus({ type: 'error', message: errorMessage });
+    } finally {
+      setIsNewsletterSubmitting(false);
+    }
+  };
+
+  return (
+    <footer className="bg-[#050505] text-[#F9F6F0] pt-20 pb-10 border-t border-gray-900">
+      <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
+        <div>
+          <h2 className="font-serif text-2xl font-bold mb-6">VELURE</h2>
+          <p className="text-gray-500 text-sm leading-relaxed">Small batch, artisan coffee sourced with intention and roasted for the discerning palate.</p>
+        </div>
+        <div>
+          <h3 className="text-[#D4AF37] text-xs font-bold uppercase tracking-widest mb-6">Shop</h3>
+          <ul className="space-y-4 text-sm text-gray-400">
+            <li><button type="button" onClick={() => setView('shop_all')} className="hover:text-[#F9F6F0]">All Coffee</button></li>
+            <li><button type="button" onClick={() => setView('shop_functional')} className="hover:text-[#F9F6F0]">Functional Blends</button></li>
+            <li><button type="button" onClick={() => setView('shop_single_origin')} className="hover:text-[#F9F6F0]">Single Origin</button></li>
+            <li><button type="button" onClick={() => setView('subscription')} className="hover:text-[#F9F6F0]">Subscriptions</button></li>
+            <li><button type="button" onClick={() => setView('rewards')} className="hover:text-[#F9F6F0]">Rewards App</button></li>
+          </ul>
+        </div>
+        <div>
+          <h3 className="text-[#D4AF37] text-xs font-bold uppercase tracking-widest mb-6">Company</h3>
+          <ul className="space-y-4 text-sm text-gray-400">
+            <li><button type="button" onClick={() => setView('about')} className="hover:text-[#F9F6F0]">Our Story</button></li>
+            <li><button type="button" onClick={() => setView('sourcing')} className="hover:text-[#F9F6F0]">Sourcing</button></li>
+            <li><button type="button" onClick={() => setView('wholesale')} className="hover:text-[#F9F6F0]">Wholesale</button></li>
+            <li><button type="button" onClick={() => setView('contact')} className="hover:text-[#F9F6F0]">Contact</button></li>
+          </ul>
+        </div>
+        <div>
+          <h3 className="text-[#D4AF37] text-xs font-bold uppercase tracking-widest mb-6">Newsletter</h3>
+          <form className="border-b border-gray-700 pb-2" onSubmit={handleNewsletterSubmit} noValidate>
+            <label htmlFor="newsletter-email" className="sr-only">Email address</label>
+            <div className="flex items-center">
+              <input
+                id="newsletter-email"
+                name="newsletter-email"
+                type="email"
+                value={newsletterEmail}
+                onChange={(event) => setNewsletterEmail(event.target.value)}
+                placeholder="Your email address"
+                className="bg-transparent border-none outline-none text-[#F9F6F0] flex-grow placeholder-gray-600 text-sm"
+                required
+              />
+              <button type="submit" disabled={isNewsletterSubmitting} className={`font-bold text-sm uppercase ${isNewsletterSubmitting ? 'text-gray-500' : 'text-[#D4AF37]'}`}>
+                {isNewsletterSubmitting ? '...' : 'Join'}
+              </button>
+            </div>
+            <input
+              type="text"
+              name="company"
+              value={newsletterTrap}
+              onChange={(event) => setNewsletterTrap(event.target.value)}
+              tabIndex={-1}
+              autoComplete="off"
+              className="hidden"
+              aria-hidden="true"
+            />
+            {newsletterStatus.message && (
+              <p className={`mt-3 text-xs ${newsletterStatus.type === 'error' ? 'text-red-400' : 'text-green-400'}`} role="status">
+                {newsletterStatus.message}
+              </p>
+            )}
+          </form>
+        </div>
       </div>
-    </div>
-  </footer>
-);
+      <div className="max-w-7xl mx-auto px-6 pt-8 border-t border-gray-900 flex justify-between items-center text-xs text-gray-600">
+        <p>&copy; {new Date().getFullYear()} Velure Coffee Co.</p>
+        <div className="flex space-x-6">
+          <button type="button" onClick={() => setView('privacy')}>Privacy Policy</button>
+          <button type="button" onClick={() => setView('terms')}>Terms of Service</button>
+        </div>
+      </div>
+    </footer>
+  );
+};
 
 const HomeView = ({ openProductDetail, setView }) => (
   <>
@@ -602,6 +1307,19 @@ const HomeView = ({ openProductDetail, setView }) => (
       </div>
     </div>
 
+    <div className="bg-[#121212] border-y border-gray-800 py-10">
+      <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row gap-4 md:items-center md:justify-between">
+        <div>
+          <p className="text-[#D4AF37] text-xs uppercase tracking-[0.2em] mb-2">New</p>
+          <h3 className="font-serif text-2xl text-[#F9F6F0]">Rewards App + Instant Shipping Rewards</h3>
+          <p className="text-gray-400 text-sm mt-2">Collect points and unlock discounts or free shipping faster.</p>
+        </div>
+        <button type="button" onClick={() => setView('rewards')} className="border border-[#D4AF37] text-[#D4AF37] px-6 py-3 font-sans uppercase tracking-widest hover:bg-[#D4AF37] hover:text-[#0B0C0C] transition-all">
+          Explore Rewards
+        </button>
+      </div>
+    </div>
+
     {/* FEATURED SHOP */}
     <div className="bg-[#0B0C0C] py-24 border-t border-gray-900">
       <div className="max-w-7xl mx-auto px-6">
@@ -623,13 +1341,92 @@ const HomeView = ({ openProductDetail, setView }) => (
   </>
 );
 
+const WholesaleView = ({ setView }) => (
+  <div className="pt-32 pb-24 bg-[#F9F6F0] min-h-screen">
+    <div className="max-w-6xl mx-auto px-6">
+      <h1 className="text-5xl font-serif text-[#0B0C0C] mb-6">Wholesale & Bulk Orders</h1>
+      <p className="text-gray-700 font-sans mb-10 max-w-3xl">
+        Yes, Velure can sell in bulk. We support restaurants, hotels, offices, and multi-location chains with sample kits, onboarding, and recurring supply plans.
+      </p>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+        <div className="bg-white border border-gray-200 p-6">
+          <h2 className="font-serif text-2xl text-[#0B0C0C] mb-2">Starter Bulk</h2>
+          <p className="text-sm text-gray-600 mb-3">24-99 units</p>
+          <p className="text-sm text-gray-700">Great for test locations and pilot menus.</p>
+        </div>
+        <div className="bg-white border border-gray-200 p-6">
+          <h2 className="font-serif text-2xl text-[#0B0C0C] mb-2">Growth Bulk</h2>
+          <p className="text-sm text-gray-600 mb-3">100-499 units</p>
+          <p className="text-sm text-gray-700">Volume pricing and scheduled restock support.</p>
+        </div>
+        <div className="bg-white border border-gray-200 p-6">
+          <h2 className="font-serif text-2xl text-[#0B0C0C] mb-2">Chain Program</h2>
+          <p className="text-sm text-gray-600 mb-3">500+ units</p>
+          <p className="text-sm text-gray-700">Custom blends, private label options, and account manager setup.</p>
+        </div>
+      </div>
+
+      <div className="bg-[#0B0C0C] text-[#F9F6F0] p-8">
+        <h3 className="font-serif text-3xl mb-4">Need Samples First?</h3>
+        <p className="text-gray-300 mb-6">We can ship sample boxes before full bulk commitment.</p>
+        <div className="flex flex-wrap gap-4">
+          <button type="button" onClick={() => setView('contact')} className="bg-[#D4AF37] text-[#0B0C0C] px-6 py-3 font-bold uppercase tracking-wider hover:bg-[#b5952f] transition-colors">
+            Request Samples
+          </button>
+          <a href="mailto:wholesale@velureritual.com" className="border border-[#D4AF37] text-[#D4AF37] px-6 py-3 font-bold uppercase tracking-wider hover:bg-[#D4AF37] hover:text-[#0B0C0C] transition-colors">
+            Email Wholesale Team
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
 // --- MAIN APP COMPONENT ---
 
 const App = () => {
-  const [currentView, setView] = useState('home'); 
-  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [route, setRoute] = useState(() => {
+    if (typeof window === 'undefined') {
+      return { view: 'home', productId: null };
+    }
+
+    return getRouteFromPath(window.location.pathname);
+  });
   const [isCartOpen, setIsCartOpen] = useState(false);
-  
+  const openCart = useCallback(() => setIsCartOpen(true), []);
+  const closeCart = useCallback(() => setIsCartOpen(false), []);
+  const currentView = route.view;
+  const selectedProduct = currentView === 'product_detail'
+    ? PRODUCTS.find((product) => product.id === route.productId) || null
+    : null;
+
+  const navigateToView = useCallback((view, options = {}) => {
+    const normalizedView = view === 'product_detail' && !options.productId ? 'shop_all' : view;
+    const productId = options.productId || null;
+    const nextPath = getPathForView(normalizedView, { productId });
+    const shouldReplace = options.replace === true;
+
+    if (typeof window !== 'undefined') {
+      const historyAction = shouldReplace ? 'replaceState' : 'pushState';
+      const nextState = { velureBackGuard: true, view: normalizedView, productId };
+      if (window.location.pathname !== nextPath || shouldReplace) {
+        window.history[historyAction](nextState, '', nextPath);
+      }
+
+      if (!options.preserveScroll) {
+        window.scrollTo(0, 0);
+      }
+    }
+
+    setRoute({ view: normalizedView, productId });
+  }, []);
+
+  const setView = useCallback((view) => {
+    trackEvent('navigation_click', { destination: view });
+    navigateToView(view);
+  }, [navigateToView]);
+
   // Persistent Cart Logic
   const [cart, setCart] = useState(() => {
     try {
@@ -642,24 +1439,186 @@ const App = () => {
   });
 
   useEffect(() => {
-    localStorage.setItem('velure_cart', JSON.stringify(cart));
+    try {
+      localStorage.setItem('velure_cart', JSON.stringify(cart));
+    } catch (e) {
+      console.error('Failed to save cart', e);
+    }
   }, [cart]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+
+    const currentPath = window.location.pathname !== '/' ? window.location.pathname.replace(/\/+$/, '') : '/';
+    const hasBackGuard = window.history.state?.velureBackGuard;
+
+    if (!hasBackGuard) {
+      if (currentPath !== ROUTE_PATHS.home) {
+        const initialRoute = getRouteFromPath(currentPath);
+        window.history.replaceState({ velureBackGuard: true, view: 'home' }, '', ROUTE_PATHS.home);
+        window.history.pushState(
+          { velureBackGuard: true, view: initialRoute.view, productId: initialRoute.productId },
+          '',
+          getPathForView(initialRoute.view, { productId: initialRoute.productId })
+        );
+      } else {
+        window.history.replaceState({ velureBackGuard: true, view: 'home' }, '', ROUTE_PATHS.home);
+      }
+    }
+
+    const handlePopState = () => {
+      setRoute(getRouteFromPath(window.location.pathname));
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  useEffect(() => {
+    const path = typeof window !== 'undefined'
+      ? window.location.pathname
+      : getPathForView(currentView, { productId: route.productId });
+
+    trackEvent('page_view', {
+      path,
+      view: currentView,
+      ...(route.productId ? { product_id: route.productId } : {}),
+    });
+  }, [currentView, route.productId]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const origin = window.location.origin;
+    const path = window.location.pathname;
+    const canonical = `${origin}${path}`;
+    const defaultImage = `${origin}/vite.svg`;
+
+    const viewMeta = {
+      home: {
+        title: 'Velure | Luxury Functional & Single-Origin Coffee',
+        description: 'Elevate your ritual with Velure. Premium coffee, functional blends, and ceremonial matcha.',
+      },
+      shop_all: {
+        title: 'All Collections | Velure Coffee',
+        description: 'Browse all Velure coffee collections, from functional blends to single-origin favorites.',
+      },
+      shop_functional: {
+        title: 'Functional Blends | Velure Coffee',
+        description: 'Explore Velure functional coffee blends with purposeful ingredients for daily focus and energy.',
+      },
+      shop_single_origin: {
+        title: 'Single Origin Series | Velure Coffee',
+        description: 'Discover Velure single-origin coffee with distinct regional profiles and premium quality.',
+      },
+      rewards: {
+        title: 'Rewards App | Velure Coffee',
+        description: 'Earn points, unlock discounts, and redeem free-shipping rewards with the Velure rewards flow.',
+      },
+      subscription: {
+        title: 'Subscription | Velure Coffee',
+        description: 'Subscribe to Velure for recurring coffee deliveries and members-only perks.',
+      },
+      wholesale: {
+        title: 'Wholesale & Bulk | Velure Coffee',
+        description: 'Bulk and wholesale coffee options for restaurants, cafes, hotels, and business partners.',
+      },
+      contact: {
+        title: 'Contact | Velure Coffee',
+        description: 'Contact Velure for support, wholesale inquiries, and product questions.',
+      },
+    };
+
+    const activeMeta = viewMeta[currentView] || viewMeta.home;
+    let title = activeMeta.title;
+    let description = activeMeta.description;
+    let image = defaultImage;
+    let structuredData = {
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      name: 'Velure Coffee',
+      url: `${origin}/`,
+    };
+
+    if (currentView === 'product_detail' && selectedProduct) {
+      title = `${selectedProduct.name} | Velure Coffee`;
+      description = selectedProduct.description.split('\n')[0] || activeMeta.description;
+      image = selectedProduct.images[0] || defaultImage;
+      structuredData = {
+        '@context': 'https://schema.org',
+        '@type': 'Product',
+        name: selectedProduct.name,
+        description,
+        image: selectedProduct.images,
+        brand: {
+          '@type': 'Brand',
+          name: 'Velure',
+        },
+        offers: {
+          '@type': 'Offer',
+          priceCurrency: 'USD',
+          price: selectedProduct.price.toFixed(2),
+          availability: 'https://schema.org/InStock',
+          url: canonical,
+        },
+        aggregateRating: {
+          '@type': 'AggregateRating',
+          ratingValue: String(selectedProduct.rating),
+          reviewCount: String(selectedProduct.reviews),
+        },
+      };
+    }
+
+    document.title = title;
+    upsertMetaByName('description', description);
+    upsertMetaByProperty('og:title', title);
+    upsertMetaByProperty('og:description', description);
+    upsertMetaByProperty('og:url', canonical);
+    upsertMetaByProperty('og:image', image);
+    upsertMetaByProperty('twitter:title', title);
+    upsertMetaByProperty('twitter:description', description);
+    upsertMetaByProperty('twitter:image', image);
+    upsertCanonical(canonical);
+    upsertStructuredData(structuredData);
+  }, [currentView, selectedProduct]);
+
   const addToCart = (product) => {
-    setCart([...cart, product]);
-    setIsCartOpen(true);
+    setCart((previousCart) => [...previousCart, product]);
+    openCart();
+    trackEvent('add_to_cart', {
+      currency: 'USD',
+      value: Number(product.price.toFixed(2)),
+      item_id: product.id,
+      item_name: product.name,
+    });
   };
 
   const removeFromCart = (index) => {
-    const newCart = [...cart];
-    newCart.splice(index, 1);
-    setCart(newCart);
+    setCart((previousCart) => {
+      const newCart = [...previousCart];
+      const [removedItem] = newCart.splice(index, 1);
+
+      if (removedItem) {
+        trackEvent('remove_from_cart', {
+          currency: 'USD',
+          value: Number(removedItem.price.toFixed(2)),
+          item_id: removedItem.id,
+          item_name: removedItem.name,
+        });
+      }
+
+      return newCart;
+    });
   };
 
   const openProductDetail = (product) => {
-    setSelectedProduct(product);
-    setView('product_detail');
-    window.scrollTo(0,0);
+    navigateToView('product_detail', { productId: product.id });
+    trackEvent('view_item', {
+      currency: 'USD',
+      value: Number(product.price.toFixed(2)),
+      item_id: product.id,
+      item_name: product.name,
+    });
   };
 
   // --- CONTENT MAPPING ---
@@ -670,7 +1629,8 @@ const App = () => {
         <ProductDetailView 
           product={selectedProduct} 
           addToCart={addToCart} 
-          onBack={() => setView('shop_all')} 
+          onBack={() => setView('shop_all')}
+          isCartOpen={isCartOpen}
         />
       );
     }
@@ -681,10 +1641,12 @@ const App = () => {
       case 'shop_functional': return <ShopView category="functional" openProductDetail={openProductDetail} />;
       case 'shop_single_origin': return <ShopView category="single_origin" openProductDetail={openProductDetail} />;
       case 'contact': return <ContactView />;
+      case 'rewards': return <RewardsView setView={setView} />;
       case 'subscription': return <SubscriptionView />;
+      case 'product_detail': return <ShopView category="all" openProductDetail={openProductDetail} />;
       
       case 'about': return (
-        <TextView title="Our Story" content={`In a world that rushes, Velure exists to make you pause. We believe that your morning cup is more than a caffeine delivery system—it is the foundational ritual of your day.\n\nFrom the altitude of the Brazilian highlands to the precise extraction science of our functional mushroom blends, every decision we make is governed by one rule: Uncompromising Quality.\n\n"Velure is my invitation to you: Slow down, taste the difference, and start your day with excellence." — Joe, Founder`} />
+        <TextView title="Our Story" content={`In a world that rushes, Velure exists to make you pause. We believe your morning cup is not just caffeine, it is the ritual that sets the tone for your day.\n\nJoe Hart has wanted to build his own coffee brand for a long time. He built Velure around one standard: source from ethical, clean farms and keep every blend transparent.\n\nOur beans are selected for quality and traceability, with no genetically engineered or modified ingredients listed in our formulas. We focus on real coffee beans, thoughtful functional additions, and no unnecessary fillers.\n\nFrom the altitude of the Brazilian highlands to the precision of our functional mushroom blends, every decision we make is guided by uncompromising quality.\n\n"Velure is my invitation to you: Slow down, taste the difference, and start your day with excellence." — Joe Hart, Founder`} />
       );
 
       case 'sourcing': return (
@@ -692,11 +1654,11 @@ const App = () => {
       );
 
       case 'wholesale': return (
-        <TextView title="Wholesale Partners" content={`Interested in serving Velure at your cafe, hotel, or office? \n\nWe provide equipment sourcing, barista training, and custom blend development for our wholesale partners. Please contact us at wholesale@velureritual.com to apply.`} />
+        <WholesaleView setView={setView} />
       );
 
       case 'privacy': return (
-        <TextView title="Privacy Policy" content={`Last Updated: Dec 2025\n\n1. Information We Collect: We collect information you provide directly to us when you make a purchase.\n2. How We Use Information: To process transactions and send you related information.\n3. Sharing: We do not sell your data.`} />
+        <TextView title="Privacy Policy" content={`Last Updated: February 2026\n\n1. Information We Collect: We collect information you provide directly to us when you make a purchase.\n2. How We Use Information: To process transactions and send you related information.\n3. Sharing: We do not sell your data.`} />
       );
 
       case 'terms': return (
@@ -715,11 +1677,11 @@ const App = () => {
         .font-sans { font-family: 'Montserrat', sans-serif; }
       `}</style>
 
-      <Navigation currentView={currentView} cartCount={cart.length} setView={setView} toggleCart={() => setIsCartOpen(true)} />
+      <Navigation currentView={currentView} cartCount={cart.length} setView={setView} toggleCart={openCart} />
       
       <CartDrawer 
         isOpen={isCartOpen} 
-        closeCart={() => setIsCartOpen(false)} 
+        closeCart={closeCart} 
         cart={cart} 
         removeFromCart={removeFromCart} 
       />
