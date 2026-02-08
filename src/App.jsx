@@ -222,6 +222,241 @@ const ROUTE_PATHS = {
   contact: '/contact',
   privacy: '/privacy',
   terms: '/terms',
+  shipping_returns: '/shipping-returns',
+  rewards_terms: '/rewards-terms',
+  subscription_terms: '/subscription-terms',
+};
+
+const LEGAL_CONTENT = {
+  privacy: `Last Updated: February 8, 2026
+
+Velure Coffee Co. ("Velure," "we," "our," "us") respects your privacy. This Privacy Policy explains what we collect, why we collect it, and your choices.
+
+1. Information We Collect
+- Information you provide directly:
+  - Contact form: name, email, message.
+  - Newsletter/subscription form: email and selected plan tier details.
+  - Checkout details submitted to our checkout endpoint: cart items and quantities.
+- Information collected automatically:
+  - IP address, browser/device user agent, request timestamps.
+  - Site interaction data through analytics events (for example product views, add-to-cart, checkout start, and lead submissions).
+
+2. How We Use Information
+We use information to:
+- Process and support orders and checkout flows.
+- Respond to support and wholesale inquiries.
+- Send newsletters, subscription updates, and related marketing communications.
+- Detect spam, abuse, fraud, and security incidents.
+- Improve site performance, usability, and product experience.
+
+3. Legal Bases (where applicable)
+Depending on your location, we process data based on:
+- Performance of a contract (orders and service delivery).
+- Legitimate interests (security, fraud prevention, site improvement).
+- Consent (newsletter/subscription marketing where required by law).
+- Compliance with legal obligations.
+
+4. Sharing and Disclosure
+We do not sell personal information for money.
+We may share data with service providers that help us operate the business, such as:
+- Hosting and infrastructure providers.
+- Payment processors and checkout providers.
+- Form handling, messaging, and analytics tools.
+We may also disclose data when required by law, to enforce our terms, or to protect rights and safety.
+
+5. Cookies and Similar Technologies
+We and our vendors may use cookies, local storage, pixels, and similar technologies to:
+- Keep cart/session functionality working.
+- Measure traffic and campaign performance.
+- Understand content and product engagement.
+You can control cookies in your browser settings. Blocking some cookies may affect functionality.
+
+6. Data Retention
+We retain personal information only as long as reasonably necessary for business, legal, tax, fraud-prevention, and operational purposes.
+
+7. Data Security
+We use reasonable administrative, technical, and organizational safeguards. No online system is 100% secure, but we continuously work to reduce risk.
+
+8. Your Privacy Rights
+Depending on your state/country, you may have rights to:
+- Access or know what personal information we hold.
+- Request deletion or correction.
+- Opt out of certain targeted advertising or sharing activities.
+- Appeal certain privacy decisions where required.
+To submit a request, contact: concierge@velureritual.com.
+
+9. Marketing Choices
+You can unsubscribe from marketing emails at any time by using the unsubscribe link in the email or by contacting us directly.
+
+10. Children's Privacy
+Our site is not directed to children under 13, and we do not knowingly collect personal information from children under 13.
+
+11. International Visitors
+If you access the site from outside the United States, you understand your data may be processed in the U.S. or other jurisdictions where our providers operate.
+
+12. Policy Updates
+We may update this policy periodically. Changes are effective when posted with a new "Last Updated" date.
+
+13. Contact
+Velure Coffee Co.
+Email: concierge@velureritual.com`,
+  terms: `Last Updated: February 8, 2026
+
+These Terms of Service ("Terms") govern your use of the Velure Coffee website and related services. By using our site, you agree to these Terms.
+
+1. Eligibility and Use
+You must use this site in compliance with applicable law. You agree not to misuse the site, interfere with operations, or attempt unauthorized access.
+
+2. Product Information
+We make reasonable efforts to ensure product descriptions, pricing, and availability are accurate, but errors may occur. We reserve the right to correct errors and update information at any time.
+
+3. Orders and Acceptance
+Placing an order is an offer to buy. We may accept, reject, or cancel any order, including for pricing errors, suspected fraud, or stock issues. If we cancel after payment, we will issue a refund to the original payment method.
+
+4. Payments
+Checkout and payment processing may be provided by third-party processors (for example PayPal). Your payment relationship with that provider is governed by their terms and policies.
+
+5. Shipping and Delivery
+Shipping timelines are estimates and not guaranteed. Risk of loss transfers according to applicable law and carrier handling.
+See our Shipping & Returns Policy for full details.
+
+6. Returns and Refunds
+Returns and refunds are handled under our Shipping & Returns Policy, including eligibility and condition requirements.
+
+7. Subscriptions and Marketing
+If you join newsletter or subscription updates, you agree to receive communications related to offers, product updates, and account/service notices. You may unsubscribe from marketing messages at any time.
+See Subscription Terms for recurring offer details and cancellation language.
+
+8. Rewards Program
+If you participate in rewards features, your participation is also subject to our Rewards Terms.
+
+9. Intellectual Property
+All site content, branding, design elements, copy, and media are owned by Velure or licensed to us. You may not reproduce, distribute, or exploit site content without written permission.
+
+10. User Content and Feedback
+If you submit reviews, comments, or feedback, you grant us a non-exclusive, worldwide, royalty-free license to use it for business purposes, consistent with applicable law.
+
+11. Disclaimers
+The site and services are provided "as is" and "as available," without warranties of any kind to the extent allowed by law.
+Statements about taste, wellness, or functional ingredients are informational and not medical advice. These products are not intended to diagnose, treat, cure, or prevent any disease.
+
+12. Limitation of Liability
+To the maximum extent permitted by law, Velure is not liable for indirect, incidental, special, consequential, or punitive damages arising from site or product use.
+
+13. Indemnification
+You agree to indemnify and hold Velure harmless from claims arising from your misuse of the site, violation of these Terms, or violation of law.
+
+14. Governing Law
+These Terms are governed by the laws of the State of California, without regard to conflict-of-law principles, unless otherwise required by law.
+
+15. Changes to Terms
+We may update these Terms at any time. Updated Terms are effective when posted.
+
+16. Contact
+Questions about these Terms: concierge@velureritual.com`,
+  shippingReturns: `Last Updated: February 8, 2026
+
+1. Shipping Coverage
+Velure currently ships within supported regions shown at checkout. Some destinations may be limited due to carrier or customs restrictions.
+
+2. Processing Time
+Orders are typically processed within 1-3 business days (excluding weekends and major holidays).
+
+3. Delivery Estimates
+Transit times vary by destination and carrier. Delivery windows are estimates and not guarantees.
+
+4. Free Shipping Offer
+We offer free shipping on qualifying orders over $50 (USD) where available. Eligibility may exclude taxes, duties, and limited-time carrier surcharges.
+
+5. International Orders
+For international deliveries, import duties, taxes, and customs fees may apply and are the customer's responsibility unless stated otherwise at checkout.
+
+6. Incorrect Address / Failed Delivery
+Please verify your shipping address before placing an order. We are not responsible for delays or losses caused by incorrect addresses provided at checkout.
+
+7. Damaged or Missing Items
+If your order arrives damaged or incomplete, contact concierge@velureritual.com within 7 days of delivery with photos and order details.
+
+8. Return Eligibility
+Unopened products in original condition may be returned within 30 days of delivery unless marked final sale.
+
+9. Non-Returnable Items
+For food safety reasons, opened consumable products are generally non-returnable unless defective or required by applicable law.
+
+10. Return Process
+Email concierge@velureritual.com with your order number and reason for return. If approved, we will provide return instructions.
+
+11. Refund Timing
+Approved refunds are issued to the original payment method after returned items are received and inspected. Processing time may vary by payment provider.
+
+12. Exchanges
+We do not guarantee direct exchanges. In most cases, approved returns are refunded and a new order can be placed.`,
+  rewardsTerms: `Last Updated: February 8, 2026
+
+These Rewards Terms apply to Velure rewards participation.
+
+1. Program Basics
+The rewards experience allows eligible users to earn and redeem points for select benefits.
+
+2. Eligibility
+You must provide a valid email and comply with our Terms of Service to participate.
+
+3. Earning Points
+Points may be awarded for qualifying purchases and limited promotional actions (for example referrals or reviews, when offered).
+
+4. Redemption
+Points may be redeemed for eligible discounts or shipping-related perks where available. Redemption options may vary over time.
+
+5. No Cash Value
+Points are promotional and have no cash value unless explicitly required by law.
+
+6. Expiration and Forfeiture
+We may apply inactivity expiration windows or promotional expiration dates. Expired or forfeited points cannot be reinstated unless required by law.
+
+7. Returns and Chargebacks
+If an order is refunded, canceled, or charged back, related points may be removed or adjusted.
+
+8. Abuse and Fraud
+We may suspend or terminate rewards access for abuse, fraud, duplicate accounts, or policy violations.
+
+9. Program Changes
+We may modify, pause, or end the rewards program, point values, and redemption rules at any time, with notice where required by law.
+
+10. Relationship to Other Terms
+These Rewards Terms supplement our Terms of Service and Privacy Policy.`,
+  subscriptionTerms: `Last Updated: February 8, 2026
+
+These Subscription Terms govern recurring plan offers and subscription communications.
+
+1. Subscription Offers
+Displayed plans describe expected monthly quantity and promotional pricing (when available). Final price and taxes are shown before payment.
+
+2. Authorization
+By subscribing, you authorize recurring charges according to the selected plan and billing cadence until canceled.
+
+3. Billing and Renewal
+Subscriptions renew automatically unless canceled before the next billing date.
+
+4. Cancellation
+You may cancel before your next billing cycle to avoid future charges. Cancellation does not reverse charges already processed for the current cycle.
+
+5. Price and Plan Changes
+We may update subscription pricing, contents, or benefits. Material changes will be communicated before they take effect where required by law.
+
+6. Failed Payments
+If payment fails, we may retry, pause, or cancel the subscription.
+
+7. Shipping for Subscription Orders
+Subscription shipments follow our Shipping & Returns Policy and may vary by fulfillment timing.
+
+8. Marketing and Service Messages
+Subscription participants may receive transactional and service-related messages, plus optional marketing emails. You can unsubscribe from marketing emails at any time.
+
+9. Termination
+We may suspend or terminate subscriptions for fraud, abuse, non-payment, or policy violations.
+
+10. Additional Terms
+These Subscription Terms supplement our Terms of Service and Privacy Policy.`,
 };
 
 const getRouteFromPath = (pathname) => {
@@ -1065,6 +1300,12 @@ const RewardsView = ({ setView }) => (
 
       <div className="bg-[#151515] border border-gray-800 p-6">
         <p className="text-sm text-gray-300 mb-4">Install steps: open this site on mobile, choose “Add to Home Screen,” then join through rewards/newsletter.</p>
+        <p className="text-xs text-gray-500 mb-4">
+          Participation is governed by our{' '}
+          <button type="button" onClick={() => setView('rewards_terms')} className="text-[#D4AF37] hover:text-[#F9F6F0] underline underline-offset-2">
+            Rewards Terms
+          </button>.
+        </p>
         <div className="flex flex-wrap gap-4">
           <button type="button" onClick={() => setView('subscription')} className="bg-[#D4AF37] text-[#0B0C0C] px-6 py-3 font-bold uppercase tracking-wider hover:bg-[#b5952f] transition-colors">
             Join Rewards
@@ -1078,7 +1319,7 @@ const RewardsView = ({ setView }) => (
   </div>
 );
 
-const SubscriptionView = () => {
+const SubscriptionView = ({ setView }) => {
   const [subscriberEmail, setSubscriberEmail] = useState('');
   const [subscribingTier, setSubscribingTier] = useState(null);
   const [status, setStatus] = useState({ type: 'idle', message: '' });
@@ -1133,6 +1374,16 @@ const SubscriptionView = () => {
               {status.message}
             </p>
           )}
+          <p className="text-xs text-gray-500 mt-3">
+            By subscribing, you agree to our{' '}
+            <button type="button" onClick={() => setView('subscription_terms')} className="text-[#D4AF37] hover:text-[#F9F6F0] underline underline-offset-2">
+              Subscription Terms
+            </button>{' '}
+            and{' '}
+            <button type="button" onClick={() => setView('privacy')} className="text-[#D4AF37] hover:text-[#F9F6F0] underline underline-offset-2">
+              Privacy Policy
+            </button>.
+          </p>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -1256,14 +1507,27 @@ const Footer = ({ setView }) => {
                 {newsletterStatus.message}
               </p>
             )}
+            <p className="mt-3 text-xs text-gray-500">
+              By joining, you agree to our{' '}
+              <button type="button" onClick={() => setView('privacy')} className="text-[#D4AF37] hover:text-[#F9F6F0] underline underline-offset-2">
+                Privacy Policy
+              </button>{' '}
+              and{' '}
+              <button type="button" onClick={() => setView('subscription_terms')} className="text-[#D4AF37] hover:text-[#F9F6F0] underline underline-offset-2">
+                Subscription Terms
+              </button>.
+            </p>
           </form>
         </div>
       </div>
-      <div className="max-w-7xl mx-auto px-6 pt-8 border-t border-gray-900 flex justify-between items-center text-xs text-gray-600">
+      <div className="max-w-7xl mx-auto px-6 pt-8 border-t border-gray-900 flex flex-col gap-4 md:flex-row md:justify-between md:items-center text-xs text-gray-600">
         <p>&copy; {new Date().getFullYear()} Velure Coffee Co.</p>
-        <div className="flex space-x-6">
+        <div className="flex flex-wrap gap-x-6 gap-y-2">
           <button type="button" onClick={() => setView('privacy')}>Privacy Policy</button>
           <button type="button" onClick={() => setView('terms')}>Terms of Service</button>
+          <button type="button" onClick={() => setView('shipping_returns')}>Shipping & Returns</button>
+          <button type="button" onClick={() => setView('rewards_terms')}>Rewards Terms</button>
+          <button type="button" onClick={() => setView('subscription_terms')}>Subscription Terms</button>
         </div>
       </div>
     </footer>
@@ -1527,6 +1791,26 @@ const App = () => {
         title: 'Contact | Velure Coffee',
         description: 'Contact Velure for support, wholesale inquiries, and product questions.',
       },
+      privacy: {
+        title: 'Privacy Policy | Velure Coffee',
+        description: 'Read how Velure collects, uses, and protects personal information.',
+      },
+      terms: {
+        title: 'Terms of Service | Velure Coffee',
+        description: 'Review Velure website and purchase terms, disclaimers, and user obligations.',
+      },
+      shipping_returns: {
+        title: 'Shipping & Returns | Velure Coffee',
+        description: 'Shipping timelines, free shipping eligibility, and return/refund rules.',
+      },
+      rewards_terms: {
+        title: 'Rewards Terms | Velure Coffee',
+        description: 'Program rules for earning and redeeming Velure rewards points and perks.',
+      },
+      subscription_terms: {
+        title: 'Subscription Terms | Velure Coffee',
+        description: 'Recurring billing, cancellation, and subscription offer terms for Velure.',
+      },
     };
 
     const activeMeta = viewMeta[currentView] || viewMeta.home;
@@ -1642,7 +1926,7 @@ const App = () => {
       case 'shop_single_origin': return <ShopView category="single_origin" openProductDetail={openProductDetail} />;
       case 'contact': return <ContactView />;
       case 'rewards': return <RewardsView setView={setView} />;
-      case 'subscription': return <SubscriptionView />;
+      case 'subscription': return <SubscriptionView setView={setView} />;
       case 'product_detail': return <ShopView category="all" openProductDetail={openProductDetail} />;
       
       case 'about': return (
@@ -1658,11 +1942,23 @@ const App = () => {
       );
 
       case 'privacy': return (
-        <TextView title="Privacy Policy" content={`Last Updated: February 2026\n\n1. Information We Collect: We collect information you provide directly to us when you make a purchase.\n2. How We Use Information: To process transactions and send you related information.\n3. Sharing: We do not sell your data.`} />
+        <TextView title="Privacy Policy" content={LEGAL_CONTENT.privacy} />
       );
 
       case 'terms': return (
-        <TextView title="Terms of Service" content={`1. Acceptance: By accessing this site, you agree to these terms.\n2. Returns: We accept returns on unopened bags within 30 days.\n3. Shipping: We ship globally.`} />
+        <TextView title="Terms of Service" content={LEGAL_CONTENT.terms} />
+      );
+
+      case 'shipping_returns': return (
+        <TextView title="Shipping & Returns Policy" content={LEGAL_CONTENT.shippingReturns} />
+      );
+
+      case 'rewards_terms': return (
+        <TextView title="Rewards Terms" content={LEGAL_CONTENT.rewardsTerms} />
+      );
+
+      case 'subscription_terms': return (
+        <TextView title="Subscription Terms" content={LEGAL_CONTENT.subscriptionTerms} />
       );
 
       default: return <HomeView openProductDetail={openProductDetail} setView={setView} />;
