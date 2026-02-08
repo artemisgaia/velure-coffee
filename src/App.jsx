@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { ShoppingBag, Menu, X, Star, Coffee, Leaf, Award, Check, Trash2, Mail, MapPin, Phone, ArrowLeft } from 'lucide-react';
+import { ShoppingBag, Menu, X, Star, Coffee, Leaf, Award, Check, Trash2, Mail, MapPin, Phone, ArrowLeft, User, LogOut } from 'lucide-react';
 
 // --- BRAND ASSETS & DATA ---
 
@@ -220,6 +220,7 @@ const ROUTE_PATHS = {
   wholesale: '/wholesale',
   subscription: '/subscription',
   contact: '/contact',
+  account: '/account',
   privacy: '/privacy',
   terms: '/terms',
   shipping_returns: '/shipping-returns',
@@ -236,6 +237,7 @@ Velure Coffee Co. ("Velure," "we," "our," "us") respects your privacy. This Priv
 - Information you provide directly:
   - Contact form: name, email, message.
   - Newsletter/subscription form: email and selected plan tier details.
+  - Account authentication: email and encrypted credential data handled by our authentication provider.
   - Checkout details submitted to our checkout endpoint: cart items and quantities.
 - Information collected automatically:
   - IP address, browser/device user agent, request timestamps.
@@ -459,6 +461,113 @@ We may suspend or terminate subscriptions for fraud, abuse, non-payment, or poli
 These Subscription Terms supplement our Terms of Service and Privacy Policy.`,
 };
 
+const REWARDS_STORAGE_KEY = 'velure_rewards_profile';
+const REWARDS_SIGNUP_BONUS = 150;
+const REWARDS_POINTS_PER_DOLLAR = 5;
+const STANDARD_SHIPPING_FEE = 6.95;
+const FREE_SHIPPING_THRESHOLD = 50;
+
+const REWARD_OFFERS = [
+  {
+    id: 'five_off',
+    name: '$5 Off Order',
+    pointsCost: 500,
+    type: 'discount',
+    discountValue: 5,
+    description: 'Apply an instant $5 discount to your checkout total.',
+  },
+  {
+    id: 'free_shipping',
+    name: 'Free Shipping',
+    pointsCost: 350,
+    type: 'shipping',
+    discountValue: STANDARD_SHIPPING_FEE,
+    description: 'Remove standard shipping on orders under $50.',
+  },
+];
+
+const REWARD_OFFER_MAP = Object.fromEntries(REWARD_OFFERS.map((offer) => [offer.id, offer]));
+
+const DEFAULT_REWARDS_PROFILE = {
+  enrolled: false,
+  email: '',
+  points: 0,
+  lifetimePoints: 0,
+  activeRewardId: null,
+  history: [],
+};
+
+const getRewardOffer = (rewardId) => (rewardId ? REWARD_OFFER_MAP[rewardId] || null : null);
+
+const normalizeRewardsProfile = (value) => {
+  if (!value || typeof value !== 'object') {
+    return { ...DEFAULT_REWARDS_PROFILE };
+  }
+
+  return {
+    enrolled: Boolean(value.enrolled),
+    email: typeof value.email === 'string' ? value.email : '',
+    points: Number.isFinite(Number(value.points)) ? Math.max(0, Math.floor(Number(value.points))) : 0,
+    lifetimePoints: Number.isFinite(Number(value.lifetimePoints))
+      ? Math.max(0, Math.floor(Number(value.lifetimePoints)))
+      : 0,
+    activeRewardId: typeof value.activeRewardId === 'string' && getRewardOffer(value.activeRewardId)
+      ? value.activeRewardId
+      : null,
+    history: Array.isArray(value.history) ? value.history.slice(0, 15) : [],
+  };
+};
+
+const appendRewardsHistory = (profile, entry) => {
+  const item = {
+    id: `rw-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    createdAt: new Date().toISOString(),
+    ...entry,
+  };
+  return {
+    ...profile,
+    history: [item, ...(Array.isArray(profile.history) ? profile.history : [])].slice(0, 15),
+  };
+};
+
+const getRewardsTier = (lifetimePoints) => {
+  if (lifetimePoints >= 2500) return 'Gold';
+  if (lifetimePoints >= 1000) return 'Silver';
+  return 'Bronze';
+};
+
+const getPointsToNextTier = (lifetimePoints) => {
+  if (lifetimePoints >= 2500) return 0;
+  if (lifetimePoints >= 1000) return 2500 - lifetimePoints;
+  return 1000 - lifetimePoints;
+};
+
+const getCheckoutPricing = (subtotal, rewardId) => {
+  const parsedSubtotal = Number.isFinite(Number(subtotal)) ? Number(subtotal) : 0;
+  const subtotalValue = Math.max(0, Number(parsedSubtotal.toFixed(2)));
+  const baseShipping = subtotalValue >= FREE_SHIPPING_THRESHOLD ? 0 : STANDARD_SHIPPING_FEE;
+  const reward = getRewardOffer(rewardId);
+  let shipping = baseShipping;
+  let rewardDiscount = 0;
+
+  if (reward?.type === 'discount') {
+    rewardDiscount = Math.min(reward.discountValue, subtotalValue);
+  }
+
+  if (reward?.type === 'shipping') {
+    shipping = 0;
+  }
+
+  const total = Math.max(0, Number((subtotalValue + shipping - rewardDiscount).toFixed(2)));
+  return {
+    subtotal: subtotalValue,
+    shipping: Number(shipping.toFixed(2)),
+    rewardDiscount: Number(rewardDiscount.toFixed(2)),
+    total,
+    reward,
+  };
+};
+
 const getRouteFromPath = (pathname) => {
   const normalizedPathname = pathname !== '/' ? pathname.replace(/\/+$/, '') : pathname;
   const productMatch = normalizedPathname.match(/^\/products\/([^/]+)$/);
@@ -492,6 +601,183 @@ const getPathForView = (view, options = {}) => {
   }
 
   return ROUTE_PATHS[view] || ROUTE_PATHS.home;
+};
+
+const normalizeLower = (value) => (typeof value === 'string' ? value.trim().toLowerCase() : '');
+const AUTH_STORAGE_KEY = 'velure_auth_state_v1';
+const DEFAULT_AUTH_STATE = {
+  isLoading: false,
+  user: null,
+  session: null,
+};
+
+const normalizeAuthState = (value) => {
+  if (!value || typeof value !== 'object') {
+    return { ...DEFAULT_AUTH_STATE };
+  }
+
+  const session = value.session && typeof value.session === 'object'
+    ? {
+        accessToken: typeof value.session.accessToken === 'string' ? value.session.accessToken : '',
+        refreshToken: typeof value.session.refreshToken === 'string' ? value.session.refreshToken : '',
+        expiresAt: Number.isFinite(Number(value.session.expiresAt)) ? Number(value.session.expiresAt) : 0,
+      }
+    : null;
+
+  const user = value.user && typeof value.user === 'object'
+    ? {
+        id: typeof value.user.id === 'string' ? value.user.id : '',
+        email: typeof value.user.email === 'string' ? value.user.email : '',
+      }
+    : null;
+
+  if (!session?.accessToken || !user?.id) {
+    return {
+      isLoading: false,
+      user: null,
+      session: null,
+    };
+  }
+
+  return {
+    isLoading: false,
+    user,
+    session,
+  };
+};
+
+const getSupabaseConfig = () => {
+  const url = (import.meta.env.VITE_SUPABASE_URL || '').trim().replace(/\/+$/, '');
+  const anonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim();
+
+  if (!url || !anonKey) {
+    throw new Error('Auth is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
+  }
+
+  return { url, anonKey };
+};
+
+const parseSupabaseError = (payload, fallbackMessage) => {
+  if (!payload || typeof payload !== 'object') return fallbackMessage;
+  if (typeof payload.error_description === 'string' && payload.error_description.trim()) {
+    return payload.error_description;
+  }
+  if (typeof payload.msg === 'string' && payload.msg.trim()) {
+    return payload.msg;
+  }
+  if (typeof payload.error === 'string' && payload.error.trim()) {
+    return payload.error;
+  }
+  if (typeof payload.message === 'string' && payload.message.trim()) {
+    return payload.message;
+  }
+  return fallbackMessage;
+};
+
+const supabaseRequest = async (path, options = {}) => {
+  const { url, anonKey } = getSupabaseConfig();
+  const {
+    method = 'GET',
+    body,
+    accessToken,
+  } = options;
+
+  const headers = {
+    apikey: anonKey,
+    'Content-Type': 'application/json',
+    ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+  };
+
+  const response = await fetch(`${url}${path}`, {
+    method,
+    headers,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  let payload = null;
+  try {
+    payload = await response.json();
+  } catch {
+    payload = null;
+  }
+
+  if (!response.ok) {
+    throw new Error(parseSupabaseError(payload, 'Unable to complete auth request.'));
+  }
+
+  return payload;
+};
+
+const createSessionFromSupabasePayload = (payload) => {
+  const source = payload?.session && typeof payload.session === 'object'
+    ? payload.session
+    : payload;
+  const accessToken = typeof source?.access_token === 'string' ? source.access_token : '';
+  const refreshToken = typeof source?.refresh_token === 'string' ? source.refresh_token : '';
+  const expiresAtSeconds = Number(source?.expires_at);
+  const expiresInSeconds = Number(source?.expires_in);
+  const expiresAt = Number.isFinite(expiresAtSeconds)
+    ? expiresAtSeconds * 1000
+    : (Number.isFinite(expiresInSeconds) ? Date.now() + (expiresInSeconds * 1000) : 0);
+
+  if (!accessToken || !refreshToken) return null;
+
+  return {
+    accessToken,
+    refreshToken,
+    expiresAt,
+  };
+};
+
+const supabaseSignUp = async (email, password) => {
+  const payload = await supabaseRequest('/auth/v1/signup', {
+    method: 'POST',
+    body: { email, password },
+  });
+
+  return {
+    user: payload?.user || payload?.session?.user || null,
+    session: createSessionFromSupabasePayload(payload),
+  };
+};
+
+const supabaseSignIn = async (email, password) => {
+  const payload = await supabaseRequest('/auth/v1/token?grant_type=password', {
+    method: 'POST',
+    body: { email, password },
+  });
+
+  return {
+    user: payload?.user || null,
+    session: createSessionFromSupabasePayload(payload),
+  };
+};
+
+const supabaseRefreshSession = async (refreshToken) => {
+  const payload = await supabaseRequest('/auth/v1/token?grant_type=refresh_token', {
+    method: 'POST',
+    body: { refresh_token: refreshToken },
+  });
+
+  return {
+    user: payload?.user || null,
+    session: createSessionFromSupabasePayload(payload),
+  };
+};
+
+const supabaseGetUser = async (accessToken) => {
+  const payload = await supabaseRequest('/auth/v1/user', {
+    method: 'GET',
+    accessToken,
+  });
+  return payload && typeof payload === 'object' ? payload : null;
+};
+
+const supabaseSignOut = async (accessToken) => {
+  await supabaseRequest('/auth/v1/logout', {
+    method: 'POST',
+    accessToken,
+  });
 };
 
 const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
@@ -814,7 +1100,7 @@ const ProductDetailView = ({ product, addToCart, onBack, isCartOpen }) => {
   );
 };
 
-const Navigation = ({ currentView, cartCount, setView, toggleCart }) => {
+const Navigation = ({ currentView, cartCount, setView, toggleCart, authUser, onSignOut }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -899,39 +1185,88 @@ const Navigation = ({ currentView, cartCount, setView, toggleCart }) => {
           <button onClick={() => handleNav('subscription')} className="hover:text-[#D4AF37] transition-colors uppercase">Subscription</button>
         </div>
 
-        <button
-          type="button"
-          className="relative cursor-pointer text-[#F9F6F0] hover:text-[#D4AF37] transition-colors"
-          onClick={toggleCart}
-          aria-label={`Open cart${cartCount > 0 ? ` with ${cartCount} items` : ''}`}
-        >
-          <ShoppingBag size={24} />
-          {cartCount > 0 && (
-            <span className="absolute -top-2 -right-2 bg-[#D4AF37] text-[#0B0C0C] text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-              {cartCount}
+        <div className="flex items-center gap-4">
+          <button
+            type="button"
+            className="text-[#F9F6F0] hover:text-[#D4AF37] transition-colors flex items-center gap-2"
+            onClick={() => handleNav('account')}
+            aria-label={authUser ? 'Open account' : 'Log in or sign up'}
+          >
+            <User size={20} />
+            <span className="hidden md:inline text-xs uppercase tracking-widest">
+              {authUser ? 'Account' : 'Login'}
             </span>
+          </button>
+
+          {authUser && (
+            <button
+              type="button"
+              className="text-[#F9F6F0] hover:text-[#D4AF37] transition-colors"
+              onClick={onSignOut}
+              aria-label="Sign out"
+            >
+              <LogOut size={20} />
+            </button>
           )}
-        </button>
+
+          <button
+            type="button"
+            className="relative cursor-pointer text-[#F9F6F0] hover:text-[#D4AF37] transition-colors"
+            onClick={toggleCart}
+            aria-label={`Open cart${cartCount > 0 ? ` with ${cartCount} items` : ''}`}
+          >
+            <ShoppingBag size={24} />
+            {cartCount > 0 && (
+              <span className="absolute -top-2 -right-2 bg-[#D4AF37] text-[#0B0C0C] text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                {cartCount}
+              </span>
+            )}
+          </button>
+        </div>
       </div>
 
-      {mobileMenuOpen && (
-        <div id="mobile-navigation" className="absolute top-full left-0 w-full bg-[#0B0C0C] border-t border-gray-800 p-6 md:hidden flex flex-col space-y-4 shadow-2xl z-50">
-           <button onClick={() => handleNav('shop_all')} className="text-[#F9F6F0] text-left font-sans tracking-widest">SHOP</button>
-           <button onClick={() => handleNav('rewards')} className="text-[#F9F6F0] text-left font-sans tracking-widest">REWARDS</button>
-           <button onClick={() => handleNav('about')} className="text-[#F9F6F0] text-left font-sans tracking-widest">OUR STORY</button>
-           <button onClick={() => handleNav('subscription')} className="text-[#F9F6F0] text-left font-sans tracking-widest">SUBSCRIPTION</button>
-           <button onClick={() => handleNav('contact')} className="text-[#F9F6F0] text-left font-sans tracking-widest">CONTACT</button>
-        </div>
-      )}
+	      {mobileMenuOpen && (
+	        <div id="mobile-navigation" className="absolute top-full left-0 w-full bg-[#0B0C0C] border-t border-gray-800 p-6 md:hidden flex flex-col space-y-4 shadow-2xl z-50">
+	           <button onClick={() => handleNav('shop_all')} className="text-[#F9F6F0] text-left font-sans tracking-widest">SHOP</button>
+	           <button onClick={() => handleNav('rewards')} className="text-[#F9F6F0] text-left font-sans tracking-widest">REWARDS</button>
+	           <button onClick={() => handleNav('about')} className="text-[#F9F6F0] text-left font-sans tracking-widest">OUR STORY</button>
+	           <button onClick={() => handleNav('subscription')} className="text-[#F9F6F0] text-left font-sans tracking-widest">SUBSCRIPTION</button>
+	           <button onClick={() => handleNav('contact')} className="text-[#F9F6F0] text-left font-sans tracking-widest">CONTACT</button>
+           <button onClick={() => handleNav('account')} className="text-[#F9F6F0] text-left font-sans tracking-widest">
+             {authUser ? 'ACCOUNT' : 'LOGIN / SIGN UP'}
+           </button>
+           {authUser && (
+             <button
+               type="button"
+               onClick={onSignOut}
+               className="text-[#D4AF37] text-left font-sans tracking-widest"
+             >
+               SIGN OUT
+             </button>
+           )}
+	        </div>
+	      )}
     </nav>
   );
 };
 
-const CartDrawer = ({ isOpen, closeCart, cart, removeFromCart }) => {
+const CartDrawer = ({
+  isOpen,
+  closeCart,
+  cart,
+  removeFromCart,
+  rewardsProfile,
+  onRedeemReward,
+  onRemoveReward,
+  onCheckoutSuccess,
+}) => {
   const drawerRef = useRef(null);
-  const total = cart.reduce((sum, item) => sum + item.price, 0);
+  const subtotal = cart.reduce((sum, item) => sum + item.price, 0);
+  const pricing = getCheckoutPricing(subtotal, rewardsProfile.activeRewardId);
+  const activeReward = getRewardOffer(rewardsProfile.activeRewardId);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [checkoutError, setCheckoutError] = useState('');
+  const [rewardStatus, setRewardStatus] = useState({ type: 'idle', message: '' });
 
   useEffect(() => {
     if (!isOpen) return undefined;
@@ -982,8 +1317,9 @@ const CartDrawer = ({ isOpen, closeCart, cart, removeFromCart }) => {
 
     trackEvent('begin_checkout', {
       currency: 'USD',
-      value: Number(total.toFixed(2)),
+      value: Number(pricing.total.toFixed(2)),
       item_count: cart.length,
+      reward_id: rewardsProfile.activeRewardId || undefined,
     });
 
     const itemCounts = cart.reduce((accumulator, item) => {
@@ -1000,7 +1336,10 @@ const CartDrawer = ({ isOpen, closeCart, cart, removeFromCart }) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
-        body: JSON.stringify({ items }),
+        body: JSON.stringify({
+          items,
+          rewardId: rewardsProfile.activeRewardId || null,
+        }),
       });
 
       if (!response.ok) {
@@ -1013,7 +1352,12 @@ const CartDrawer = ({ isOpen, closeCart, cart, removeFromCart }) => {
         throw new Error('Missing checkout URL.');
       }
 
+      if (typeof onCheckoutSuccess === 'function') {
+        onCheckoutSuccess(payload);
+      }
+
       window.open(payload.checkoutUrl, '_blank', 'noopener,noreferrer');
+      closeCart();
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unable to start checkout right now.';
       setCheckoutError(message);
@@ -1021,6 +1365,22 @@ const CartDrawer = ({ isOpen, closeCart, cart, removeFromCart }) => {
     } finally {
       setIsCheckingOut(false);
     }
+  };
+
+  const handleApplyReward = (rewardId) => {
+    const result = onRedeemReward(rewardId);
+    setRewardStatus({
+      type: result.ok ? 'success' : 'error',
+      message: result.message,
+    });
+  };
+
+  const handleRemoveReward = () => {
+    const result = onRemoveReward();
+    setRewardStatus({
+      type: result.ok ? 'success' : 'error',
+      message: result.message,
+    });
   };
 
   return (
@@ -1068,9 +1428,70 @@ const CartDrawer = ({ isOpen, closeCart, cart, removeFromCart }) => {
         </div>
 
         <div className="p-6 bg-white border-t border-gray-200">
+          <div className="mb-4 p-4 bg-[#F4F0E7] border border-[#e2d9c4]">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs uppercase tracking-widest text-gray-600">Rewards Wallet</p>
+              <p className="text-sm font-bold text-[#0B0C0C]">{rewardsProfile.points} pts</p>
+            </div>
+
+            {!rewardsProfile.enrolled && (
+              <p className="text-xs text-gray-600 mb-3">
+                Join rewards from the Rewards page to unlock instant redemptions.
+              </p>
+            )}
+
+            {activeReward ? (
+              <div className="border border-[#D4AF37] bg-white p-3">
+                <p className="text-xs text-gray-600 uppercase tracking-wide mb-1">Active Reward</p>
+                <p className="text-sm font-bold text-[#0B0C0C]">{activeReward.name}</p>
+                <button
+                  type="button"
+                  onClick={handleRemoveReward}
+                  className="mt-2 text-xs font-bold uppercase tracking-wider text-[#0B0C0C] underline underline-offset-2"
+                >
+                  Remove Reward
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-2">
+                {REWARD_OFFERS.map((offer) => (
+                  <button
+                    key={offer.id}
+                    type="button"
+                    onClick={() => handleApplyReward(offer.id)}
+                    disabled={!rewardsProfile.enrolled || rewardsProfile.points < offer.pointsCost || cart.length === 0}
+                    className="text-left border border-gray-300 p-3 text-xs uppercase tracking-wide font-bold text-[#0B0C0C] enabled:hover:border-[#D4AF37] disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {offer.name} - {offer.pointsCost} pts
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {rewardStatus.message && (
+              <p className={`mt-3 text-xs ${rewardStatus.type === 'error' ? 'text-red-600' : 'text-green-700'}`} role="status">
+                {rewardStatus.message}
+              </p>
+            )}
+          </div>
+
           <div className="flex justify-between items-center mb-4">
             <span className="font-sans text-gray-600">Subtotal</span>
-            <span className="font-serif text-xl font-bold text-[#0B0C0C]">${total.toFixed(2)}</span>
+            <span className="font-serif text-xl font-bold text-[#0B0C0C]">${pricing.subtotal.toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between items-center mb-2">
+            <span className="font-sans text-gray-600">Shipping</span>
+            <span className="font-sans font-semibold text-[#0B0C0C]">${pricing.shipping.toFixed(2)}</span>
+          </div>
+          {pricing.rewardDiscount > 0 && (
+            <div className="flex justify-between items-center mb-2">
+              <span className="font-sans text-gray-600">Rewards Discount</span>
+              <span className="font-sans font-semibold text-green-700">-${pricing.rewardDiscount.toFixed(2)}</span>
+            </div>
+          )}
+          <div className="flex justify-between items-center mb-4 border-t border-gray-200 pt-3">
+            <span className="font-sans text-gray-700 uppercase tracking-wide text-xs">Total</span>
+            <span className="font-serif text-2xl font-bold text-[#0B0C0C]">${pricing.total.toFixed(2)}</span>
           </div>
           <button 
             type="button"
@@ -1078,9 +1499,11 @@ const CartDrawer = ({ isOpen, closeCart, cart, removeFromCart }) => {
             disabled={cart.length === 0 || isCheckingOut}
             className={`w-full bg-[#0B0C0C] text-[#D4AF37] py-4 font-sans font-bold tracking-widest transition-colors ${(cart.length === 0 || isCheckingOut) ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#222]'}`}
           >
-            {isCheckingOut ? 'STARTING CHECKOUT...' : `CHECKOUT — $${total.toFixed(2)}`}
+            {isCheckingOut ? 'STARTING CHECKOUT...' : `CHECKOUT — $${pricing.total.toFixed(2)}`}
           </button>
-          <p className="text-xs text-center text-gray-400 mt-3">Processed securely by PayPal.</p>
+          <p className="text-xs text-center text-gray-400 mt-3">
+            Processed securely by PayPal. Earn {Math.floor((pricing.subtotal - pricing.rewardDiscount) * REWARDS_POINTS_PER_DOLLAR)} pts on this order.
+          </p>
           {checkoutError && (
             <p className="text-xs text-center text-red-500 mt-2" role="status">{checkoutError}</p>
           )}
@@ -1275,49 +1698,420 @@ const ContactView = () => {
   );
 };
 
-const RewardsView = ({ setView }) => (
-  <div className="pt-32 pb-24 bg-[#0B0C0C] min-h-screen text-[#F9F6F0]">
-    <div className="max-w-5xl mx-auto px-6">
-      <h1 className="text-5xl font-serif mb-6">Velure Rewards App</h1>
-      <p className="text-gray-300 text-lg mb-10">
-        Yes, we offer a rewards experience through the Velure web app flow. Save this site to your phone home screen and earn points on purchases.
-      </p>
+const AccountView = ({ authState, onSignIn, onSignUp, onSignOut, setView }) => {
+  const [activeTab, setActiveTab] = useState('signin');
+  const [signInForm, setSignInForm] = useState({ email: '', password: '' });
+  const [signUpForm, setSignUpForm] = useState({ email: '', password: '', confirmPassword: '' });
+  const [status, setStatus] = useState({ type: 'idle', message: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-        <div className="bg-[#151515] border border-gray-800 p-6">
-          <h2 className="font-serif text-2xl text-[#D4AF37] mb-3">Earn</h2>
-          <p className="text-sm text-gray-300">Get points for every order, referral, and review.</p>
-        </div>
-        <div className="bg-[#151515] border border-gray-800 p-6">
-          <h2 className="font-serif text-2xl text-[#D4AF37] mb-3">Redeem</h2>
-          <p className="text-sm text-gray-300">Use points instantly for discounts and free shipping rewards.</p>
-        </div>
-        <div className="bg-[#151515] border border-gray-800 p-6">
-          <h2 className="font-serif text-2xl text-[#D4AF37] mb-3">Access</h2>
-          <p className="text-sm text-gray-300">Get early-access drops and member-only bundles.</p>
+  const handleSignIn = async (event) => {
+    event.preventDefault();
+    if (!isValidEmail(signInForm.email) || signInForm.password.length < 8) {
+      setStatus({ type: 'error', message: 'Enter a valid email and password (8+ characters).' });
+      return;
+    }
+
+    setIsSubmitting(true);
+    setStatus({ type: 'idle', message: '' });
+
+    const result = await onSignIn(signInForm.email, signInForm.password);
+    setStatus({ type: result.ok ? 'success' : 'error', message: result.message });
+    setIsSubmitting(false);
+  };
+
+  const handleSignUp = async (event) => {
+    event.preventDefault();
+    if (!isValidEmail(signUpForm.email)) {
+      setStatus({ type: 'error', message: 'Enter a valid email address.' });
+      return;
+    }
+    if (signUpForm.password.length < 8) {
+      setStatus({ type: 'error', message: 'Password must be at least 8 characters.' });
+      return;
+    }
+    if (signUpForm.password !== signUpForm.confirmPassword) {
+      setStatus({ type: 'error', message: 'Password confirmation does not match.' });
+      return;
+    }
+
+    setIsSubmitting(true);
+    setStatus({ type: 'idle', message: '' });
+
+    const result = await onSignUp(signUpForm.email, signUpForm.password);
+    setStatus({ type: result.ok ? 'success' : 'error', message: result.message });
+    if (result.ok) {
+      setSignUpForm({ email: signUpForm.email, password: '', confirmPassword: '' });
+    }
+    setIsSubmitting(false);
+  };
+
+  if (authState.isLoading) {
+    return (
+      <div className="pt-32 pb-24 bg-[#0B0C0C] min-h-screen text-[#F9F6F0]">
+        <div className="max-w-4xl mx-auto px-6">
+          <p className="text-gray-300">Loading account...</p>
         </div>
       </div>
+    );
+  }
 
-      <div className="bg-[#151515] border border-gray-800 p-6">
-        <p className="text-sm text-gray-300 mb-4">Install steps: open this site on mobile, choose “Add to Home Screen,” then join through rewards/newsletter.</p>
-        <p className="text-xs text-gray-500 mb-4">
-          Participation is governed by our{' '}
-          <button type="button" onClick={() => setView('rewards_terms')} className="text-[#D4AF37] hover:text-[#F9F6F0] underline underline-offset-2">
-            Rewards Terms
-          </button>.
+  if (authState.user) {
+    return (
+      <div className="pt-32 pb-24 bg-[#0B0C0C] min-h-screen text-[#F9F6F0]">
+        <div className="max-w-4xl mx-auto px-6">
+          <h1 className="text-5xl font-serif mb-6">My Account</h1>
+          <div className="bg-[#151515] border border-gray-800 p-8">
+            <p className="text-xs uppercase tracking-widest text-gray-400 mb-2">Signed In</p>
+            <p className="text-lg text-[#F9F6F0] break-all">{authState.user.email}</p>
+            <p className="text-sm text-gray-400 mt-3">
+              Your rewards profile and cart now load under this account on this device.
+            </p>
+            <div className="flex flex-wrap gap-3 mt-6">
+              <button
+                type="button"
+                onClick={() => setView('rewards')}
+                className="bg-[#D4AF37] text-[#0B0C0C] px-5 py-3 text-xs font-bold uppercase tracking-wider hover:bg-[#b5952f]"
+              >
+                Open Rewards
+              </button>
+              <button
+                type="button"
+                onClick={() => setView('shop_all')}
+                className="border border-[#D4AF37] text-[#D4AF37] px-5 py-3 text-xs font-bold uppercase tracking-wider hover:bg-[#D4AF37] hover:text-[#0B0C0C]"
+              >
+                Continue Shopping
+              </button>
+              <button
+                type="button"
+                onClick={onSignOut}
+                className="border border-gray-700 text-gray-300 px-5 py-3 text-xs font-bold uppercase tracking-wider hover:border-red-500 hover:text-red-400"
+              >
+                Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="pt-32 pb-24 bg-[#0B0C0C] min-h-screen text-[#F9F6F0]">
+      <div className="max-w-4xl mx-auto px-6">
+        <h1 className="text-5xl font-serif mb-6">Account Access</h1>
+        <p className="text-gray-300 mb-8">
+          Create an account or sign in to manage rewards and account-linked activity.
         </p>
-        <div className="flex flex-wrap gap-4">
-          <button type="button" onClick={() => setView('subscription')} className="bg-[#D4AF37] text-[#0B0C0C] px-6 py-3 font-bold uppercase tracking-wider hover:bg-[#b5952f] transition-colors">
-            Join Rewards
+
+        <div className="flex gap-3 mb-6">
+          <button
+            type="button"
+            onClick={() => setActiveTab('signin')}
+            className={`px-4 py-2 text-xs font-bold uppercase tracking-wider border ${activeTab === 'signin' ? 'border-[#D4AF37] text-[#D4AF37]' : 'border-gray-700 text-gray-400 hover:text-[#F9F6F0]'}`}
+          >
+            Sign In
           </button>
-          <button type="button" onClick={() => setView('contact')} className="border border-[#D4AF37] text-[#D4AF37] px-6 py-3 font-bold uppercase tracking-wider hover:bg-[#D4AF37] hover:text-[#0B0C0C] transition-colors">
-            Ask Questions
+          <button
+            type="button"
+            onClick={() => setActiveTab('signup')}
+            className={`px-4 py-2 text-xs font-bold uppercase tracking-wider border ${activeTab === 'signup' ? 'border-[#D4AF37] text-[#D4AF37]' : 'border-gray-700 text-gray-400 hover:text-[#F9F6F0]'}`}
+          >
+            Sign Up
           </button>
+        </div>
+
+        <div className="bg-[#151515] border border-gray-800 p-8">
+          {activeTab === 'signin' ? (
+            <form onSubmit={handleSignIn} noValidate>
+              <div className="space-y-4">
+                <input
+                  type="email"
+                  value={signInForm.email}
+                  onChange={(event) => setSignInForm((prev) => ({ ...prev, email: event.target.value }))}
+                  placeholder="Email"
+                  className="w-full border border-gray-700 bg-[#0B0C0C] p-3 outline-none focus:border-[#D4AF37]"
+                />
+                <input
+                  type="password"
+                  value={signInForm.password}
+                  onChange={(event) => setSignInForm((prev) => ({ ...prev, password: event.target.value }))}
+                  placeholder="Password"
+                  className="w-full border border-gray-700 bg-[#0B0C0C] p-3 outline-none focus:border-[#D4AF37]"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className={`mt-5 bg-[#D4AF37] text-[#0B0C0C] px-6 py-3 text-xs font-bold uppercase tracking-wider ${isSubmitting ? 'opacity-60 cursor-not-allowed' : 'hover:bg-[#b5952f]'}`}
+              >
+                {isSubmitting ? 'Signing In...' : 'Sign In'}
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleSignUp} noValidate>
+              <div className="space-y-4">
+                <input
+                  type="email"
+                  value={signUpForm.email}
+                  onChange={(event) => setSignUpForm((prev) => ({ ...prev, email: event.target.value }))}
+                  placeholder="Email"
+                  className="w-full border border-gray-700 bg-[#0B0C0C] p-3 outline-none focus:border-[#D4AF37]"
+                />
+                <input
+                  type="password"
+                  value={signUpForm.password}
+                  onChange={(event) => setSignUpForm((prev) => ({ ...prev, password: event.target.value }))}
+                  placeholder="Password (min 8 chars)"
+                  className="w-full border border-gray-700 bg-[#0B0C0C] p-3 outline-none focus:border-[#D4AF37]"
+                />
+                <input
+                  type="password"
+                  value={signUpForm.confirmPassword}
+                  onChange={(event) => setSignUpForm((prev) => ({ ...prev, confirmPassword: event.target.value }))}
+                  placeholder="Confirm password"
+                  className="w-full border border-gray-700 bg-[#0B0C0C] p-3 outline-none focus:border-[#D4AF37]"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className={`mt-5 bg-[#D4AF37] text-[#0B0C0C] px-6 py-3 text-xs font-bold uppercase tracking-wider ${isSubmitting ? 'opacity-60 cursor-not-allowed' : 'hover:bg-[#b5952f]'}`}
+              >
+                {isSubmitting ? 'Creating Account...' : 'Create Account'}
+              </button>
+            </form>
+          )}
+
+          {status.message && (
+            <p className={`text-sm mt-4 ${status.type === 'error' ? 'text-red-400' : 'text-green-400'}`} role="status">
+              {status.message}
+            </p>
+          )}
+
+          <p className="text-xs text-gray-500 mt-6">
+            By continuing, you agree to our{' '}
+            <button type="button" onClick={() => setView('terms')} className="text-[#D4AF37] underline underline-offset-2">
+              Terms of Service
+            </button>{' '}
+            and{' '}
+            <button type="button" onClick={() => setView('privacy')} className="text-[#D4AF37] underline underline-offset-2">
+              Privacy Policy
+            </button>.
+          </p>
         </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
+
+const RewardsView = ({ setView, rewardsProfile, onJoinRewards, onRedeemReward, onRemoveReward, authUser }) => {
+  const [joinEmail, setJoinEmail] = useState(authUser?.email || rewardsProfile.email || '');
+  const [isJoining, setIsJoining] = useState(false);
+  const [status, setStatus] = useState({ type: 'idle', message: '' });
+  const tier = getRewardsTier(rewardsProfile.lifetimePoints);
+  const pointsToNextTier = getPointsToNextTier(rewardsProfile.lifetimePoints);
+  const activeReward = getRewardOffer(rewardsProfile.activeRewardId);
+
+  useEffect(() => {
+    setJoinEmail(authUser?.email || rewardsProfile.email || '');
+  }, [authUser?.email, rewardsProfile.email]);
+
+  const handleJoinRewards = async () => {
+    if (!joinEmail.trim() || !isValidEmail(joinEmail)) {
+      setStatus({ type: 'error', message: 'Enter a valid email address to join rewards.' });
+      return;
+    }
+
+    setIsJoining(true);
+    setStatus({ type: 'idle', message: '' });
+    const normalizedEmail = joinEmail.trim().toLowerCase();
+
+    try {
+      await submitFormPayload('newsletter', {
+        email: normalizedEmail,
+        rewardsProgram: 'enabled',
+      });
+
+      const result = onJoinRewards(normalizedEmail);
+      setStatus({ type: 'success', message: result.message });
+      setJoinEmail(normalizedEmail);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to join rewards right now.';
+      setStatus({ type: 'error', message });
+    } finally {
+      setIsJoining(false);
+    }
+  };
+
+  const handleRedeem = (rewardId) => {
+    const result = onRedeemReward(rewardId);
+    setStatus({ type: result.ok ? 'success' : 'error', message: result.message });
+  };
+
+  const handleRemoveReward = () => {
+    const result = onRemoveReward();
+    setStatus({ type: result.ok ? 'success' : 'error', message: result.message });
+  };
+
+  return (
+    <div className="pt-32 pb-24 bg-[#0B0C0C] min-h-screen text-[#F9F6F0]">
+      <div className="max-w-6xl mx-auto px-6">
+        <h1 className="text-5xl font-serif mb-4">Velure Rewards App</h1>
+        <p className="text-gray-300 text-lg mb-10">
+          Your rewards wallet is now active. Earn points on checkout and redeem them instantly for discounts and shipping perks.
+        </p>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
+          <div className="bg-[#151515] border border-gray-800 p-6">
+            <p className="text-xs text-gray-400 uppercase tracking-widest mb-2">Current Points</p>
+            <p className="font-serif text-5xl text-[#D4AF37]">{rewardsProfile.points}</p>
+            <p className="text-xs text-gray-500 mt-2">Earn {REWARDS_POINTS_PER_DOLLAR} pts per $1 on checkout subtotal.</p>
+          </div>
+          <div className="bg-[#151515] border border-gray-800 p-6">
+            <p className="text-xs text-gray-400 uppercase tracking-widest mb-2">Membership Tier</p>
+            <p className="font-serif text-4xl">{tier}</p>
+            <p className="text-xs text-gray-500 mt-2">
+              {pointsToNextTier > 0 ? `${pointsToNextTier} pts to next tier.` : 'Top tier unlocked.'}
+            </p>
+          </div>
+          <div className="bg-[#151515] border border-gray-800 p-6">
+            <p className="text-xs text-gray-400 uppercase tracking-widest mb-2">Rewards Email</p>
+            <p className="text-sm text-gray-200 break-all">{authUser?.email || rewardsProfile.email || 'Not enrolled yet'}</p>
+            <p className="text-xs text-gray-500 mt-2">Use the same email for rewards and newsletter updates.</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="bg-[#151515] border border-gray-800 p-6">
+            <h2 className="font-serif text-3xl mb-4">Join & Redeem</h2>
+
+            {!authUser && (
+              <div className="mb-5 p-4 border border-gray-700 bg-[#0B0C0C]">
+                <p className="text-sm text-gray-300 mb-3">Sign in to create an account-linked rewards wallet.</p>
+                <button
+                  type="button"
+                  onClick={() => setView('account')}
+                  className="border border-[#D4AF37] text-[#D4AF37] px-4 py-2 text-xs font-bold uppercase tracking-wider hover:bg-[#D4AF37] hover:text-[#0B0C0C]"
+                >
+                  Sign In / Sign Up
+                </button>
+              </div>
+            )}
+
+            {!rewardsProfile.enrolled && authUser && (
+              <div className="mb-6">
+                <label htmlFor="rewards-email" className="block text-xs uppercase tracking-widest text-gray-400 mb-2">Email</label>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <input
+                    id="rewards-email"
+                    type="email"
+                    value={joinEmail}
+                    onChange={(event) => setJoinEmail(event.target.value)}
+                    placeholder="you@example.com"
+                    className="flex-1 border border-gray-700 bg-[#0B0C0C] text-[#F9F6F0] px-3 py-2 outline-none focus:border-[#D4AF37]"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleJoinRewards}
+                    disabled={isJoining}
+                    className={`bg-[#D4AF37] text-[#0B0C0C] px-5 py-2 font-bold uppercase tracking-wider ${isJoining ? 'opacity-60 cursor-not-allowed' : 'hover:bg-[#b5952f]'}`}
+                  >
+                    {isJoining ? 'Joining...' : `Join +${REWARDS_SIGNUP_BONUS} pts`}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-3">
+                {REWARD_OFFERS.map((offer) => {
+                const disabled = !authUser || !rewardsProfile.enrolled || rewardsProfile.points < offer.pointsCost || Boolean(activeReward);
+                return (
+                  <div key={offer.id} className="border border-gray-700 p-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="font-serif text-2xl text-[#D4AF37]">{offer.name}</p>
+                        <p className="text-xs text-gray-400 mt-1">{offer.description}</p>
+                        <p className="text-xs text-gray-500 mt-2">{offer.pointsCost} points</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRedeem(offer.id)}
+                        disabled={disabled}
+                        className="border border-[#D4AF37] text-[#D4AF37] px-4 py-2 text-xs font-bold uppercase tracking-wider enabled:hover:bg-[#D4AF37] enabled:hover:text-[#0B0C0C] disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Redeem
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {activeReward && (
+              <div className="mt-5 border border-[#D4AF37] bg-[#0B0C0C] p-4">
+                <p className="text-xs uppercase tracking-widest text-gray-400 mb-1">Active Reward</p>
+                <p className="font-serif text-2xl text-[#D4AF37]">{activeReward.name}</p>
+                <p className="text-xs text-gray-400 mt-1">Applied in cart and ready for checkout.</p>
+                <button
+                  type="button"
+                  onClick={handleRemoveReward}
+                  className="mt-3 text-xs font-bold uppercase tracking-wider underline underline-offset-2"
+                >
+                  Remove Reward
+                </button>
+              </div>
+            )}
+
+            {status.message && (
+              <p className={`text-sm mt-4 ${status.type === 'error' ? 'text-red-400' : 'text-green-400'}`} role="status">
+                {status.message}
+              </p>
+            )}
+          </div>
+
+          <div className="bg-[#151515] border border-gray-800 p-6">
+            <h2 className="font-serif text-3xl mb-4">Recent Activity</h2>
+            {rewardsProfile.history.length === 0 ? (
+              <p className="text-sm text-gray-400">No rewards activity yet. Join rewards and place your first order to start earning.</p>
+            ) : (
+              <div className="space-y-3">
+                {rewardsProfile.history.slice(0, 8).map((entry) => (
+                  <div key={entry.id} className="border border-gray-700 p-3">
+                    <p className="text-sm text-[#F9F6F0]">{entry.description}</p>
+                    <div className="flex justify-between mt-1 text-xs text-gray-500">
+                      <span>{new Date(entry.createdAt).toLocaleString()}</span>
+                      <span className={entry.pointsDelta >= 0 ? 'text-green-400' : 'text-red-400'}>
+                        {entry.pointsDelta > 0 ? '+' : ''}{entry.pointsDelta} pts
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="mt-6 border-t border-gray-800 pt-4">
+              <p className="text-xs text-gray-500 mb-3">
+                Participation is governed by our{' '}
+                <button type="button" onClick={() => setView('rewards_terms')} className="text-[#D4AF37] hover:text-[#F9F6F0] underline underline-offset-2">
+                  Rewards Terms
+                </button>.
+              </p>
+              <div className="flex flex-wrap gap-3">
+                <button type="button" onClick={() => setView('shop_all')} className="bg-[#D4AF37] text-[#0B0C0C] px-4 py-2 text-xs font-bold uppercase tracking-wider hover:bg-[#b5952f]">
+                  Shop & Earn
+                </button>
+                <button type="button" onClick={() => setView('contact')} className="border border-[#D4AF37] text-[#D4AF37] px-4 py-2 text-xs font-bold uppercase tracking-wider hover:bg-[#D4AF37] hover:text-[#0B0C0C]">
+                  Rewards Help
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const SubscriptionView = ({ setView }) => {
   const [subscriberEmail, setSubscriberEmail] = useState('');
@@ -1471,6 +2265,7 @@ const Footer = ({ setView }) => {
             <li><button type="button" onClick={() => setView('sourcing')} className="hover:text-[#F9F6F0]">Sourcing</button></li>
             <li><button type="button" onClick={() => setView('wholesale')} className="hover:text-[#F9F6F0]">Wholesale</button></li>
             <li><button type="button" onClick={() => setView('contact')} className="hover:text-[#F9F6F0]">Contact</button></li>
+            <li><button type="button" onClick={() => setView('account')} className="hover:text-[#F9F6F0]">Account</button></li>
           </ul>
         </div>
         <div>
@@ -1691,24 +2486,142 @@ const App = () => {
     navigateToView(view);
   }, [navigateToView]);
 
-  // Persistent Cart Logic
-  const [cart, setCart] = useState(() => {
+  const [authState, setAuthState] = useState(() => {
     try {
-      const savedCart = localStorage.getItem('velure_cart');
-      return savedCart ? JSON.parse(savedCart) : [];
-    } catch (e) {
-      console.error("Failed to load cart", e);
-      return [];
+      const storedAuth = localStorage.getItem(AUTH_STORAGE_KEY);
+      return normalizeAuthState(storedAuth ? JSON.parse(storedAuth) : DEFAULT_AUTH_STATE);
+    } catch (error) {
+      console.error('Failed to load auth state', error);
+      return { ...DEFAULT_AUTH_STATE };
     }
   });
 
   useEffect(() => {
     try {
-      localStorage.setItem('velure_cart', JSON.stringify(cart));
-    } catch (e) {
-      console.error('Failed to save cart', e);
+      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({
+        user: authState.user,
+        session: authState.session,
+      }));
+    } catch (error) {
+      console.error('Failed to save auth state', error);
     }
-  }, [cart]);
+  }, [authState.session, authState.user]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const hydrateAuthSession = async () => {
+      if (!authState.session?.accessToken) {
+        return;
+      }
+
+      setAuthState((previousState) => ({ ...previousState, isLoading: true }));
+
+      try {
+        let currentSession = authState.session;
+        let currentUser = authState.user;
+
+        const shouldRefresh = currentSession.expiresAt && currentSession.expiresAt <= Date.now() + 60_000;
+        if (shouldRefresh && currentSession.refreshToken) {
+          const refreshed = await supabaseRefreshSession(currentSession.refreshToken);
+          if (refreshed.session) {
+            currentSession = refreshed.session;
+            currentUser = refreshed.user || currentUser;
+          }
+        }
+
+        if (!currentUser?.id) {
+          const fetchedUser = await supabaseGetUser(currentSession.accessToken);
+          currentUser = fetchedUser ? { id: fetchedUser.id, email: fetchedUser.email || '' } : null;
+        }
+
+        if (!cancelled) {
+          if (!currentUser?.id) {
+            setAuthState({ ...DEFAULT_AUTH_STATE });
+            return;
+          }
+
+          setAuthState({
+            isLoading: false,
+            session: currentSession,
+            user: {
+              id: currentUser.id,
+              email: currentUser.email || '',
+            },
+          });
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.error('Failed to hydrate auth session', error);
+          setAuthState({ ...DEFAULT_AUTH_STATE });
+        }
+      }
+    };
+
+    hydrateAuthSession();
+
+    return () => {
+      cancelled = true;
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const accountStorageScope = authState.user?.id || 'guest';
+  const cartStorageKey = `velure_cart_${accountStorageScope}`;
+  const rewardsStorageKey = `${REWARDS_STORAGE_KEY}_${accountStorageScope}`;
+
+  const [cart, setCart] = useState([]);
+  const [rewardsProfile, setRewardsProfile] = useState(() => {
+    return { ...DEFAULT_REWARDS_PROFILE };
+  });
+  const skipNextCartSaveRef = useRef(true);
+  const skipNextRewardsSaveRef = useRef(true);
+
+  useEffect(() => {
+    skipNextCartSaveRef.current = true;
+    try {
+      const savedCart = localStorage.getItem(cartStorageKey);
+      setCart(savedCart ? JSON.parse(savedCart) : []);
+    } catch (error) {
+      console.error('Failed to load cart', error);
+      setCart([]);
+    }
+  }, [cartStorageKey]);
+
+  useEffect(() => {
+    if (skipNextCartSaveRef.current) {
+      skipNextCartSaveRef.current = false;
+      return;
+    }
+    try {
+      localStorage.setItem(cartStorageKey, JSON.stringify(cart));
+    } catch (error) {
+      console.error('Failed to save cart', error);
+    }
+  }, [cart, cartStorageKey]);
+
+  useEffect(() => {
+    skipNextRewardsSaveRef.current = true;
+    try {
+      const savedRewards = localStorage.getItem(rewardsStorageKey);
+      setRewardsProfile(normalizeRewardsProfile(savedRewards ? JSON.parse(savedRewards) : DEFAULT_REWARDS_PROFILE));
+    } catch (error) {
+      console.error('Failed to load rewards profile', error);
+      setRewardsProfile({ ...DEFAULT_REWARDS_PROFILE });
+    }
+  }, [rewardsStorageKey]);
+
+  useEffect(() => {
+    if (skipNextRewardsSaveRef.current) {
+      skipNextRewardsSaveRef.current = false;
+      return;
+    }
+    try {
+      localStorage.setItem(rewardsStorageKey, JSON.stringify(rewardsProfile));
+    } catch (error) {
+      console.error('Failed to save rewards profile', error);
+    }
+  }, [rewardsProfile, rewardsStorageKey]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
@@ -1790,6 +2703,10 @@ const App = () => {
       contact: {
         title: 'Contact | Velure Coffee',
         description: 'Contact Velure for support, wholesale inquiries, and product questions.',
+      },
+      account: {
+        title: 'Account | Velure Coffee',
+        description: 'Sign in or create a Velure account to manage rewards and activity.',
       },
       privacy: {
         title: 'Privacy Policy | Velure Coffee',
@@ -1905,6 +2822,258 @@ const App = () => {
     });
   };
 
+  const handleSignIn = useCallback(async (email, password) => {
+    setAuthState((previousState) => ({ ...previousState, isLoading: true }));
+
+    try {
+      const normalizedEmail = normalizeLower(email);
+      const signInResult = await supabaseSignIn(normalizedEmail, password);
+      if (!signInResult.session?.accessToken) {
+        throw new Error('Unable to start a session. Please check your credentials.');
+      }
+
+      let resolvedUser = signInResult.user;
+      if (!resolvedUser?.id) {
+        resolvedUser = await supabaseGetUser(signInResult.session.accessToken);
+      }
+
+      if (!resolvedUser?.id) {
+        throw new Error('Unable to load account details.');
+      }
+
+      setAuthState({
+        isLoading: false,
+        session: signInResult.session,
+        user: {
+          id: resolvedUser.id,
+          email: resolvedUser.email || normalizedEmail,
+        },
+      });
+
+      trackEvent('login', { method: 'password' });
+      return { ok: true, message: 'Signed in successfully.' };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to sign in right now.';
+      setAuthState((previousState) => ({ ...previousState, isLoading: false }));
+      return { ok: false, message };
+    }
+  }, []);
+
+  const handleSignUp = useCallback(async (email, password) => {
+    setAuthState((previousState) => ({ ...previousState, isLoading: true }));
+
+    try {
+      const normalizedEmail = normalizeLower(email);
+      const signUpResult = await supabaseSignUp(normalizedEmail, password);
+
+      if (signUpResult.session?.accessToken) {
+        const resolvedUser = signUpResult.user || await supabaseGetUser(signUpResult.session.accessToken);
+        if (!resolvedUser?.id) {
+          throw new Error('Account created, but user profile could not be loaded.');
+        }
+
+        setAuthState({
+          isLoading: false,
+          session: signUpResult.session,
+          user: {
+            id: resolvedUser.id,
+            email: resolvedUser.email || normalizedEmail,
+          },
+        });
+
+        trackEvent('sign_up', { method: 'password' });
+        return { ok: true, message: 'Account created and signed in.' };
+      }
+
+      setAuthState((previousState) => ({ ...previousState, isLoading: false }));
+      trackEvent('sign_up', { method: 'password', verification_required: true });
+      return {
+        ok: true,
+        message: 'Account created. Check your email to confirm, then sign in.',
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to create account right now.';
+      setAuthState((previousState) => ({ ...previousState, isLoading: false }));
+      return { ok: false, message };
+    }
+  }, []);
+
+  const handleSignOut = useCallback(async () => {
+    const accessToken = authState.session?.accessToken;
+    setAuthState((previousState) => ({ ...previousState, isLoading: true }));
+
+    try {
+      if (accessToken) {
+        await supabaseSignOut(accessToken);
+      }
+    } catch (error) {
+      console.error('Sign-out request failed', error);
+    } finally {
+      setAuthState({ ...DEFAULT_AUTH_STATE });
+      trackEvent('logout');
+      navigateToView('home', { replace: true });
+    }
+  }, [authState.session?.accessToken, navigateToView]);
+
+  const joinRewards = useCallback((email) => {
+    if (!authState.user?.id) {
+      return { ok: false, message: 'Sign in to activate rewards on your account.' };
+    }
+
+    const normalizedEmail = normalizeLower(email);
+    let result = { ok: true, message: 'Rewards account updated.' };
+
+    setRewardsProfile((previousProfile) => {
+      const alreadyEnrolled = previousProfile.enrolled;
+      const bonusPoints = alreadyEnrolled ? 0 : REWARDS_SIGNUP_BONUS;
+      let nextProfile = {
+        ...previousProfile,
+        enrolled: true,
+        email: normalizedEmail || previousProfile.email,
+        points: previousProfile.points + bonusPoints,
+        lifetimePoints: previousProfile.lifetimePoints + bonusPoints,
+      };
+
+      if (!alreadyEnrolled) {
+        nextProfile = appendRewardsHistory(nextProfile, {
+          type: 'join_bonus',
+          description: `Joined rewards and received ${REWARDS_SIGNUP_BONUS} bonus points`,
+          pointsDelta: REWARDS_SIGNUP_BONUS,
+        });
+        result = { ok: true, message: `Rewards activated. ${REWARDS_SIGNUP_BONUS} points added.` };
+      } else {
+        result = { ok: true, message: 'Rewards account updated.' };
+      }
+
+      return nextProfile;
+    });
+
+    trackEvent('rewards_join', { email: normalizedEmail || undefined });
+    return result;
+  }, [authState.user?.id]);
+
+  const redeemReward = useCallback((rewardId) => {
+    const rewardOffer = getRewardOffer(rewardId);
+    if (!rewardOffer) {
+      return { ok: false, message: 'Invalid reward selection.' };
+    }
+
+    let result = { ok: false, message: 'Unable to redeem reward right now.' };
+
+    setRewardsProfile((previousProfile) => {
+      if (!previousProfile.enrolled) {
+        result = { ok: false, message: 'Join rewards first to redeem points.' };
+        return previousProfile;
+      }
+
+      if (previousProfile.activeRewardId) {
+        result = { ok: false, message: 'You already have an active reward in cart.' };
+        return previousProfile;
+      }
+
+      if (previousProfile.points < rewardOffer.pointsCost) {
+        result = { ok: false, message: `You need ${rewardOffer.pointsCost - previousProfile.points} more points.` };
+        return previousProfile;
+      }
+
+      const nextProfile = appendRewardsHistory(
+        {
+          ...previousProfile,
+          points: previousProfile.points - rewardOffer.pointsCost,
+          activeRewardId: rewardOffer.id,
+        },
+        {
+          type: 'redeem',
+          description: `Redeemed ${rewardOffer.name}`,
+          pointsDelta: -rewardOffer.pointsCost,
+        },
+      );
+
+      result = { ok: true, message: `${rewardOffer.name} applied to cart.` };
+      return nextProfile;
+    });
+
+    if (result.ok) {
+      trackEvent('rewards_redeem', {
+        reward_id: rewardOffer.id,
+        points_cost: rewardOffer.pointsCost,
+      });
+    }
+
+    return result;
+  }, []);
+
+  const removeReward = useCallback(() => {
+    let result = { ok: false, message: 'No active reward to remove.' };
+
+    setRewardsProfile((previousProfile) => {
+      const activeReward = getRewardOffer(previousProfile.activeRewardId);
+      if (!activeReward) {
+        result = { ok: false, message: 'No active reward to remove.' };
+        return previousProfile;
+      }
+
+      const nextProfile = appendRewardsHistory(
+        {
+          ...previousProfile,
+          points: previousProfile.points + activeReward.pointsCost,
+          activeRewardId: null,
+        },
+        {
+          type: 'reward_removed',
+          description: `Removed ${activeReward.name} and restored points`,
+          pointsDelta: activeReward.pointsCost,
+        },
+      );
+
+      result = { ok: true, message: 'Reward removed and points restored.' };
+      return nextProfile;
+    });
+
+    if (result.ok) {
+      trackEvent('rewards_removed');
+    }
+
+    return result;
+  }, []);
+
+  const handleCheckoutSuccess = useCallback((checkoutPayload) => {
+    const earnedPoints = Math.max(0, Math.floor(Number(checkoutPayload?.earnablePoints || 0)));
+    const usedRewardId = checkoutPayload?.reward?.id || null;
+
+    setRewardsProfile((previousProfile) => {
+      let nextProfile = {
+        ...previousProfile,
+        activeRewardId: usedRewardId ? null : previousProfile.activeRewardId,
+      };
+
+      if (earnedPoints > 0) {
+        nextProfile = appendRewardsHistory(
+          {
+            ...nextProfile,
+            points: nextProfile.points + earnedPoints,
+            lifetimePoints: nextProfile.lifetimePoints + earnedPoints,
+          },
+          {
+            type: 'earned_checkout',
+            description: `Earned ${earnedPoints} points from checkout`,
+            pointsDelta: earnedPoints,
+          },
+        );
+      }
+
+      return nextProfile;
+    });
+
+    setCart([]);
+
+    trackEvent('rewards_checkout_processed', {
+      earned_points: earnedPoints,
+      reward_id: usedRewardId || undefined,
+      total: checkoutPayload?.total,
+    });
+  }, []);
+
   // --- CONTENT MAPPING ---
   
   const renderView = () => {
@@ -1925,7 +3094,25 @@ const App = () => {
       case 'shop_functional': return <ShopView category="functional" openProductDetail={openProductDetail} />;
       case 'shop_single_origin': return <ShopView category="single_origin" openProductDetail={openProductDetail} />;
       case 'contact': return <ContactView />;
-      case 'rewards': return <RewardsView setView={setView} />;
+      case 'account': return (
+        <AccountView
+          authState={authState}
+          onSignIn={handleSignIn}
+          onSignUp={handleSignUp}
+          onSignOut={handleSignOut}
+          setView={setView}
+        />
+      );
+      case 'rewards': return (
+        <RewardsView
+          setView={setView}
+          rewardsProfile={rewardsProfile}
+          onJoinRewards={joinRewards}
+          onRedeemReward={redeemReward}
+          onRemoveReward={removeReward}
+          authUser={authState.user}
+        />
+      );
       case 'subscription': return <SubscriptionView setView={setView} />;
       case 'product_detail': return <ShopView category="all" openProductDetail={openProductDetail} />;
       
@@ -1973,13 +3160,24 @@ const App = () => {
         .font-sans { font-family: 'Montserrat', sans-serif; }
       `}</style>
 
-      <Navigation currentView={currentView} cartCount={cart.length} setView={setView} toggleCart={openCart} />
+      <Navigation
+        currentView={currentView}
+        cartCount={cart.length}
+        setView={setView}
+        toggleCart={openCart}
+        authUser={authState.user}
+        onSignOut={handleSignOut}
+      />
       
       <CartDrawer 
         isOpen={isCartOpen} 
         closeCart={closeCart} 
         cart={cart} 
-        removeFromCart={removeFromCart} 
+        removeFromCart={removeFromCart}
+        rewardsProfile={rewardsProfile}
+        onRedeemReward={redeemReward}
+        onRemoveReward={removeReward}
+        onCheckoutSuccess={handleCheckoutSuccess}
       />
 
       {renderView()}

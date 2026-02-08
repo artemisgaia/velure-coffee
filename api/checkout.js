@@ -8,6 +8,23 @@ const PRODUCT_CATALOG = {
 };
 
 const DEFAULT_PAYPAL_EMAIL = 'sales@artemisgaia.co';
+const STANDARD_SHIPPING_FEE = 6.95;
+const FREE_SHIPPING_THRESHOLD = 50;
+const REWARDS_POINTS_PER_DOLLAR = 5;
+const REWARD_OFFERS = {
+  five_off: {
+    id: 'five_off',
+    name: '$5 Off Order',
+    type: 'discount',
+    discountValue: 5,
+  },
+  free_shipping: {
+    id: 'free_shipping',
+    name: 'Free Shipping',
+    type: 'shipping',
+    discountValue: STANDARD_SHIPPING_FEE,
+  },
+};
 
 const normalize = (value) => (typeof value === 'string' ? value.trim() : '');
 const normalizeLower = (value) => normalize(value).toLowerCase();
@@ -86,29 +103,70 @@ const validateItems = (items) => {
   return { ok: true, items: normalized };
 };
 
-const buildCheckoutUrl = (items, paypalEmail) => {
+const validateReward = (rewardId) => {
+  const normalizedRewardId = normalizeLower(rewardId);
+  if (!normalizedRewardId) {
+    return { ok: true, reward: null };
+  }
+
+  const reward = REWARD_OFFERS[normalizedRewardId];
+  if (!reward) {
+    return { ok: false, error: 'Invalid reward selection.' };
+  }
+
+  return { ok: true, reward };
+};
+
+const calculatePricing = (subtotal, reward) => {
+  const roundedSubtotal = Number(subtotal.toFixed(2));
+  const baseShipping = roundedSubtotal >= FREE_SHIPPING_THRESHOLD ? 0 : STANDARD_SHIPPING_FEE;
+  let shipping = baseShipping;
+  let rewardDiscount = 0;
+
+  if (reward?.type === 'discount') {
+    rewardDiscount = Math.min(reward.discountValue, roundedSubtotal);
+  }
+
+  if (reward?.type === 'shipping') {
+    shipping = 0;
+  }
+
+  return {
+    subtotal: roundedSubtotal,
+    shipping: Number(shipping.toFixed(2)),
+    rewardDiscount: Number(rewardDiscount.toFixed(2)),
+    total: Number((roundedSubtotal + shipping - rewardDiscount).toFixed(2)),
+  };
+};
+
+const buildCheckoutUrl = (items, paypalEmail, reward) => {
   const subtotal = items.reduce((sum, item) => {
     const product = PRODUCT_CATALOG[item.productId];
     return sum + (product.price * item.quantity);
   }, 0);
-  const total = Number(subtotal.toFixed(2));
+  const pricing = calculatePricing(subtotal, reward);
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
   const itemSummary = items
     .map((item) => `${PRODUCT_CATALOG[item.productId].name} x${item.quantity}`)
     .join(', ')
-    .slice(0, 110);
-  const itemName = `Velure Order (${totalItems} items): ${itemSummary}`;
+    .slice(0, 90);
+  const rewardSummary = reward ? ` | Reward: ${reward.name}` : '';
+  const itemName = `Velure Order (${totalItems} items): ${itemSummary}${rewardSummary}`.slice(0, 127);
+  const pointsBase = Math.max(0, pricing.subtotal - pricing.rewardDiscount);
+  const earnablePoints = Math.floor(pointsBase * REWARDS_POINTS_PER_DOLLAR);
 
   const query = new URLSearchParams({
     cmd: '_xclick',
     business: paypalEmail,
     currency_code: 'USD',
-    amount: total.toFixed(2),
+    amount: pricing.total.toFixed(2),
     item_name: itemName,
   });
 
   return {
-    total,
+    ...pricing,
+    reward: reward ? { id: reward.id, name: reward.name } : null,
+    earnablePoints,
     checkoutUrl: `https://www.paypal.com/cgi-bin/webscr?${query.toString()}`,
   };
 };
@@ -146,13 +204,18 @@ export default async function handler(req, res) {
     return;
   }
 
+  const rewardValidation = validateReward(body.rewardId);
+  if (!rewardValidation.ok) {
+    sendJson(res, 422, { ok: false, error: rewardValidation.error });
+    return;
+  }
+
   const paypalEmail = getEnv('PAYPAL_CHECKOUT_EMAIL') || getEnv('PAYPAL_EMAIL') || DEFAULT_PAYPAL_EMAIL;
-  const { total, checkoutUrl } = buildCheckoutUrl(validation.items, paypalEmail);
+  const checkoutPayload = buildCheckoutUrl(validation.items, paypalEmail, rewardValidation.reward);
 
   sendJson(res, 200, {
     ok: true,
     currency: 'USD',
-    total,
-    checkoutUrl,
+    ...checkoutPayload,
   });
 }

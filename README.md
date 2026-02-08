@@ -2,6 +2,17 @@
 
 React + Vite storefront for Velure Coffee.
 
+## Account Auth
+
+The project includes account sign-up and sign-in in `src/App.jsx` using Supabase Auth (email/password).
+
+Required frontend environment variables:
+
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+
+When these are missing, account actions return a clear setup error.
+
 ## Scripts
 
 - `npm run dev` starts the local app.
@@ -28,7 +39,9 @@ Frontend form requests use `VITE_FORMS_ENDPOINT`, defaulting to `/api/forms`.
 The project also includes `/api/checkout`:
 
 - Recalculates totals server-side from trusted product IDs and quantities.
+- Supports optional rewards redemptions via `rewardId` (`five_off`, `free_shipping`).
 - Returns a checkout URL to open in PayPal.
+- Returns computed pricing breakdown (`subtotal`, `shipping`, `rewardDiscount`, `total`) and `earnablePoints`.
 - Supports origin allowlisting with `CHECKOUT_ALLOWED_ORIGINS` (or `FORMS_ALLOWED_ORIGINS` fallback).
 - Uses `PAYPAL_CHECKOUT_EMAIL` (or `PAYPAL_EMAIL`) from server environment.
 
@@ -44,6 +57,8 @@ Copy `.env.example` to `.env.local` for local overrides:
 - `FORMS_WEBHOOK_SECRET` (server): optional HMAC secret for signed webhook forwarding.
 - `PAYPAL_CHECKOUT_EMAIL` (server): PayPal recipient email for checkout URL generation.
 - `CHECKOUT_ALLOWED_ORIGINS` (server): optional allowlist for `/api/checkout`.
+- `VITE_SUPABASE_URL` (frontend): Supabase project URL for auth.
+- `VITE_SUPABASE_ANON_KEY` (frontend): Supabase anon public key for auth requests.
 
 ## Webhook Signature
 
