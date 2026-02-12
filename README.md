@@ -45,6 +45,19 @@ The project also includes `/api/checkout`:
 - Supports origin allowlisting with `CHECKOUT_ALLOWED_ORIGINS` (or `FORMS_ALLOWED_ORIGINS` fallback).
 - Uses `PAYPAL_CHECKOUT_EMAIL` (or `PAYPAL_EMAIL`) from server environment.
 
+## Rewards Sync API
+
+The project includes `/api/rewards` for cross-device rewards sync tied to authenticated users:
+
+- Verifies Supabase user access tokens from `Authorization: Bearer <token>`.
+- `GET /api/rewards`: returns stored rewards profile for the signed-in user.
+- `PUT /api/rewards`: saves sanitized rewards profile for the signed-in user.
+- Uses Supabase PostgREST with service-role credentials on the server.
+
+Create the required table/policies in Supabase using:
+
+- `supabase/rewards_profiles.sql`
+
 ## Environment Variables
 
 Copy `.env.example` to `.env.local` for local overrides:
@@ -59,6 +72,11 @@ Copy `.env.example` to `.env.local` for local overrides:
 - `CHECKOUT_ALLOWED_ORIGINS` (server): optional allowlist for `/api/checkout`.
 - `VITE_SUPABASE_URL` (frontend): Supabase project URL for auth.
 - `VITE_SUPABASE_ANON_KEY` (frontend): Supabase anon public key for auth requests.
+- `VITE_REWARDS_ENDPOINT` (frontend): optional rewards sync endpoint override (default `/api/rewards`).
+- `SUPABASE_URL` (server): Supabase URL for rewards sync API.
+- `SUPABASE_ANON_KEY` (server): Supabase anon key used for token verification in rewards API.
+- `SUPABASE_SERVICE_ROLE_KEY` (server): Supabase service-role key used by rewards sync API.
+- `REWARDS_ALLOWED_ORIGINS` (server): optional allowlist for `/api/rewards`.
 
 ## Webhook Signature
 

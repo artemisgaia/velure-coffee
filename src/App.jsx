@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { ShoppingBag, Menu, X, Star, Coffee, Leaf, Award, Check, Trash2, Mail, MapPin, Phone, ArrowLeft, User, LogOut } from 'lucide-react';
+import { ShoppingBag, Menu, X, Star, Coffee, Leaf, Award, Check, Trash2, Mail, MapPin, Phone, ArrowLeft, User, LogOut, Share2, Link2 } from 'lucide-react';
 
 // --- BRAND ASSETS & DATA ---
 
@@ -882,6 +882,88 @@ const submitFormPayload = async (formType, payload) => {
   }
 };
 
+const copyTextToClipboard = async (text) => {
+  if (!text) {
+    throw new Error('Nothing to copy.');
+  }
+
+  if (
+    typeof window !== 'undefined'
+    && typeof navigator !== 'undefined'
+    && window.isSecureContext
+    && navigator.clipboard?.writeText
+  ) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+
+  if (typeof document === 'undefined') {
+    throw new Error('Clipboard is not available.');
+  }
+
+  const textArea = document.createElement('textarea');
+  textArea.value = text;
+  textArea.setAttribute('readonly', '');
+  textArea.style.position = 'fixed';
+  textArea.style.top = '-1000px';
+  textArea.style.left = '-1000px';
+  document.body.appendChild(textArea);
+  textArea.focus();
+  textArea.select();
+  textArea.setSelectionRange(0, textArea.value.length);
+
+  const copied = document.execCommand('copy');
+  document.body.removeChild(textArea);
+
+  if (!copied) {
+    throw new Error('Copy failed.');
+  }
+};
+
+const loadRewardsProfileFromApi = async (accessToken) => {
+  const endpoint = import.meta.env.VITE_REWARDS_ENDPOINT || '/api/rewards';
+  const response = await fetch(endpoint, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    credentials: 'same-origin',
+  });
+
+  if (!response.ok) {
+    const errorPayload = await response.json().catch(() => ({}));
+    const message = typeof errorPayload?.error === 'string' && errorPayload.error
+      ? errorPayload.error
+      : 'Unable to load rewards profile.';
+    throw new Error(message);
+  }
+
+  return response.json();
+};
+
+const syncRewardsProfileToApi = async (accessToken, profile) => {
+  const endpoint = import.meta.env.VITE_REWARDS_ENDPOINT || '/api/rewards';
+  const response = await fetch(endpoint, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    credentials: 'same-origin',
+    body: JSON.stringify({ profile }),
+  });
+
+  if (!response.ok) {
+    const errorPayload = await response.json().catch(() => ({}));
+    const message = typeof errorPayload?.error === 'string' && errorPayload.error
+      ? errorPayload.error
+      : 'Unable to sync rewards profile.';
+    throw new Error(message);
+  }
+
+  return response.json();
+};
+
 // --- SUB-COMPONENTS ---
 
 const ProductCard = ({ product, openProductDetail }) => (
@@ -919,7 +1001,7 @@ const ProductCard = ({ product, openProductDetail }) => (
   </button>
 );
 
-const ProductDetailView = ({ product, addToCart, onBack, isCartOpen }) => {
+const ProductDetailView = ({ product, addToCart, onBack, isCartOpen, onShareProduct, onCopyProductLink }) => {
   const [mainImage, setMainImage] = useState(product.images[0]);
   const nutritionImage = getNutritionPanelImage(product);
   const nutritionSpecs = product.nutritionSpecs || null;
@@ -1006,6 +1088,24 @@ const ProductDetailView = ({ product, addToCart, onBack, isCartOpen }) => {
             >
               Add to Cart — ${product.price.toFixed(2)}
             </button>
+            <div className="hidden md:grid grid-cols-2 gap-3 mb-8">
+              <button
+                type="button"
+                onClick={() => onShareProduct(product)}
+                className="border border-[#D4AF37] text-[#D4AF37] py-3 px-4 font-sans text-xs font-bold uppercase tracking-wider hover:bg-[#D4AF37] hover:text-[#0B0C0C] transition-colors flex items-center justify-center gap-2"
+              >
+                <Share2 size={14} />
+                Share
+              </button>
+              <button
+                type="button"
+                onClick={() => onCopyProductLink(product)}
+                className="border border-gray-700 text-[#F9F6F0] py-3 px-4 font-sans text-xs font-bold uppercase tracking-wider hover:border-[#F9F6F0] transition-colors flex items-center justify-center gap-2"
+              >
+                <Link2 size={14} />
+                Copy Link
+              </button>
+            </div>
             <div className="hidden md:grid grid-cols-1 gap-2 mb-8 text-xs text-gray-400">
               <p className="flex items-center gap-2"><Check size={14} className="text-[#D4AF37]" /> Free shipping on orders over $50</p>
               <p className="flex items-center gap-2"><Check size={14} className="text-[#D4AF37]" /> 30-day return window on unopened products</p>
@@ -1072,6 +1172,24 @@ const ProductDetailView = ({ product, addToCart, onBack, isCartOpen }) => {
             >
               Add to Cart — ${product.price.toFixed(2)}
             </button>
+            <div className="md:hidden mt-3 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => onShareProduct(product)}
+                className="border border-[#D4AF37] text-[#D4AF37] py-3 px-3 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2"
+              >
+                <Share2 size={14} />
+                Share
+              </button>
+              <button
+                type="button"
+                onClick={() => onCopyProductLink(product)}
+                className="border border-gray-700 text-[#F9F6F0] py-3 px-3 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2"
+              >
+                <Link2 size={14} />
+                Copy
+              </button>
+            </div>
             <div className="md:hidden mt-4 space-y-2">
               <p className="text-center text-xs text-gray-500">Free shipping on orders over $50</p>
               <p className="text-center text-xs text-gray-500">Secure checkout processing</p>
@@ -1093,6 +1211,14 @@ const ProductDetailView = ({ product, addToCart, onBack, isCartOpen }) => {
           >
             Add to Cart
           </button>
+          <button
+            type="button"
+            onClick={() => onShareProduct(product)}
+            className="border border-[#D4AF37] text-[#D4AF37] p-3 hover:bg-[#D4AF37] hover:text-[#0B0C0C] transition-colors"
+            aria-label={`Share ${product.name}`}
+          >
+            <Share2 size={18} />
+          </button>
         </div>
       </div>
       )}
@@ -1100,7 +1226,7 @@ const ProductDetailView = ({ product, addToCart, onBack, isCartOpen }) => {
   );
 };
 
-const Navigation = ({ currentView, cartCount, setView, toggleCart, authUser, onSignOut }) => {
+const Navigation = ({ currentView, cartCount, setView, toggleCart, authUser, onSignOut, onSharePage }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -1112,6 +1238,13 @@ const Navigation = ({ currentView, cartCount, setView, toggleCart, authUser, onS
 
   const handleNav = (viewName) => {
     setView(viewName);
+    setMobileMenuOpen(false);
+  };
+
+  const handleShare = async () => {
+    if (typeof onSharePage === 'function') {
+      await onSharePage();
+    }
     setMobileMenuOpen(false);
   };
 
@@ -1189,6 +1322,18 @@ const Navigation = ({ currentView, cartCount, setView, toggleCart, authUser, onS
           <button
             type="button"
             className="text-[#F9F6F0] hover:text-[#D4AF37] transition-colors flex items-center gap-2"
+            onClick={handleShare}
+            aria-label="Share this page"
+          >
+            <Share2 size={20} />
+            <span className="hidden md:inline text-xs uppercase tracking-widest">
+              Share
+            </span>
+          </button>
+
+          <button
+            type="button"
+            className="text-[#F9F6F0] hover:text-[#D4AF37] transition-colors flex items-center gap-2"
             onClick={() => handleNav('account')}
             aria-label={authUser ? 'Open account' : 'Log in or sign up'}
           >
@@ -1230,8 +1375,9 @@ const Navigation = ({ currentView, cartCount, setView, toggleCart, authUser, onS
 	           <button onClick={() => handleNav('shop_all')} className="text-[#F9F6F0] text-left font-sans tracking-widest">SHOP</button>
 	           <button onClick={() => handleNav('rewards')} className="text-[#F9F6F0] text-left font-sans tracking-widest">REWARDS</button>
 	           <button onClick={() => handleNav('about')} className="text-[#F9F6F0] text-left font-sans tracking-widest">OUR STORY</button>
-	           <button onClick={() => handleNav('subscription')} className="text-[#F9F6F0] text-left font-sans tracking-widest">SUBSCRIPTION</button>
-	           <button onClick={() => handleNav('contact')} className="text-[#F9F6F0] text-left font-sans tracking-widest">CONTACT</button>
+           <button onClick={() => handleNav('subscription')} className="text-[#F9F6F0] text-left font-sans tracking-widest">SUBSCRIPTION</button>
+           <button onClick={() => handleNav('contact')} className="text-[#F9F6F0] text-left font-sans tracking-widest">CONTACT</button>
+           <button type="button" onClick={handleShare} className="text-[#F9F6F0] text-left font-sans tracking-widest">SHARE THIS PAGE</button>
            <button onClick={() => handleNav('account')} className="text-[#F9F6F0] text-left font-sans tracking-widest">
              {authUser ? 'ACCOUNT' : 'LOGIN / SIGN UP'}
            </button>
@@ -2486,6 +2632,121 @@ const App = () => {
     navigateToView(view);
   }, [navigateToView]);
 
+  const [shareNotice, setShareNotice] = useState('');
+
+  useEffect(() => {
+    if (!shareNotice) return undefined;
+    const timeoutId = setTimeout(() => setShareNotice(''), 2400);
+    return () => clearTimeout(timeoutId);
+  }, [shareNotice]);
+
+  const buildShareUrl = useCallback((path) => {
+    if (typeof window === 'undefined') return '';
+    if (!path) return window.location.href;
+
+    try {
+      return new URL(path, window.location.origin).toString();
+    } catch {
+      return window.location.href;
+    }
+  }, []);
+
+  const handleShareLink = useCallback(async ({ path, title, text, copyOnly = false } = {}) => {
+    const url = buildShareUrl(path);
+
+    if (!url) {
+      setShareNotice('Unable to generate link right now.');
+      return { ok: false };
+    }
+
+    try {
+      if (
+        !copyOnly
+        && typeof navigator !== 'undefined'
+        && typeof navigator.share === 'function'
+      ) {
+        await navigator.share({
+          title: title || 'Velure Coffee',
+          text: text || 'Check out Velure Coffee.',
+          url,
+        });
+        setShareNotice('Link shared.');
+        return { ok: true, method: 'share', url };
+      }
+
+      await copyTextToClipboard(url);
+      setShareNotice('Link copied.');
+      return { ok: true, method: 'copy', url };
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        return { ok: false, aborted: true };
+      }
+
+      if (!copyOnly) {
+        try {
+          await copyTextToClipboard(url);
+          setShareNotice('Link copied.');
+          return { ok: true, method: 'copy', url };
+        } catch {
+          // fall through to generic message
+        }
+      }
+
+      setShareNotice('Could not share this link on your phone.');
+      return { ok: false, error };
+    }
+  }, [buildShareUrl]);
+
+  const handleSharePage = useCallback(async () => {
+    const isProductPage = currentView === 'product_detail' && selectedProduct;
+    const result = await handleShareLink({
+      title: isProductPage ? `${selectedProduct.name} | Velure Coffee` : 'Velure Coffee',
+      text: isProductPage
+        ? `${selectedProduct.subtitle} from Velure Coffee`
+        : 'Check out Velure Coffee.',
+    });
+
+    if (result.ok) {
+      trackEvent(result.method === 'share' ? 'share' : 'copy_link', {
+        view: currentView,
+        url: result.url,
+      });
+    }
+  }, [currentView, handleShareLink, selectedProduct]);
+
+  const handleShareProduct = useCallback(async (product) => {
+    const result = await handleShareLink({
+      path: getPathForView('product_detail', { productId: product.id }),
+      title: `${product.name} | Velure Coffee`,
+      text: `${product.subtitle} from Velure Coffee`,
+    });
+
+    if (result.ok) {
+      trackEvent(result.method === 'share' ? 'share' : 'copy_link', {
+        view: 'product_detail',
+        item_id: product.id,
+        url: result.url,
+      });
+    }
+  }, [handleShareLink]);
+
+  const handleCopyProductLink = useCallback(async (product) => {
+    const result = await handleShareLink({
+      path: getPathForView('product_detail', { productId: product.id }),
+      title: `${product.name} | Velure Coffee`,
+      text: `${product.subtitle} from Velure Coffee`,
+      copyOnly: true,
+    });
+
+    if (result.ok) {
+      trackEvent('copy_link', {
+        view: 'product_detail',
+        item_id: product.id,
+        url: result.url,
+      });
+    }
+  }, [handleShareLink]);
+
   const [authState, setAuthState] = useState(() => {
     try {
       const storedAuth = localStorage.getItem(AUTH_STORAGE_KEY);
@@ -2576,6 +2837,8 @@ const App = () => {
   });
   const skipNextCartSaveRef = useRef(true);
   const skipNextRewardsSaveRef = useRef(true);
+  const skipNextRemoteRewardsSyncRef = useRef(true);
+  const [isRemoteRewardsReady, setIsRemoteRewardsReady] = useState(false);
 
   useEffect(() => {
     skipNextCartSaveRef.current = true;
@@ -2622,6 +2885,97 @@ const App = () => {
       console.error('Failed to save rewards profile', error);
     }
   }, [rewardsProfile, rewardsStorageKey]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const accessToken = authState.session?.accessToken;
+    const userId = authState.user?.id;
+
+    if (!accessToken || !userId) {
+      setIsRemoteRewardsReady(false);
+      return undefined;
+    }
+
+    const hydrateRemoteRewards = async () => {
+      setIsRemoteRewardsReady(false);
+      skipNextRemoteRewardsSyncRef.current = true;
+      try {
+        const payload = await loadRewardsProfileFromApi(accessToken);
+        if (cancelled) return;
+
+        const remoteProfile = payload?.profile ? normalizeRewardsProfile(payload.profile) : null;
+
+        if (remoteProfile) {
+          skipNextRewardsSaveRef.current = true;
+          skipNextRemoteRewardsSyncRef.current = true;
+          setRewardsProfile({
+            ...remoteProfile,
+            email: authState.user?.email || remoteProfile.email,
+          });
+        } else {
+          let localProfile = { ...DEFAULT_REWARDS_PROFILE };
+          try {
+            const savedLocalProfile = localStorage.getItem(rewardsStorageKey);
+            localProfile = normalizeRewardsProfile(savedLocalProfile ? JSON.parse(savedLocalProfile) : DEFAULT_REWARDS_PROFILE);
+          } catch (error) {
+            console.error('Failed to load local rewards profile for bootstrap', error);
+          }
+
+          await syncRewardsProfileToApi(accessToken, {
+            ...localProfile,
+            email: authState.user?.email || localProfile.email,
+          });
+        }
+      } catch (error) {
+        console.error('Failed to load remote rewards profile', error);
+      } finally {
+        if (!cancelled) {
+          setIsRemoteRewardsReady(true);
+        }
+      }
+    };
+
+    hydrateRemoteRewards();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authState.session?.accessToken, authState.user?.id, authState.user?.email, rewardsStorageKey]);
+
+  useEffect(() => {
+    const accessToken = authState.session?.accessToken;
+    const userId = authState.user?.id;
+
+    if (!accessToken || !userId || !isRemoteRewardsReady) {
+      return undefined;
+    }
+
+    if (skipNextRemoteRewardsSyncRef.current) {
+      skipNextRemoteRewardsSyncRef.current = false;
+      return undefined;
+    }
+
+    const syncTimeout = setTimeout(async () => {
+      try {
+        await syncRewardsProfileToApi(accessToken, {
+          ...rewardsProfile,
+          email: authState.user?.email || rewardsProfile.email,
+        });
+      } catch (error) {
+        console.error('Failed to sync remote rewards profile', error);
+      }
+    }, 450);
+
+    return () => {
+      clearTimeout(syncTimeout);
+    };
+  }, [
+    authState.session?.accessToken,
+    authState.user?.id,
+    authState.user?.email,
+    isRemoteRewardsReady,
+    rewardsProfile,
+  ]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
@@ -3084,6 +3438,8 @@ const App = () => {
           addToCart={addToCart} 
           onBack={() => setView('shop_all')}
           isCartOpen={isCartOpen}
+          onShareProduct={handleShareProduct}
+          onCopyProductLink={handleCopyProductLink}
         />
       );
     }
@@ -3167,6 +3523,7 @@ const App = () => {
         toggleCart={openCart}
         authUser={authState.user}
         onSignOut={handleSignOut}
+        onSharePage={handleSharePage}
       />
       
       <CartDrawer 
@@ -3183,6 +3540,16 @@ const App = () => {
       {renderView()}
 
       <Footer setView={setView} />
+
+      {shareNotice && (
+        <div
+          className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[80] bg-[#151515] border border-[#D4AF37] text-[#F9F6F0] px-4 py-2 text-xs font-bold uppercase tracking-wider shadow-xl"
+          role="status"
+          aria-live="polite"
+        >
+          {shareNotice}
+        </div>
+      )}
     </div>
   );
 };

@@ -2,6 +2,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import formsHandler from './api/forms.js'
 import checkoutHandler from './api/checkout.js'
+import rewardsHandler from './api/rewards.js'
 
 const formsApiPlugin = () => ({
   name: 'forms-api-dev-middleware',
@@ -17,6 +18,14 @@ const formsApiPlugin = () => ({
     server.middlewares.use('/api/checkout', async (req, res, next) => {
       try {
         await checkoutHandler(req, res)
+      } catch (error) {
+        next(error)
+      }
+    })
+
+    server.middlewares.use('/api/rewards', async (req, res, next) => {
+      try {
+        await rewardsHandler(req, res)
       } catch (error) {
         next(error)
       }
