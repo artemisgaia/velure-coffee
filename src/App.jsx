@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { ShoppingBag, Menu, X, Star, Coffee, Leaf, Award, Check, Trash2, Mail, MapPin, Phone, ArrowLeft, User, LogOut, Share2, Link2 } from 'lucide-react';
 
 // --- BRAND ASSETS & DATA ---
+const DEFAULT_SHARE_IMAGE_URL = 'https://res.cloudinary.com/dfygdydcj/image/upload/v1767217072/6843a1f1-d7bc-41c5-97b3-990b7dd18a18.png';
 
 const PRODUCTS = [
   {
@@ -4442,7 +4443,7 @@ const App = () => {
     const origin = window.location.origin;
     const path = window.location.pathname;
     const canonical = `${origin}${path}`;
-    const defaultImage = `${origin}/vite.svg`;
+    const defaultImage = DEFAULT_SHARE_IMAGE_URL;
 
     const viewMeta = {
       home: {
@@ -4549,10 +4550,14 @@ const App = () => {
 
     document.title = title;
     upsertMetaByName('description', description);
+    upsertMetaByProperty('og:type', currentView === 'product_detail' ? 'product' : 'website');
     upsertMetaByProperty('og:title', title);
     upsertMetaByProperty('og:description', description);
     upsertMetaByProperty('og:url', canonical);
     upsertMetaByProperty('og:image', image);
+    upsertMetaByProperty('og:image:alt', currentView === 'product_detail' && selectedProduct ? `${selectedProduct.name} by Velure Coffee` : 'Velure Coffee brand preview');
+    upsertMetaByProperty('twitter:card', 'summary_large_image');
+    upsertMetaByProperty('twitter:url', canonical);
     upsertMetaByProperty('twitter:title', title);
     upsertMetaByProperty('twitter:description', description);
     upsertMetaByProperty('twitter:image', image);
