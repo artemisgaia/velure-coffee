@@ -40,10 +40,11 @@ The project also includes `/api/checkout`:
 
 - Recalculates totals server-side from trusted product IDs and quantities.
 - Supports optional rewards redemptions via `rewardId` (`five_off`, `free_shipping`).
-- Returns a checkout URL to open in PayPal.
+- Requires `customerName` and `customerEmail` in the checkout request payload.
+- Creates a Stripe Checkout Session and returns `checkoutUrl` for redirect.
 - Returns computed pricing breakdown (`subtotal`, `shipping`, `rewardDiscount`, `total`) and `earnablePoints`.
 - Supports origin allowlisting with `CHECKOUT_ALLOWED_ORIGINS` (or `FORMS_ALLOWED_ORIGINS` fallback).
-- Uses `PAYPAL_CHECKOUT_EMAIL` (or `PAYPAL_EMAIL`) from server environment.
+- Uses `STRIPE_SECRET_KEY` from server environment.
 
 ## Rewards Sync API
 
@@ -68,8 +69,9 @@ Copy `.env.example` to `.env.local` for local overrides:
 - `FORMS_ALLOWED_ORIGINS` (server): comma-separated allowed origins for `/api/forms`.
 - `FORMS_CHALLENGE_TOKEN` (server): optional token required on incoming form requests.
 - `FORMS_WEBHOOK_SECRET` (server): optional HMAC secret for signed webhook forwarding.
-- `PAYPAL_CHECKOUT_EMAIL` (server): PayPal recipient email for checkout URL generation.
+- `STRIPE_SECRET_KEY` (server): Stripe secret key for creating checkout sessions.
 - `CHECKOUT_ALLOWED_ORIGINS` (server): optional allowlist for `/api/checkout`.
+- `PUBLIC_SITE_URL` (server): optional canonical site origin used for Stripe success/cancel URLs.
 - `VITE_SUPABASE_URL` (frontend): Supabase project URL for auth.
 - `VITE_SUPABASE_ANON_KEY` (frontend): Supabase anon public key for auth requests.
 - `VITE_REWARDS_ENDPOINT` (frontend): optional rewards sync endpoint override (default `/api/rewards`).

@@ -214,6 +214,7 @@ const ROUTE_PATHS = {
   shop_all: '/collections',
   shop_functional: '/collections/functional',
   shop_single_origin: '/collections/single-origin',
+  checkout: '/checkout',
   rewards: '/rewards',
   about: '/about',
   sourcing: '/sourcing',
@@ -238,7 +239,7 @@ Velure Coffee Co. ("Velure," "we," "our," "us") respects your privacy. This Priv
   - Contact form: name, email, message.
   - Newsletter/subscription form: email and selected plan tier details.
   - Account authentication: email and encrypted credential data handled by our authentication provider.
-  - Checkout details submitted to our checkout endpoint: cart items and quantities.
+  - Checkout details submitted to our checkout endpoint: cart items, quantities, and customer checkout details (for example name and email).
 - Information collected automatically:
   - IP address, browser/device user agent, request timestamps.
   - Site interaction data through analytics events (for example product views, add-to-cart, checkout start, and lead submissions).
@@ -316,7 +317,7 @@ We make reasonable efforts to ensure product descriptions, pricing, and availabi
 Placing an order is an offer to buy. We may accept, reject, or cancel any order, including for pricing errors, suspected fraud, or stock issues. If we cancel after payment, we will issue a refund to the original payment method.
 
 4. Payments
-Checkout and payment processing may be provided by third-party processors (for example PayPal). Your payment relationship with that provider is governed by their terms and policies.
+Checkout and payment processing may be provided by third-party processors (for example Stripe). Your payment relationship with that provider is governed by their terms and policies.
 
 5. Shipping and Delivery
 Shipping timelines are estimates and not guaranteed. Risk of loss transfers according to applicable law and carrier handling.
@@ -462,6 +463,7 @@ These Subscription Terms supplement our Terms of Service and Privacy Policy.`,
 };
 
 const REWARDS_STORAGE_KEY = 'velure_rewards_profile';
+const PENDING_CHECKOUT_STORAGE_KEY = 'velure_pending_checkout_v1';
 const REWARDS_SIGNUP_BONUS = 150;
 const REWARDS_POINTS_PER_DOLLAR = 5;
 const STANDARD_SHIPPING_FEE = 6.95;
@@ -566,6 +568,15 @@ const getCheckoutPricing = (subtotal, rewardId) => {
     total,
     reward,
   };
+};
+
+const getCheckoutItemsFromCart = (cart) => {
+  const itemCounts = cart.reduce((accumulator, item) => {
+    accumulator[item.id] = (accumulator[item.id] || 0) + 1;
+    return accumulator;
+  }, {});
+
+  return Object.entries(itemCounts).map(([productId, quantity]) => ({ productId, quantity }));
 };
 
 const getRouteFromPath = (pathname) => {
@@ -1404,14 +1415,12 @@ const CartDrawer = ({
   rewardsProfile,
   onRedeemReward,
   onRemoveReward,
-  onCheckoutSuccess,
+  onProceedToCheckout,
 }) => {
   const drawerRef = useRef(null);
   const subtotal = cart.reduce((sum, item) => sum + item.price, 0);
   const pricing = getCheckoutPricing(subtotal, rewardsProfile.activeRewardId);
   const activeReward = getRewardOffer(rewardsProfile.activeRewardId);
-  const [isCheckingOut, setIsCheckingOut] = useState(false);
-  const [checkoutError, setCheckoutError] = useState('');
   const [rewardStatus, setRewardStatus] = useState({ type: 'idle', message: '' });
 
   useEffect(() => {
@@ -1458,58 +1467,10 @@ const CartDrawer = ({
     };
   }, [closeCart, isOpen]);
 
-  const handleCheckout = async () => {
-    if (cart.length === 0 || isCheckingOut) return;
-
-    trackEvent('begin_checkout', {
-      currency: 'USD',
-      value: Number(pricing.total.toFixed(2)),
-      item_count: cart.length,
-      reward_id: rewardsProfile.activeRewardId || undefined,
-    });
-
-    const itemCounts = cart.reduce((accumulator, item) => {
-      accumulator[item.id] = (accumulator[item.id] || 0) + 1;
-      return accumulator;
-    }, {});
-    const items = Object.entries(itemCounts).map(([productId, quantity]) => ({ productId, quantity }));
-
-    setIsCheckingOut(true);
-    setCheckoutError('');
-
-    try {
-      const response = await fetch('/api/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'same-origin',
-        body: JSON.stringify({
-          items,
-          rewardId: rewardsProfile.activeRewardId || null,
-        }),
-      });
-
-      if (!response.ok) {
-        const payload = await response.json().catch(() => ({}));
-        throw new Error(payload?.error || 'Unable to start checkout right now.');
-      }
-
-      const payload = await response.json();
-      if (!payload?.checkoutUrl) {
-        throw new Error('Missing checkout URL.');
-      }
-
-      if (typeof onCheckoutSuccess === 'function') {
-        onCheckoutSuccess(payload);
-      }
-
-      window.open(payload.checkoutUrl, '_blank', 'noopener,noreferrer');
-      closeCart();
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unable to start checkout right now.';
-      setCheckoutError(message);
-      trackEvent('checkout_error', { message });
-    } finally {
-      setIsCheckingOut(false);
+  const handleCheckout = () => {
+    if (cart.length === 0) return;
+    if (typeof onProceedToCheckout === 'function') {
+      onProceedToCheckout();
     }
   };
 
@@ -1642,19 +1603,300 @@ const CartDrawer = ({
           <button 
             type="button"
             onClick={handleCheckout}
-            disabled={cart.length === 0 || isCheckingOut}
-            className={`w-full bg-[#0B0C0C] text-[#D4AF37] py-4 font-sans font-bold tracking-widest transition-colors ${(cart.length === 0 || isCheckingOut) ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#222]'}`}
+            disabled={cart.length === 0}
+            className={`w-full bg-[#0B0C0C] text-[#D4AF37] py-4 font-sans font-bold tracking-widest transition-colors ${(cart.length === 0) ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#222]'}`}
           >
-            {isCheckingOut ? 'STARTING CHECKOUT...' : `CHECKOUT — $${pricing.total.toFixed(2)}`}
+            {`CONTINUE TO CHECKOUT — $${pricing.total.toFixed(2)}`}
           </button>
           <p className="text-xs text-center text-gray-400 mt-3">
-            Processed securely by PayPal. Earn {Math.floor((pricing.subtotal - pricing.rewardDiscount) * REWARDS_POINTS_PER_DOLLAR)} pts on this order.
+            Processed securely by Stripe Checkout. Earn {Math.floor((pricing.subtotal - pricing.rewardDiscount) * REWARDS_POINTS_PER_DOLLAR)} pts on this order.
           </p>
-          {checkoutError && (
-            <p className="text-xs text-center text-red-500 mt-2" role="status">{checkoutError}</p>
-          )}
         </div>
 
+      </div>
+    </div>
+  );
+};
+
+const CheckoutView = ({
+  cart,
+  rewardsProfile,
+  authUser,
+  setView,
+  onOpenCart,
+  onCheckoutSuccess,
+}) => {
+  const subtotal = cart.reduce((sum, item) => sum + item.price, 0);
+  const pricing = getCheckoutPricing(subtotal, rewardsProfile.activeRewardId);
+  const [customerName, setCustomerName] = useState('');
+  const [customerEmail, setCustomerEmail] = useState(authUser?.email || rewardsProfile.email || '');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [checkoutError, setCheckoutError] = useState('');
+  const [checkoutNotice, setCheckoutNotice] = useState('');
+
+  const checkoutItems = getCheckoutItemsFromCart(cart)
+    .map((entry) => {
+      const product = PRODUCTS.find((item) => item.id === entry.productId);
+      if (!product) return null;
+      return {
+        ...entry,
+        name: product.name,
+        subtitle: product.subtitle,
+        price: product.price,
+      };
+    })
+    .filter(Boolean);
+
+  useEffect(() => {
+    if (!customerEmail && (authUser?.email || rewardsProfile.email)) {
+      setCustomerEmail(authUser?.email || rewardsProfile.email || '');
+    }
+  }, [authUser?.email, rewardsProfile.email, customerEmail]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get('checkout');
+    if (!status) return;
+
+    if (status === 'success') {
+      try {
+        const raw = window.sessionStorage.getItem(PENDING_CHECKOUT_STORAGE_KEY);
+        if (raw) {
+          const checkoutPayload = JSON.parse(raw);
+          if (typeof onCheckoutSuccess === 'function') {
+            onCheckoutSuccess(checkoutPayload);
+          }
+          window.sessionStorage.removeItem(PENDING_CHECKOUT_STORAGE_KEY);
+        }
+      } catch (error) {
+        console.error('Failed to process post-checkout payload', error);
+      }
+      setCheckoutNotice('Payment completed. Thank you for your order.');
+      trackEvent('purchase', {
+        currency: 'USD',
+        value: Number(pricing.total.toFixed(2)),
+        item_count: checkoutItems.length,
+      });
+    } else if (status === 'cancelled') {
+      setCheckoutNotice('Checkout was cancelled. Your cart is still saved.');
+      trackEvent('checkout_cancelled');
+    }
+
+    params.delete('checkout');
+    const cleanedQuery = params.toString();
+    const cleanedUrl = `${window.location.pathname}${cleanedQuery ? `?${cleanedQuery}` : ''}`;
+    window.history.replaceState(window.history.state, '', cleanedUrl);
+  }, [checkoutItems.length, onCheckoutSuccess, pricing.total]);
+
+  const handleStartStripeCheckout = async (event) => {
+    event.preventDefault();
+
+    if (cart.length === 0 || isSubmitting) return;
+    setCheckoutError('');
+    setCheckoutNotice('');
+
+    const normalizedName = customerName.trim();
+    const normalizedEmail = customerEmail.trim().toLowerCase();
+
+    if (!normalizedName || normalizedName.length < 2) {
+      setCheckoutError('Please enter your full name.');
+      return;
+    }
+
+    if (!normalizedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      setCheckoutError('Please enter a valid email address.');
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    trackEvent('checkout_submit', {
+      currency: 'USD',
+      value: Number(pricing.total.toFixed(2)),
+      item_count: cart.length,
+      reward_id: rewardsProfile.activeRewardId || undefined,
+    });
+
+    try {
+      const response = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          items: getCheckoutItemsFromCart(cart),
+          rewardId: rewardsProfile.activeRewardId || null,
+          customerName: normalizedName,
+          customerEmail: normalizedEmail,
+        }),
+      });
+
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(payload?.error || 'Unable to start checkout right now.');
+      }
+
+      if (!payload?.checkoutUrl) {
+        throw new Error('Missing checkout URL.');
+      }
+
+      if (typeof window !== 'undefined') {
+        window.sessionStorage.setItem(PENDING_CHECKOUT_STORAGE_KEY, JSON.stringify(payload));
+      }
+
+      const checkoutProvider = typeof payload.provider === 'string' ? payload.provider.toLowerCase() : '';
+      if (checkoutProvider !== 'stripe') {
+        throw new Error('Stripe checkout is not available right now.');
+      }
+
+      window.location.assign(payload.checkoutUrl);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to start checkout right now.';
+      setCheckoutError(message);
+      trackEvent('checkout_error', { message });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="pt-28 pb-20 bg-[#F9F6F0] min-h-screen">
+      <div className="max-w-6xl mx-auto px-6">
+        <button
+          type="button"
+          onClick={() => setView('shop_all')}
+          className="inline-flex items-center gap-2 text-sm font-bold tracking-wide text-[#0B0C0C] hover:text-[#2D2D2D]"
+        >
+          <ArrowLeft size={16} />
+          Continue Shopping
+        </button>
+
+        <div className="mt-8 grid grid-cols-1 lg:grid-cols-[1.2fr,1fr] gap-8">
+          <section className="bg-white border border-gray-200 p-6 md:p-8">
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <h1 className="text-3xl md:text-4xl font-serif text-[#0B0C0C]">Checkout</h1>
+              <button
+                type="button"
+                onClick={onOpenCart}
+                className="text-xs uppercase tracking-widest font-bold text-[#0B0C0C] border border-[#0B0C0C] px-3 py-2 hover:bg-[#0B0C0C] hover:text-[#F9F6F0]"
+              >
+                Edit Cart
+              </button>
+            </div>
+
+            {checkoutNotice && (
+              <p className="mb-4 border border-green-200 bg-green-50 text-green-800 px-4 py-3 text-sm" role="status">
+                {checkoutNotice}
+              </p>
+            )}
+
+            {checkoutItems.length === 0 ? (
+              <div className="border border-dashed border-gray-300 bg-[#fafafa] p-8 text-center">
+                <p className="text-gray-600">Your cart is empty.</p>
+                <button
+                  type="button"
+                  onClick={() => setView('shop_all')}
+                  className="mt-4 bg-[#0B0C0C] text-[#D4AF37] px-5 py-3 text-xs font-bold uppercase tracking-wider hover:bg-[#1b1d1d]"
+                >
+                  Browse Products
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-3">
+                  {checkoutItems.map((item) => (
+                    <div key={item.productId} className="flex items-start justify-between gap-4 border-b border-gray-100 pb-3">
+                      <div>
+                        <p className="font-serif text-lg text-[#0B0C0C]">{item.name}</p>
+                        <p className="text-xs text-gray-600">{item.subtitle}</p>
+                        <p className="text-xs uppercase tracking-wider text-gray-500 mt-1">Qty {item.quantity}</p>
+                      </div>
+                      <p className="font-bold text-[#0B0C0C]">${(item.price * item.quantity).toFixed(2)}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-6 border-t border-gray-200 pt-4 space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Subtotal</span>
+                    <span className="font-semibold text-[#0B0C0C]">${pricing.subtotal.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Shipping</span>
+                    <span className="font-semibold text-[#0B0C0C]">${pricing.shipping.toFixed(2)}</span>
+                  </div>
+                  {pricing.rewardDiscount > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Rewards Discount</span>
+                      <span className="font-semibold text-green-700">-${pricing.rewardDiscount.toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between border-t border-gray-200 pt-3 mt-2">
+                    <span className="text-xs uppercase tracking-wider text-gray-700">Total</span>
+                    <span className="font-serif text-2xl text-[#0B0C0C]">${pricing.total.toFixed(2)}</span>
+                  </div>
+                </div>
+              </>
+            )}
+          </section>
+
+          <section className="bg-[#0B0C0C] text-[#F9F6F0] p-6 md:p-8">
+            <h2 className="font-serif text-2xl mb-3">Customer Information</h2>
+            <p className="text-sm text-gray-300 mb-6">
+              This information is sent to Stripe with your order so your payment record includes your name, email, and purchased products.
+            </p>
+
+            <form onSubmit={handleStartStripeCheckout} className="space-y-4">
+              <label className="block">
+                <span className="text-xs uppercase tracking-widest text-gray-300">Full Name</span>
+                <input
+                  type="text"
+                  required
+                  autoComplete="name"
+                  value={customerName}
+                  onChange={(event) => setCustomerName(event.target.value)}
+                  className="mt-2 w-full bg-[#111] border border-[#3a3a3a] px-4 py-3 text-[#F9F6F0] placeholder:text-gray-500 focus:outline-none focus:border-[#D4AF37]"
+                  placeholder="Joe Hart"
+                />
+              </label>
+
+              <label className="block">
+                <span className="text-xs uppercase tracking-widest text-gray-300">Email</span>
+                <input
+                  type="email"
+                  required
+                  autoComplete="email"
+                  value={customerEmail}
+                  onChange={(event) => setCustomerEmail(event.target.value)}
+                  className="mt-2 w-full bg-[#111] border border-[#3a3a3a] px-4 py-3 text-[#F9F6F0] placeholder:text-gray-500 focus:outline-none focus:border-[#D4AF37]"
+                  placeholder="you@example.com"
+                />
+              </label>
+
+              <button
+                type="submit"
+                disabled={cart.length === 0 || isSubmitting}
+                className={`w-full py-4 font-bold tracking-widest text-sm uppercase transition-colors ${(cart.length === 0 || isSubmitting)
+                  ? 'bg-[#3b3b3b] text-gray-400 cursor-not-allowed'
+                  : 'bg-[#D4AF37] text-[#0B0C0C] hover:bg-[#c29d2e]'
+                }`}
+              >
+                {isSubmitting ? 'Starting Stripe Checkout...' : 'Continue to Stripe Checkout'}
+              </button>
+            </form>
+
+            {checkoutError && (
+              <p className="mt-4 text-sm border border-red-500/40 bg-red-500/10 text-red-200 px-4 py-3" role="alert">
+                {checkoutError}
+              </p>
+            )}
+
+            <p className="mt-5 text-xs text-gray-400">
+              Secure payment is processed only on Stripe checkout.
+            </p>
+          </section>
+        </div>
       </div>
     </div>
   );
@@ -3042,6 +3284,10 @@ const App = () => {
         title: 'Single Origin Series | Velure Coffee',
         description: 'Discover Velure single-origin coffee with distinct regional profiles and premium quality.',
       },
+      checkout: {
+        title: 'Checkout | Velure Coffee',
+        description: 'Secure Stripe checkout for your Velure order.',
+      },
       rewards: {
         title: 'Rewards App | Velure Coffee',
         description: 'Earn points, unlock discounts, and redeem free-shipping rewards with the Velure rewards flow.',
@@ -3165,6 +3411,23 @@ const App = () => {
       return newCart;
     });
   };
+
+  const proceedToCheckout = useCallback(() => {
+    if (cart.length === 0) return;
+
+    const subtotal = cart.reduce((sum, item) => sum + item.price, 0);
+    const pricing = getCheckoutPricing(subtotal, rewardsProfile.activeRewardId);
+
+    trackEvent('begin_checkout', {
+      currency: 'USD',
+      value: Number(pricing.total.toFixed(2)),
+      item_count: cart.length,
+      reward_id: rewardsProfile.activeRewardId || undefined,
+    });
+
+    closeCart();
+    navigateToView('checkout');
+  }, [cart, closeCart, navigateToView, rewardsProfile.activeRewardId]);
 
   const openProductDetail = (product) => {
     navigateToView('product_detail', { productId: product.id });
@@ -3449,6 +3712,16 @@ const App = () => {
       case 'shop_all': return <ShopView category="all" openProductDetail={openProductDetail} />;
       case 'shop_functional': return <ShopView category="functional" openProductDetail={openProductDetail} />;
       case 'shop_single_origin': return <ShopView category="single_origin" openProductDetail={openProductDetail} />;
+      case 'checkout': return (
+        <CheckoutView
+          cart={cart}
+          rewardsProfile={rewardsProfile}
+          authUser={authState.user}
+          setView={setView}
+          onOpenCart={openCart}
+          onCheckoutSuccess={handleCheckoutSuccess}
+        />
+      );
       case 'contact': return <ContactView />;
       case 'account': return (
         <AccountView
@@ -3534,7 +3807,7 @@ const App = () => {
         rewardsProfile={rewardsProfile}
         onRedeemReward={redeemReward}
         onRemoveReward={removeReward}
-        onCheckoutSuccess={handleCheckoutSuccess}
+        onProceedToCheckout={proceedToCheckout}
       />
 
       {renderView()}

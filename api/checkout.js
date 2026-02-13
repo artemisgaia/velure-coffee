@@ -7,10 +7,11 @@ const PRODUCT_CATALOG = {
   aureo: { name: 'AUREO', price: 26.0 },
 };
 
-const DEFAULT_PAYPAL_EMAIL = 'sales@artemisgaia.co';
 const STANDARD_SHIPPING_FEE = 6.95;
 const FREE_SHIPPING_THRESHOLD = 50;
 const REWARDS_POINTS_PER_DOLLAR = 5;
+const STRIPE_DEFAULT_CURRENCY = 'usd';
+
 const REWARD_OFFERS = {
   five_off: {
     id: 'five_off',
@@ -117,6 +118,29 @@ const validateReward = (rewardId) => {
   return { ok: true, reward };
 };
 
+const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+const validateCustomer = (name, email) => {
+  const normalizedName = normalize(name).slice(0, 120);
+  const normalizedEmail = normalizeLower(email).slice(0, 180);
+
+  if (!normalizedName || normalizedName.length < 2) {
+    return { ok: false, error: 'Please enter your full name.' };
+  }
+
+  if (!normalizedEmail || !isValidEmail(normalizedEmail)) {
+    return { ok: false, error: 'Please enter a valid email address.' };
+  }
+
+  return {
+    ok: true,
+    customer: {
+      name: normalizedName,
+      email: normalizedEmail,
+    },
+  };
+};
+
 const calculatePricing = (subtotal, reward) => {
   const roundedSubtotal = Number(subtotal.toFixed(2));
   const baseShipping = roundedSubtotal >= FREE_SHIPPING_THRESHOLD ? 0 : STANDARD_SHIPPING_FEE;
@@ -139,35 +163,193 @@ const calculatePricing = (subtotal, reward) => {
   };
 };
 
-const buildCheckoutUrl = (items, paypalEmail, reward) => {
-  const subtotal = items.reduce((sum, item) => {
-    const product = PRODUCT_CATALOG[item.productId];
-    return sum + (product.price * item.quantity);
-  }, 0);
-  const pricing = calculatePricing(subtotal, reward);
+const getSiteOrigin = (req) => {
+  const requestOrigin = normalize(req.headers.origin);
+  if (requestOrigin) {
+    return requestOrigin;
+  }
+
+  const referer = normalize(req.headers.referer);
+  if (referer) {
+    try {
+      return new URL(referer).origin;
+    } catch {
+      // continue to env fallback
+    }
+  }
+
+  const publicSiteUrl = getEnv('PUBLIC_SITE_URL') || getEnv('SITE_URL');
+  if (publicSiteUrl) {
+    return publicSiteUrl.replace(/\/+$/, '');
+  }
+
+  const vercelUrl = getEnv('VERCEL_URL');
+  if (vercelUrl) {
+    return `https://${vercelUrl.replace(/^https?:\/\//, '').replace(/\/+$/, '')}`;
+  }
+
+  return 'http://localhost:5173';
+};
+
+const buildOrderSummary = (items, reward) => {
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
   const itemSummary = items
     .map((item) => `${PRODUCT_CATALOG[item.productId].name} x${item.quantity}`)
     .join(', ')
-    .slice(0, 90);
-  const rewardSummary = reward ? ` | Reward: ${reward.name}` : '';
-  const itemName = `Velure Order (${totalItems} items): ${itemSummary}${rewardSummary}`.slice(0, 127);
-  const pointsBase = Math.max(0, pricing.subtotal - pricing.rewardDiscount);
-  const earnablePoints = Math.floor(pointsBase * REWARDS_POINTS_PER_DOLLAR);
+    .slice(0, 200);
 
-  const query = new URLSearchParams({
-    cmd: '_xclick',
-    business: paypalEmail,
-    currency_code: 'USD',
-    amount: pricing.total.toFixed(2),
-    item_name: itemName,
+  const rewardSummary = reward ? ` | Reward: ${reward.name}` : '';
+  return `Velure Order (${totalItems} items): ${itemSummary}${rewardSummary}`.slice(0, 480);
+};
+
+const createStripeCoupon = async ({ stripeSecretKey, pricing, reward }) => {
+  if (pricing.rewardDiscount <= 0) {
+    return null;
+  }
+
+  const amountOff = Math.round(pricing.rewardDiscount * 100);
+  if (!Number.isFinite(amountOff) || amountOff <= 0) {
+    return null;
+  }
+
+  const couponParams = new URLSearchParams();
+  couponParams.append('amount_off', String(amountOff));
+  couponParams.append('currency', STRIPE_DEFAULT_CURRENCY);
+  couponParams.append('duration', 'once');
+  couponParams.append('name', reward?.name ? `Velure Reward - ${reward.name}` : 'Velure Reward');
+
+  const response = await fetch('https://api.stripe.com/v1/coupons', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${stripeSecretKey}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: couponParams.toString(),
   });
 
+  let payload = {};
+  try {
+    payload = await response.json();
+  } catch {
+    payload = {};
+  }
+
+  if (!response.ok || !normalize(payload?.id)) {
+    const stripeMessage = normalize(payload?.error?.message);
+    throw new Error(stripeMessage || 'Unable to apply reward discount.');
+  }
+
+  return normalize(payload.id);
+};
+
+const createStripeCheckoutSession = async ({ items, pricing, reward, customer, req }) => {
+  const stripeSecretKey = getEnv('STRIPE_SECRET_KEY');
+  if (!stripeSecretKey) {
+    throw new Error('Stripe checkout is not configured. Add STRIPE_SECRET_KEY to server environment variables.');
+  }
+
+  const amountCents = Math.round(pricing.total * 100);
+  if (!Number.isFinite(amountCents) || amountCents < 50) {
+    throw new Error('Order total is below the Stripe minimum charge.');
+  }
+
+  const origin = getSiteOrigin(req);
+  const summary = buildOrderSummary(items, reward);
+  const params = new URLSearchParams();
+  let lineItemIndex = 0;
+
+  params.append('mode', 'payment');
+  params.append('success_url', `${origin}/checkout?checkout=success`);
+  params.append('cancel_url', `${origin}/checkout?checkout=cancelled`);
+  params.append('customer_creation', 'always');
+  params.append('customer_email', customer.email);
+  params.append('payment_intent_data[receipt_email]', customer.email);
+  params.append('payment_intent_data[description]', summary.slice(0, 500));
+  params.append('payment_intent_data[metadata][customer_name]', customer.name);
+  params.append('payment_intent_data[metadata][customer_email]', customer.email);
+  params.append('payment_intent_data[metadata][item_summary]', summary.slice(0, 450));
+  params.append('phone_number_collection[enabled]', 'true');
+
+  for (const item of items) {
+    const product = PRODUCT_CATALOG[item.productId];
+    const unitAmount = Math.round(product.price * 100);
+    params.append(`line_items[${lineItemIndex}][quantity]`, String(item.quantity));
+    params.append(`line_items[${lineItemIndex}][price_data][currency]`, STRIPE_DEFAULT_CURRENCY);
+    params.append(`line_items[${lineItemIndex}][price_data][unit_amount]`, String(unitAmount));
+    params.append(`line_items[${lineItemIndex}][price_data][product_data][name]`, `Velure ${product.name}`);
+    params.append(`line_items[${lineItemIndex}][price_data][product_data][description]`, 'Premium coffee product');
+    lineItemIndex += 1;
+  }
+
+  if (pricing.shipping > 0) {
+    params.append(`line_items[${lineItemIndex}][quantity]`, '1');
+    params.append(`line_items[${lineItemIndex}][price_data][currency]`, STRIPE_DEFAULT_CURRENCY);
+    params.append(`line_items[${lineItemIndex}][price_data][unit_amount]`, String(Math.round(pricing.shipping * 100)));
+    params.append(`line_items[${lineItemIndex}][price_data][product_data][name]`, 'Velure Standard Shipping');
+    params.append(`line_items[${lineItemIndex}][price_data][product_data][description]`, 'Shipping and handling');
+  }
+
+  const couponId = await createStripeCoupon({ stripeSecretKey, pricing, reward });
+  if (couponId) {
+    params.append('discounts[0][coupon]', couponId);
+  }
+
+  params.append('metadata[item_summary]', summary.slice(0, 450));
+  params.append('metadata[reward_id]', reward?.id || 'none');
+  params.append('metadata[customer_name]', customer.name);
+  params.append('metadata[customer_email]', customer.email);
+  params.append('metadata[expected_total_usd]', pricing.total.toFixed(2));
+  params.append('metadata[expected_total_cents]', String(amountCents));
+
+  const response = await fetch('https://api.stripe.com/v1/checkout/sessions', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${stripeSecretKey}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: params.toString(),
+  });
+
+  let payload = {};
+  try {
+    payload = await response.json();
+  } catch {
+    payload = {};
+  }
+
+  if (!response.ok) {
+    const stripeMessage = normalize(payload?.error?.message);
+    throw new Error(stripeMessage || 'Unable to create Stripe checkout session.');
+  }
+
+  if (!normalize(payload?.url)) {
+    throw new Error('Stripe did not return a checkout URL.');
+  }
+
   return {
+    checkoutUrl: payload.url,
+    checkoutSessionId: normalize(payload.id),
+  };
+};
+
+const buildCheckoutPayload = async (items, reward, customer, req) => {
+  const subtotal = items.reduce((sum, item) => {
+    const product = PRODUCT_CATALOG[item.productId];
+    return sum + (product.price * item.quantity);
+  }, 0);
+
+  const pricing = calculatePricing(subtotal, reward);
+  const pointsBase = Math.max(0, pricing.subtotal - pricing.rewardDiscount);
+  const earnablePoints = Math.floor(pointsBase * REWARDS_POINTS_PER_DOLLAR);
+  const stripeSession = await createStripeCheckoutSession({ items, pricing, reward, customer, req });
+
+  return {
+    provider: 'stripe',
     ...pricing,
     reward: reward ? { id: reward.id, name: reward.name } : null,
     earnablePoints,
-    checkoutUrl: `https://www.paypal.com/cgi-bin/webscr?${query.toString()}`,
+    checkoutUrl: stripeSession.checkoutUrl,
+    checkoutSessionId: stripeSession.checkoutSessionId,
   };
 };
 
@@ -210,12 +392,26 @@ export default async function handler(req, res) {
     return;
   }
 
-  const paypalEmail = getEnv('PAYPAL_CHECKOUT_EMAIL') || getEnv('PAYPAL_EMAIL') || DEFAULT_PAYPAL_EMAIL;
-  const checkoutPayload = buildCheckoutUrl(validation.items, paypalEmail, rewardValidation.reward);
+  const customerValidation = validateCustomer(body.customerName, body.customerEmail);
+  if (!customerValidation.ok) {
+    sendJson(res, 422, { ok: false, error: customerValidation.error });
+    return;
+  }
 
-  sendJson(res, 200, {
-    ok: true,
-    currency: 'USD',
-    ...checkoutPayload,
-  });
+  try {
+    const checkoutPayload = await buildCheckoutPayload(
+      validation.items,
+      rewardValidation.reward,
+      customerValidation.customer,
+      req,
+    );
+    sendJson(res, 200, {
+      ok: true,
+      currency: 'USD',
+      ...checkoutPayload,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to start checkout right now.';
+    sendJson(res, 502, { ok: false, error: message });
+  }
 }
