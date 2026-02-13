@@ -100,6 +100,8 @@ const dom = {
   shippingCountry: document.getElementById('shipping-country'),
   shippingService: document.getElementById('shipping-service'),
   shippingAddress1: document.getElementById('shipping-address1'),
+  enableAddress2: document.getElementById('enable-address2'),
+  address2Wrap: document.getElementById('address2-wrap'),
   shippingAddress2: document.getElementById('shipping-address2'),
   shippingCity: document.getElementById('shipping-city'),
   shippingRegion: document.getElementById('shipping-region'),
@@ -598,34 +600,12 @@ const submitCheckout = async (event) => {
   setSubmittingState(true);
   setNotice('info', 'Confirming payment...');
 
-  const billingDetails = {
-    name: normalize(dom.customerName.value),
-    email: normalize(dom.customerEmail.value).toLowerCase(),
-    phone: dom.enablePhone.checked ? normalize(dom.customerPhone.value) : undefined,
-    address: {
-      line1: normalize(dom.shippingAddress1.value),
-      line2: normalize(dom.shippingAddress2.value) || undefined,
-      city: normalize(dom.shippingCity.value),
-      state: normalize(dom.shippingRegion.value),
-      postal_code: normalize(dom.shippingPostal.value),
-      country: selectedCountry(),
-    },
-  };
-
   try {
     const result = await state.stripe.confirmPayment({
       elements: state.elements,
       redirect: 'if_required',
       confirmParams: {
         return_url: `${window.location.origin}/checkout.html`,
-        payment_method_data: {
-          billing_details: billingDetails,
-        },
-        shipping: {
-          name: billingDetails.name,
-          phone: billingDetails.phone,
-          address: billingDetails.address,
-        },
       },
     });
 
@@ -705,6 +685,17 @@ const bindEvents = () => {
     } else {
       dom.phoneWrap.classList.add('hidden');
       dom.customerPhone.value = '';
+    }
+    scheduleRefresh(120);
+  });
+
+  dom.enableAddress2.addEventListener('change', () => {
+    if (dom.enableAddress2.checked) {
+      dom.address2Wrap.classList.remove('hidden');
+      dom.shippingAddress2.focus();
+    } else {
+      dom.address2Wrap.classList.add('hidden');
+      dom.shippingAddress2.value = '';
     }
     scheduleRefresh(120);
   });

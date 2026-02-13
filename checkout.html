@@ -80,8 +80,15 @@
               <label for="shipping-address1">Address line 1</label>
               <input id="shipping-address1" name="shippingAddress1" autocomplete="shipping address-line1" required />
 
-              <label for="shipping-address2">Address line 2</label>
-              <input id="shipping-address2" name="shippingAddress2" autocomplete="shipping address-line2" />
+              <div class="toggle-row">
+                <input id="enable-address2" type="checkbox" />
+                <label for="enable-address2">Add apartment, suite, unit (optional)</label>
+              </div>
+
+              <div id="address2-wrap" class="hidden">
+                <label for="shipping-address2">Address line 2</label>
+                <input id="shipping-address2" name="shippingAddress2" autocomplete="shipping address-line2" />
+              </div>
 
               <div class="row-2">
                 <div>
