@@ -141,6 +141,8 @@ const validateCustomer = (name, email) => {
   };
 };
 
+const normalizeUiMode = (value) => (normalizeLower(value) === 'embedded' ? 'embedded' : 'hosted');
+
 const calculatePricing = (subtotal, reward) => {
   const roundedSubtotal = Number(subtotal.toFixed(2));
   const baseShipping = roundedSubtotal >= FREE_SHIPPING_THRESHOLD ? 0 : STANDARD_SHIPPING_FEE;
@@ -242,7 +244,7 @@ const createStripeCoupon = async ({ stripeSecretKey, pricing, reward }) => {
   return normalize(payload.id);
 };
 
-const createStripeCheckoutSession = async ({ items, pricing, reward, customer, req }) => {
+const createStripeCheckoutSession = async ({ items, pricing, reward, customer, uiMode, req }) => {
   const stripeSecretKey = getEnv('STRIPE_SECRET_KEY');
   if (!stripeSecretKey) {
     throw new Error('Stripe checkout is not configured. Add STRIPE_SECRET_KEY to server environment variables.');
@@ -259,8 +261,13 @@ const createStripeCheckoutSession = async ({ items, pricing, reward, customer, r
   let lineItemIndex = 0;
 
   params.append('mode', 'payment');
-  params.append('success_url', `${origin}/checkout?checkout=success`);
-  params.append('cancel_url', `${origin}/checkout?checkout=cancelled`);
+  if (uiMode === 'embedded') {
+    params.append('ui_mode', 'embedded');
+    params.append('return_url', `${origin}/checkout?checkout=success&session_id={CHECKOUT_SESSION_ID}`);
+  } else {
+    params.append('success_url', `${origin}/checkout?checkout=success`);
+    params.append('cancel_url', `${origin}/checkout?checkout=cancelled`);
+  }
   params.append('customer_creation', 'always');
   params.append('customer_email', customer.email);
   params.append('payment_intent_data[receipt_email]', customer.email);
@@ -322,17 +329,39 @@ const createStripeCheckoutSession = async ({ items, pricing, reward, customer, r
     throw new Error(stripeMessage || 'Unable to create Stripe checkout session.');
   }
 
-  if (!normalize(payload?.url)) {
+  const checkoutSessionId = normalize(payload.id);
+  const checkoutUrl = normalize(payload.url);
+  const clientSecret = normalize(payload.client_secret);
+
+  if (!checkoutSessionId) {
+    throw new Error('Stripe did not return a checkout session id.');
+  }
+
+  if (uiMode === 'embedded') {
+    if (!clientSecret) {
+      throw new Error('Stripe did not return an embedded checkout client secret.');
+    }
+    return {
+      checkoutSessionId,
+      clientSecret,
+      checkoutUrl: '',
+      uiMode: 'embedded',
+    };
+  }
+
+  if (!checkoutUrl) {
     throw new Error('Stripe did not return a checkout URL.');
   }
 
   return {
-    checkoutUrl: payload.url,
-    checkoutSessionId: normalize(payload.id),
+    checkoutSessionId,
+    clientSecret: '',
+    checkoutUrl,
+    uiMode: 'hosted',
   };
 };
 
-const buildCheckoutPayload = async (items, reward, customer, req) => {
+const buildCheckoutPayload = async (items, reward, customer, uiMode, req) => {
   const subtotal = items.reduce((sum, item) => {
     const product = PRODUCT_CATALOG[item.productId];
     return sum + (product.price * item.quantity);
@@ -341,15 +370,17 @@ const buildCheckoutPayload = async (items, reward, customer, req) => {
   const pricing = calculatePricing(subtotal, reward);
   const pointsBase = Math.max(0, pricing.subtotal - pricing.rewardDiscount);
   const earnablePoints = Math.floor(pointsBase * REWARDS_POINTS_PER_DOLLAR);
-  const stripeSession = await createStripeCheckoutSession({ items, pricing, reward, customer, req });
+  const stripeSession = await createStripeCheckoutSession({ items, pricing, reward, customer, uiMode, req });
 
   return {
     provider: 'stripe',
     ...pricing,
     reward: reward ? { id: reward.id, name: reward.name } : null,
     earnablePoints,
+    uiMode: stripeSession.uiMode,
     checkoutUrl: stripeSession.checkoutUrl,
     checkoutSessionId: stripeSession.checkoutSessionId,
+    clientSecret: stripeSession.clientSecret,
   };
 };
 
@@ -398,11 +429,14 @@ export default async function handler(req, res) {
     return;
   }
 
+  const uiMode = normalizeUiMode(body.uiMode);
+
   try {
     const checkoutPayload = await buildCheckoutPayload(
       validation.items,
       rewardValidation.reward,
       customerValidation.customer,
+      uiMode,
       req,
     );
     sendJson(res, 200, {

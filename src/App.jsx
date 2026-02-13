@@ -468,6 +468,9 @@ const REWARDS_SIGNUP_BONUS = 150;
 const REWARDS_POINTS_PER_DOLLAR = 5;
 const STANDARD_SHIPPING_FEE = 6.95;
 const FREE_SHIPPING_THRESHOLD = 50;
+const STRIPE_PUBLISHABLE_KEY = (import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '').trim();
+const STRIPE_JS_SRC = 'https://js.stripe.com/v3';
+let stripeJsPromise = null;
 
 const REWARD_OFFERS = [
   {
@@ -929,6 +932,48 @@ const copyTextToClipboard = async (text) => {
   if (!copied) {
     throw new Error('Copy failed.');
   }
+};
+
+const loadStripeJs = () => {
+  if (typeof window === 'undefined') {
+    return Promise.reject(new Error('Stripe.js can only be loaded in the browser.'));
+  }
+
+  if (window.Stripe) {
+    return Promise.resolve(window.Stripe);
+  }
+
+  if (!stripeJsPromise) {
+    stripeJsPromise = new Promise((resolve, reject) => {
+      const existingScript = document.querySelector(`script[src="${STRIPE_JS_SRC}"]`);
+      if (existingScript) {
+        existingScript.addEventListener('load', () => {
+          if (window.Stripe) {
+            resolve(window.Stripe);
+          } else {
+            reject(new Error('Stripe.js loaded without Stripe global.'));
+          }
+        }, { once: true });
+        existingScript.addEventListener('error', () => reject(new Error('Failed to load Stripe.js.')), { once: true });
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = STRIPE_JS_SRC;
+      script.async = true;
+      script.onload = () => {
+        if (window.Stripe) {
+          resolve(window.Stripe);
+          return;
+        }
+        reject(new Error('Stripe.js loaded without Stripe global.'));
+      };
+      script.onerror = () => reject(new Error('Failed to load Stripe.js.'));
+      document.head.appendChild(script);
+    });
+  }
+
+  return stripeJsPromise;
 };
 
 const loadRewardsProfileFromApi = async (accessToken) => {
@@ -1631,8 +1676,17 @@ const CheckoutView = ({
   const [customerName, setCustomerName] = useState('');
   const [customerEmail, setCustomerEmail] = useState(authUser?.email || rewardsProfile.email || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isEmbeddedBooting, setIsEmbeddedBooting] = useState(false);
+  const [isEmbeddedMounted, setIsEmbeddedMounted] = useState(false);
   const [checkoutError, setCheckoutError] = useState('');
   const [checkoutNotice, setCheckoutNotice] = useState('');
+  const [embeddedClientSecret, setEmbeddedClientSecret] = useState('');
+  const [embeddedSessionId, setEmbeddedSessionId] = useState('');
+  const embeddedContainerRef = useRef(null);
+  const embeddedCheckoutRef = useRef(null);
+  const pendingCheckoutPayloadRef = useRef(null);
+  const checkoutMetricsRef = useRef({ total: pricing.total, itemCount: cart.length });
+  const hasProcessedCheckoutRef = useRef(false);
 
   const checkoutItems = getCheckoutItemsFromCart(cart)
     .map((entry) => {
@@ -1648,6 +1702,13 @@ const CheckoutView = ({
     .filter(Boolean);
 
   useEffect(() => {
+    checkoutMetricsRef.current = {
+      total: pricing.total,
+      itemCount: cart.length,
+    };
+  }, [cart.length, pricing.total]);
+
+  useEffect(() => {
     if (!customerEmail && (authUser?.email || rewardsProfile.email)) {
       setCustomerEmail(authUser?.email || rewardsProfile.email || '');
     }
@@ -1661,24 +1722,36 @@ const CheckoutView = ({
     if (!status) return;
 
     if (status === 'success') {
-      try {
-        const raw = window.sessionStorage.getItem(PENDING_CHECKOUT_STORAGE_KEY);
-        if (raw) {
-          const checkoutPayload = JSON.parse(raw);
-          if (typeof onCheckoutSuccess === 'function') {
-            onCheckoutSuccess(checkoutPayload);
+      let shouldTrackPurchase = false;
+      if (!hasProcessedCheckoutRef.current) {
+        try {
+          const raw = window.sessionStorage.getItem(PENDING_CHECKOUT_STORAGE_KEY);
+          if (raw) {
+            const checkoutPayload = JSON.parse(raw);
+            pendingCheckoutPayloadRef.current = checkoutPayload;
+            if (typeof onCheckoutSuccess === 'function') {
+              onCheckoutSuccess(checkoutPayload);
+            }
+            window.sessionStorage.removeItem(PENDING_CHECKOUT_STORAGE_KEY);
           }
-          window.sessionStorage.removeItem(PENDING_CHECKOUT_STORAGE_KEY);
+        } catch (error) {
+          console.error('Failed to process post-checkout payload', error);
         }
-      } catch (error) {
-        console.error('Failed to process post-checkout payload', error);
+        hasProcessedCheckoutRef.current = true;
+        shouldTrackPurchase = true;
       }
+
       setCheckoutNotice('Payment completed. Thank you for your order.');
-      trackEvent('purchase', {
-        currency: 'USD',
-        value: Number(pricing.total.toFixed(2)),
-        item_count: checkoutItems.length,
-      });
+      if (shouldTrackPurchase) {
+        const paidTotal = Number(pendingCheckoutPayloadRef.current?.total || checkoutMetricsRef.current.total || 0);
+        trackEvent('purchase', {
+          currency: 'USD',
+          value: Number(paidTotal.toFixed(2)),
+          item_count: checkoutMetricsRef.current.itemCount,
+        });
+      }
+      setEmbeddedClientSecret('');
+      setEmbeddedSessionId(params.get('session_id') || embeddedSessionId);
     } else if (status === 'cancelled') {
       setCheckoutNotice('Checkout was cancelled. Your cart is still saved.');
       trackEvent('checkout_cancelled');
@@ -1688,12 +1761,108 @@ const CheckoutView = ({
     const cleanedQuery = params.toString();
     const cleanedUrl = `${window.location.pathname}${cleanedQuery ? `?${cleanedQuery}` : ''}`;
     window.history.replaceState(window.history.state, '', cleanedUrl);
-  }, [checkoutItems.length, onCheckoutSuccess, pricing.total]);
+  }, [embeddedSessionId, onCheckoutSuccess]);
+
+  useEffect(() => {
+    if (!embeddedClientSecret) return undefined;
+
+    let cancelled = false;
+    const mountEmbeddedCheckout = async () => {
+      setCheckoutError('');
+      setIsEmbeddedBooting(true);
+
+      try {
+        if (!STRIPE_PUBLISHABLE_KEY) {
+          throw new Error('Stripe publishable key is missing. Set VITE_STRIPE_PUBLISHABLE_KEY.');
+        }
+
+        const StripeConstructor = await loadStripeJs();
+        const stripe = StripeConstructor(STRIPE_PUBLISHABLE_KEY);
+        if (!stripe || typeof stripe.initEmbeddedCheckout !== 'function') {
+          throw new Error('Embedded Stripe checkout is not available.');
+        }
+
+        const embeddedCheckout = await stripe.initEmbeddedCheckout({
+          fetchClientSecret: async () => embeddedClientSecret,
+          onComplete: () => {
+            if (hasProcessedCheckoutRef.current) return;
+            hasProcessedCheckoutRef.current = true;
+
+            try {
+              const checkoutPayload = pendingCheckoutPayloadRef.current;
+              if (checkoutPayload && typeof onCheckoutSuccess === 'function') {
+                onCheckoutSuccess(checkoutPayload);
+              }
+              window.sessionStorage.removeItem(PENDING_CHECKOUT_STORAGE_KEY);
+            } catch (error) {
+              console.error('Failed to finalize checkout payload', error);
+            }
+
+            const paidTotal = Number(pendingCheckoutPayloadRef.current?.total || checkoutMetricsRef.current.total || 0);
+            setCheckoutNotice('Payment completed. Thank you for your order.');
+            trackEvent('purchase', {
+              currency: 'USD',
+              value: Number(paidTotal.toFixed(2)),
+              item_count: checkoutMetricsRef.current.itemCount,
+            });
+          },
+        });
+
+        if (cancelled) {
+          embeddedCheckout.destroy();
+          return;
+        }
+
+        if (!embeddedContainerRef.current) {
+          embeddedCheckout.destroy();
+          throw new Error('Checkout container is not available.');
+        }
+
+        embeddedCheckout.mount(embeddedContainerRef.current);
+        embeddedCheckoutRef.current = embeddedCheckout;
+        setIsEmbeddedMounted(true);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unable to initialize Stripe checkout.';
+        setCheckoutError(message);
+        setEmbeddedClientSecret('');
+        setEmbeddedSessionId('');
+      } finally {
+        if (!cancelled) {
+          setIsEmbeddedBooting(false);
+        }
+      }
+    };
+
+    mountEmbeddedCheckout();
+
+    return () => {
+      cancelled = true;
+      const checkout = embeddedCheckoutRef.current;
+      if (checkout && typeof checkout.destroy === 'function') {
+        checkout.destroy();
+      }
+      embeddedCheckoutRef.current = null;
+      setIsEmbeddedMounted(false);
+    };
+  }, [embeddedClientSecret, onCheckoutSuccess]);
+
+  const resetEmbeddedCheckout = () => {
+    const checkout = embeddedCheckoutRef.current;
+    if (checkout && typeof checkout.destroy === 'function') {
+      checkout.destroy();
+    }
+    embeddedCheckoutRef.current = null;
+    setEmbeddedClientSecret('');
+    setEmbeddedSessionId('');
+    setIsEmbeddedMounted(false);
+    setIsEmbeddedBooting(false);
+    hasProcessedCheckoutRef.current = false;
+  };
 
   const handleStartStripeCheckout = async (event) => {
     event.preventDefault();
 
-    if (cart.length === 0 || isSubmitting) return;
+    if (cart.length === 0 || isSubmitting || isEmbeddedBooting) return;
     setCheckoutError('');
     setCheckoutNotice('');
 
@@ -1705,12 +1874,18 @@ const CheckoutView = ({
       return;
     }
 
-    if (!normalizedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+    if (!isValidEmail(normalizedEmail)) {
       setCheckoutError('Please enter a valid email address.');
       return;
     }
 
+    if (!STRIPE_PUBLISHABLE_KEY) {
+      setCheckoutError('Stripe publishable key is missing. Set VITE_STRIPE_PUBLISHABLE_KEY.');
+      return;
+    }
+
     setIsSubmitting(true);
+    hasProcessedCheckoutRef.current = false;
 
     trackEvent('checkout_submit', {
       currency: 'USD',
@@ -1729,6 +1904,7 @@ const CheckoutView = ({
           rewardId: rewardsProfile.activeRewardId || null,
           customerName: normalizedName,
           customerEmail: normalizedEmail,
+          uiMode: 'embedded',
         }),
       });
 
@@ -1737,20 +1913,24 @@ const CheckoutView = ({
         throw new Error(payload?.error || 'Unable to start checkout right now.');
       }
 
-      if (!payload?.checkoutUrl) {
-        throw new Error('Missing checkout URL.');
-      }
-
-      if (typeof window !== 'undefined') {
-        window.sessionStorage.setItem(PENDING_CHECKOUT_STORAGE_KEY, JSON.stringify(payload));
-      }
-
       const checkoutProvider = typeof payload.provider === 'string' ? payload.provider.toLowerCase() : '';
       if (checkoutProvider !== 'stripe') {
         throw new Error('Stripe checkout is not available right now.');
       }
 
-      window.location.assign(payload.checkoutUrl);
+      if (typeof window !== 'undefined') {
+        window.sessionStorage.setItem(PENDING_CHECKOUT_STORAGE_KEY, JSON.stringify(payload));
+      }
+      pendingCheckoutPayloadRef.current = payload;
+
+      if (payload?.uiMode === 'embedded' && payload?.clientSecret) {
+        setEmbeddedSessionId(typeof payload.checkoutSessionId === 'string' ? payload.checkoutSessionId : '');
+        setEmbeddedClientSecret(payload.clientSecret);
+      } else if (payload?.checkoutUrl) {
+        window.location.assign(payload.checkoutUrl);
+      } else {
+        throw new Error('Stripe checkout response is incomplete.');
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unable to start checkout right now.';
       setCheckoutError(message);
@@ -1759,6 +1939,8 @@ const CheckoutView = ({
       setIsSubmitting(false);
     }
   };
+
+  const isEmbeddedActive = Boolean(embeddedClientSecret || isEmbeddedMounted || isEmbeddedBooting);
 
   return (
     <div className="pt-28 pb-20 bg-[#F9F6F0] min-h-screen">
@@ -1837,54 +2019,83 @@ const CheckoutView = ({
                     <span className="font-serif text-2xl text-[#0B0C0C]">${pricing.total.toFixed(2)}</span>
                   </div>
                 </div>
+
+                {embeddedSessionId && (
+                  <p className="mt-4 text-xs text-gray-500">
+                    Session: {embeddedSessionId}
+                  </p>
+                )}
               </>
             )}
           </section>
 
           <section className="bg-[#0B0C0C] text-[#F9F6F0] p-6 md:p-8">
-            <h2 className="font-serif text-2xl mb-3">Customer Information</h2>
+            <h2 className="font-serif text-2xl mb-3">{isEmbeddedActive ? 'Secure Payment' : 'Customer Information'}</h2>
             <p className="text-sm text-gray-300 mb-6">
-              This information is sent to Stripe with your order so your payment record includes your name, email, and purchased products.
+              {isEmbeddedActive
+                ? 'Complete payment directly on this page. Stripe processes payment securely.'
+                : 'Your name, email, and purchased products are sent to Stripe with your order.'
+              }
             </p>
 
-            <form onSubmit={handleStartStripeCheckout} className="space-y-4">
-              <label className="block">
-                <span className="text-xs uppercase tracking-widest text-gray-300">Full Name</span>
-                <input
-                  type="text"
-                  required
-                  autoComplete="name"
-                  value={customerName}
-                  onChange={(event) => setCustomerName(event.target.value)}
-                  className="mt-2 w-full bg-[#111] border border-[#3a3a3a] px-4 py-3 text-[#F9F6F0] placeholder:text-gray-500 focus:outline-none focus:border-[#D4AF37]"
-                  placeholder="Joe Hart"
-                />
-              </label>
+            {!isEmbeddedActive && (
+              <form onSubmit={handleStartStripeCheckout} className="space-y-4">
+                <label className="block">
+                  <span className="text-xs uppercase tracking-widest text-gray-300">Full Name</span>
+                  <input
+                    type="text"
+                    required
+                    autoComplete="name"
+                    value={customerName}
+                    onChange={(event) => setCustomerName(event.target.value)}
+                    className="mt-2 w-full bg-[#111] border border-[#3a3a3a] px-4 py-3 text-[#F9F6F0] placeholder:text-gray-500 focus:outline-none focus:border-[#D4AF37]"
+                    placeholder="Joe Hart"
+                  />
+                </label>
 
-              <label className="block">
-                <span className="text-xs uppercase tracking-widest text-gray-300">Email</span>
-                <input
-                  type="email"
-                  required
-                  autoComplete="email"
-                  value={customerEmail}
-                  onChange={(event) => setCustomerEmail(event.target.value)}
-                  className="mt-2 w-full bg-[#111] border border-[#3a3a3a] px-4 py-3 text-[#F9F6F0] placeholder:text-gray-500 focus:outline-none focus:border-[#D4AF37]"
-                  placeholder="you@example.com"
-                />
-              </label>
+                <label className="block">
+                  <span className="text-xs uppercase tracking-widest text-gray-300">Email</span>
+                  <input
+                    type="email"
+                    required
+                    autoComplete="email"
+                    value={customerEmail}
+                    onChange={(event) => setCustomerEmail(event.target.value)}
+                    className="mt-2 w-full bg-[#111] border border-[#3a3a3a] px-4 py-3 text-[#F9F6F0] placeholder:text-gray-500 focus:outline-none focus:border-[#D4AF37]"
+                    placeholder="you@example.com"
+                  />
+                </label>
 
-              <button
-                type="submit"
-                disabled={cart.length === 0 || isSubmitting}
-                className={`w-full py-4 font-bold tracking-widest text-sm uppercase transition-colors ${(cart.length === 0 || isSubmitting)
-                  ? 'bg-[#3b3b3b] text-gray-400 cursor-not-allowed'
-                  : 'bg-[#D4AF37] text-[#0B0C0C] hover:bg-[#c29d2e]'
-                }`}
-              >
-                {isSubmitting ? 'Starting Stripe Checkout...' : 'Continue to Stripe Checkout'}
-              </button>
-            </form>
+                <button
+                  type="submit"
+                  disabled={cart.length === 0 || isSubmitting}
+                  className={`w-full py-4 font-bold tracking-widest text-sm uppercase transition-colors ${(cart.length === 0 || isSubmitting)
+                    ? 'bg-[#3b3b3b] text-gray-400 cursor-not-allowed'
+                    : 'bg-[#D4AF37] text-[#0B0C0C] hover:bg-[#c29d2e]'
+                  }`}
+                >
+                  {isSubmitting ? 'Preparing secure checkout...' : 'Continue to Secure Payment'}
+                </button>
+              </form>
+            )}
+
+            {isEmbeddedActive && (
+              <div className="space-y-4">
+                <div className="rounded-sm bg-white p-2 min-h-[420px]">
+                  {isEmbeddedBooting && (
+                    <p className="text-sm text-[#0B0C0C] px-2 py-2">Loading secure checkout...</p>
+                  )}
+                  <div ref={embeddedContainerRef} />
+                </div>
+                <button
+                  type="button"
+                  onClick={resetEmbeddedCheckout}
+                  className="w-full border border-[#D4AF37] text-[#D4AF37] py-3 text-xs font-bold uppercase tracking-wider hover:bg-[#D4AF37] hover:text-[#0B0C0C]"
+                >
+                  Edit Customer Info
+                </button>
+              </div>
+            )}
 
             {checkoutError && (
               <p className="mt-4 text-sm border border-red-500/40 bg-red-500/10 text-red-200 px-4 py-3" role="alert">
@@ -1893,7 +2104,7 @@ const CheckoutView = ({
             )}
 
             <p className="mt-5 text-xs text-gray-400">
-              Secure payment is processed only on Stripe checkout.
+              Powered securely by Stripe.
             </p>
           </section>
         </div>

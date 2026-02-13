@@ -41,7 +41,9 @@ The project also includes `/api/checkout`:
 - Recalculates totals server-side from trusted product IDs and quantities.
 - Supports optional rewards redemptions via `rewardId` (`five_off`, `free_shipping`).
 - Requires `customerName` and `customerEmail` in the checkout request payload.
-- Creates a Stripe Checkout Session and returns `checkoutUrl` for redirect.
+- Supports `uiMode`:
+  - `embedded`: returns `clientSecret` and `checkoutSessionId` for in-page embedded Stripe Checkout.
+  - `hosted` (fallback): returns `checkoutUrl` for hosted redirect.
 - Returns computed pricing breakdown (`subtotal`, `shipping`, `rewardDiscount`, `total`) and `earnablePoints`.
 - Supports origin allowlisting with `CHECKOUT_ALLOWED_ORIGINS` (or `FORMS_ALLOWED_ORIGINS` fallback).
 - Uses `STRIPE_SECRET_KEY` from server environment.
@@ -65,6 +67,7 @@ Copy `.env.example` to `.env.local` for local overrides:
 
 - `VITE_FORMS_ENDPOINT` (frontend): endpoint for form submissions.
 - `VITE_FORMS_CHALLENGE_TOKEN` (frontend): optional token sent with form requests.
+- `VITE_STRIPE_PUBLISHABLE_KEY` (frontend): Stripe publishable key used to render embedded checkout.
 - `FORMS_WEBHOOK_URL` (server): optional webhook target for validated submissions.
 - `FORMS_ALLOWED_ORIGINS` (server): comma-separated allowed origins for `/api/forms`.
 - `FORMS_CHALLENGE_TOKEN` (server): optional token required on incoming form requests.
