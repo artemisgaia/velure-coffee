@@ -5,6 +5,8 @@ const API_ENDPOINTS = {
   createPaymentIntent: '/api/create-payment-intent',
   rewards: '/api/rewards',
   orders: '/api/orders',
+  profile: '/api/profile',
+  addresses: '/api/addresses',
 };
 
 const PRODUCT_CATALOG = {
@@ -62,6 +64,8 @@ const state = {
   },
   auth: { ...DEFAULT_AUTH_STATE },
   rewards: { ...DEFAULT_REWARDS_PROFILE },
+  customerProfile: null,
+  addresses: [],
   activeAuthTab: 'signin',
 };
 
@@ -97,6 +101,8 @@ const dom = {
   phoneWrap: document.getElementById('phone-wrap'),
   customerPhone: document.getElementById('customer-phone'),
   shippingCountry: document.getElementById('shipping-country'),
+  savedAddressWrap: document.getElementById('saved-address-wrap'),
+  savedAddressSelect: document.getElementById('saved-address-select'),
   shippingService: document.getElementById('shipping-service'),
   shippingAddress1: document.getElementById('shipping-address1'),
   enableAddress2: document.getElementById('enable-address2'),
@@ -325,6 +331,11 @@ const applyAuthUi = () => {
   if (dom.authSignedIn) dom.authSignedIn.classList.toggle('hidden', !signedIn);
   if (dom.authGuest) dom.authGuest.classList.toggle('hidden', signedIn);
   if (dom.discountBlock) dom.discountBlock.classList.toggle('hidden', !signedIn);
+  if (!signedIn) {
+    state.addresses = [];
+    state.customerProfile = null;
+  }
+  renderSavedAddressOptions();
 
   if (dom.authModeSummary) {
     if (signedIn) {
@@ -383,6 +394,150 @@ const switchAuthTab = (tab) => {
   dom.authTabSignIn.setAttribute('aria-selected', isSignIn ? 'true' : 'false');
   dom.authTabSignUp.setAttribute('aria-selected', isSignIn ? 'false' : 'true');
   setAuthStatus('');
+};
+
+const renderSavedAddressOptions = () => {
+  if (!dom.savedAddressSelect || !dom.savedAddressWrap) return;
+
+  dom.savedAddressSelect.innerHTML = '';
+  const manualOption = document.createElement('option');
+  manualOption.value = '';
+  manualOption.textContent = 'Use manual entry';
+  dom.savedAddressSelect.appendChild(manualOption);
+
+  const signedIn = isSignedIn();
+  const addresses = Array.isArray(state.addresses) ? state.addresses : [];
+  const showSavedAddresses = signedIn && addresses.length > 0;
+  dom.savedAddressWrap.classList.toggle('hidden', !showSavedAddresses);
+
+  if (!showSavedAddresses) {
+    dom.savedAddressSelect.value = '';
+    return;
+  }
+
+  for (const address of addresses) {
+    const option = document.createElement('option');
+    option.value = normalize(address.id);
+    const label = normalize(address.label || address.recipientName || address.addressLine1 || 'Saved address');
+    const tail = normalize([address.city, address.region, address.country].filter(Boolean).join(', '));
+    option.textContent = tail ? `${label} • ${tail}` : label;
+    dom.savedAddressSelect.appendChild(option);
+  }
+
+  const defaultAddress = addresses.find((address) => address.isDefault) || addresses[0];
+  dom.savedAddressSelect.value = normalize(defaultAddress?.id);
+};
+
+const applyAddressToShippingForm = (address) => {
+  if (!address || typeof address !== 'object') return;
+
+  const country = normalize(address.country).toUpperCase();
+  if (country && state.checkoutConfig.shippingZones?.[country]) {
+    dom.shippingCountry.value = country;
+    setPostalLabel(country);
+    populateServiceOptions();
+  }
+
+  dom.shippingAddress1.value = normalize(address.addressLine1);
+  const addressLine2 = normalize(address.addressLine2);
+  if (addressLine2) {
+    dom.enableAddress2.checked = true;
+    dom.address2Wrap.classList.remove('hidden');
+    dom.shippingAddress2.value = addressLine2;
+  } else {
+    dom.enableAddress2.checked = false;
+    dom.address2Wrap.classList.add('hidden');
+    dom.shippingAddress2.value = '';
+  }
+  dom.shippingCity.value = normalize(address.city);
+  dom.shippingRegion.value = normalize(address.region);
+  dom.shippingPostal.value = normalize(address.postalCode);
+
+  updateShippingEstimate();
+  estimateClientTotals();
+  applyConstraintNotice();
+  scheduleRefresh(120);
+};
+
+const applyProfileAutofill = () => {
+  const profile = state.customerProfile && typeof state.customerProfile === 'object' ? state.customerProfile : null;
+  if (!profile) return;
+
+  if (!normalize(dom.customerName.value) && normalize(profile.fullName)) {
+    dom.customerName.value = normalize(profile.fullName);
+  }
+  if (!normalize(dom.customerEmail.value) && normalize(profile.email)) {
+    dom.customerEmail.value = normalize(profile.email).toLowerCase();
+  }
+  if (!normalize(dom.customerPhone.value) && normalize(profile.phone)) {
+    dom.enablePhone.checked = true;
+    dom.phoneWrap.classList.remove('hidden');
+    dom.customerPhone.value = normalize(profile.phone);
+  }
+};
+
+const loadAccountProfile = async () => {
+  if (!isSignedIn()) {
+    state.customerProfile = null;
+    return;
+  }
+
+  const response = await fetch(API_ENDPOINTS.profile, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${state.auth.session.accessToken}`,
+    },
+    credentials: 'same-origin',
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok || !payload?.ok || !payload?.profile || typeof payload.profile !== 'object') {
+    state.customerProfile = null;
+    return;
+  }
+  state.customerProfile = payload.profile;
+};
+
+const loadAccountAddresses = async () => {
+  if (!isSignedIn()) {
+    state.addresses = [];
+    return;
+  }
+
+  const response = await fetch(`${API_ENDPOINTS.addresses}?limit=50`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${state.auth.session.accessToken}`,
+    },
+    credentials: 'same-origin',
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok || !payload?.ok || !Array.isArray(payload.addresses)) {
+    state.addresses = [];
+    return;
+  }
+  state.addresses = payload.addresses;
+};
+
+const loadAccountDetails = async () => {
+  if (!isSignedIn()) {
+    state.customerProfile = null;
+    state.addresses = [];
+    renderSavedAddressOptions();
+    return;
+  }
+
+  await Promise.allSettled([
+    loadAccountProfile(),
+    loadAccountAddresses(),
+  ]);
+
+  applyProfileAutofill();
+  renderSavedAddressOptions();
+
+  const defaultAddress = state.addresses.find((address) => address.isDefault);
+  if (defaultAddress && !normalize(dom.shippingAddress1.value)) {
+    applyAddressToShippingForm(defaultAddress);
+  }
 };
 
 const loadRewardsProfile = async () => {
@@ -1116,6 +1271,7 @@ const handleAuthSignIn = async () => {
     setAuthModalOpen(false);
     saveAuthState();
     await loadRewardsProfile();
+    await loadAccountDetails();
     applyAuthUi();
     setAuthStatus('Signed in. Account rewards are now available.', 'success');
     estimateClientTotals();
@@ -1172,6 +1328,7 @@ const handleAuthSignUp = async () => {
       setAuthModalOpen(false);
       saveAuthState();
       await loadRewardsProfile();
+      await loadAccountDetails();
       applyAuthUi();
       setAuthStatus('Account created and signed in.', 'success');
       estimateClientTotals();
@@ -1283,6 +1440,16 @@ const bindEvents = () => {
     scheduleRefresh(120);
   });
 
+  if (dom.savedAddressSelect) {
+    dom.savedAddressSelect.addEventListener('change', () => {
+      const selectedId = normalize(dom.savedAddressSelect.value);
+      if (!selectedId) return;
+      const selectedAddress = state.addresses.find((address) => normalize(address.id) === selectedId);
+      if (!selectedAddress) return;
+      applyAddressToShippingForm(selectedAddress);
+    });
+  }
+
   dom.shippingCountry.addEventListener('change', () => {
     setPostalLabel(selectedCountry());
     populateServiceOptions();
@@ -1358,6 +1525,7 @@ const initializeCheckout = async () => {
   populateServiceOptions();
   updateShippingEstimate();
   setPostalLabel(selectedCountry());
+  await loadAccountDetails();
   bindEvents();
   await handleReturnQuery();
 

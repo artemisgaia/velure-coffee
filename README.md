@@ -33,6 +33,8 @@ This checkout uses Stripe Payment Element and Vercel serverless APIs:
 - `GET /api/stripe-config`
 - `POST /api/create-payment-intent`
 - `GET/POST /api/orders` (account order history + save completed orders)
+- `GET/PUT /api/profile` (account full name, phone, marketing preferences)
+- `GET/POST/PUT/DELETE /api/addresses` (saved addresses + default shipping address)
 
 ## Forms API
 
@@ -70,6 +72,8 @@ For the static checkout page, use these APIs instead:
   - Reward discounts are account-linked and require an authenticated user with an active reward on profile.
 - `GET /api/orders`: returns signed-in user's saved orders.
 - `POST /api/orders`: verifies Stripe PaymentIntent + signed-in user and persists order history in Supabase.
+- `GET /api/profile`: returns signed-in user's profile details for checkout autofill.
+- `GET /api/addresses`: returns signed-in user's saved addresses for checkout autofill.
 
 ## Rewards Sync API
 
@@ -84,6 +88,8 @@ Create the required table/policies in Supabase using:
 
 - `supabase/rewards_profiles.sql`
 - `supabase/customer_orders.sql`
+- `supabase/customer_profiles.sql`
+- `supabase/customer_addresses.sql`
 
 ## Environment Variables
 
@@ -110,6 +116,9 @@ Copy `.env.example` to `.env.local` for local overrides:
 - `SUPABASE_ANON_KEY` (server): Supabase anon key used for token verification in rewards API.
 - `SUPABASE_SERVICE_ROLE_KEY` (server): Supabase service-role key used by rewards sync API.
 - `REWARDS_ALLOWED_ORIGINS` (server): optional allowlist for `/api/rewards`.
+- `ORDERS_ALLOWED_ORIGINS` (server): optional allowlist for `/api/orders`.
+- `PROFILE_ALLOWED_ORIGINS` (server): optional allowlist for `/api/profile`.
+- `ADDRESSES_ALLOWED_ORIGINS` (server): optional allowlist for `/api/addresses`.
 
 ## Webhook Signature
 

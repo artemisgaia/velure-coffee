@@ -4,6 +4,8 @@ import formsHandler from './api/forms.js'
 import checkoutHandler from './api/checkout.js'
 import rewardsHandler from './api/rewards.js'
 import ordersHandler from './api/orders.js'
+import profileHandler from './api/profile.js'
+import addressesHandler from './api/addresses.js'
 import stripeConfigHandler from './api/stripe-config.js'
 import createPaymentIntentHandler from './api/create-payment-intent.js'
 
@@ -37,6 +39,22 @@ const formsApiPlugin = () => ({
     server.middlewares.use('/api/orders', async (req, res, next) => {
       try {
         await ordersHandler(req, res)
+      } catch (error) {
+        next(error)
+      }
+    })
+
+    server.middlewares.use('/api/profile', async (req, res, next) => {
+      try {
+        await profileHandler(req, res)
+      } catch (error) {
+        next(error)
+      }
+    })
+
+    server.middlewares.use('/api/addresses', async (req, res, next) => {
+      try {
+        await addressesHandler(req, res)
       } catch (error) {
         next(error)
       }

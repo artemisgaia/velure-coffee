@@ -653,6 +653,16 @@ const DEFAULT_PASSWORD_RECOVERY_STATE = {
   accessToken: '',
   email: '',
 };
+const DEFAULT_CUSTOMER_PROFILE = {
+  fullName: '',
+  phone: '',
+  email: '',
+  marketingPreferences: {
+    email: true,
+    sms: false,
+  },
+  updatedAt: '',
+};
 
 const normalizeAuthState = (value) => {
   if (!value || typeof value !== 'object') {
@@ -1082,6 +1092,132 @@ const loadOrdersFromApi = async (accessToken, limit = 20) => {
     const message = typeof errorPayload?.error === 'string' && errorPayload.error
       ? errorPayload.error
       : 'Unable to load account orders.';
+    throw new Error(message);
+  }
+
+  return response.json();
+};
+
+const loadCustomerProfileFromApi = async (accessToken) => {
+  const response = await fetch('/api/profile', {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    credentials: 'same-origin',
+  });
+
+  if (!response.ok) {
+    const errorPayload = await response.json().catch(() => ({}));
+    const message = typeof errorPayload?.error === 'string' && errorPayload.error
+      ? errorPayload.error
+      : 'Unable to load customer profile.';
+    throw new Error(message);
+  }
+
+  return response.json();
+};
+
+const saveCustomerProfileToApi = async (accessToken, profile) => {
+  const response = await fetch('/api/profile', {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    credentials: 'same-origin',
+    body: JSON.stringify({ profile }),
+  });
+
+  if (!response.ok) {
+    const errorPayload = await response.json().catch(() => ({}));
+    const message = typeof errorPayload?.error === 'string' && errorPayload.error
+      ? errorPayload.error
+      : 'Unable to save customer profile.';
+    throw new Error(message);
+  }
+
+  return response.json();
+};
+
+const loadCustomerAddressesFromApi = async (accessToken, limit = 20) => {
+  const response = await fetch(`/api/addresses?limit=${encodeURIComponent(String(limit))}`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    credentials: 'same-origin',
+  });
+
+  if (!response.ok) {
+    const errorPayload = await response.json().catch(() => ({}));
+    const message = typeof errorPayload?.error === 'string' && errorPayload.error
+      ? errorPayload.error
+      : 'Unable to load customer addresses.';
+    throw new Error(message);
+  }
+
+  return response.json();
+};
+
+const createCustomerAddressInApi = async (accessToken, address) => {
+  const response = await fetch('/api/addresses', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    credentials: 'same-origin',
+    body: JSON.stringify({ address }),
+  });
+
+  if (!response.ok) {
+    const errorPayload = await response.json().catch(() => ({}));
+    const message = typeof errorPayload?.error === 'string' && errorPayload.error
+      ? errorPayload.error
+      : 'Unable to save address.';
+    throw new Error(message);
+  }
+
+  return response.json();
+};
+
+const updateCustomerAddressInApi = async (accessToken, addressId, address) => {
+  const response = await fetch('/api/addresses', {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    credentials: 'same-origin',
+    body: JSON.stringify({ addressId, address }),
+  });
+
+  if (!response.ok) {
+    const errorPayload = await response.json().catch(() => ({}));
+    const message = typeof errorPayload?.error === 'string' && errorPayload.error
+      ? errorPayload.error
+      : 'Unable to update address.';
+    throw new Error(message);
+  }
+
+  return response.json();
+};
+
+const deleteCustomerAddressInApi = async (accessToken, addressId) => {
+  const response = await fetch(`/api/addresses?addressId=${encodeURIComponent(addressId)}`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    credentials: 'same-origin',
+  });
+
+  if (!response.ok) {
+    const errorPayload = await response.json().catch(() => ({}));
+    const message = typeof errorPayload?.error === 'string' && errorPayload.error
+      ? errorPayload.error
+      : 'Unable to delete address.';
     throw new Error(message);
   }
 
@@ -2394,12 +2530,18 @@ const ContactView = () => {
 const AccountView = ({
   authState,
   ordersState,
+  profileState,
+  addressesState,
   onSignIn,
   onSignUp,
   onSignOut,
   onRequestPasswordReset,
   passwordRecovery,
   onCompletePasswordReset,
+  onSaveProfile,
+  onAddAddress,
+  onSetDefaultAddress,
+  onDeleteAddress,
   setView,
 }) => {
   const [activeTab, setActiveTab] = useState('signin');
@@ -2408,6 +2550,30 @@ const AccountView = ({
   const [resetPasswordForm, setResetPasswordForm] = useState({ password: '', confirmPassword: '' });
   const [status, setStatus] = useState({ type: 'idle', message: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [profileDraft, setProfileDraft] = useState(null);
+  const [addressForm, setAddressForm] = useState({
+    label: '',
+    recipientName: '',
+    phone: '',
+    addressLine1: '',
+    addressLine2: '',
+    city: '',
+    region: '',
+    postalCode: '',
+    country: 'US',
+    isDefault: false,
+  });
+  const [accountStatus, setAccountStatus] = useState({ type: 'idle', message: '' });
+  const [accountSubmitting, setAccountSubmitting] = useState(false);
+  const profileForm = profileDraft || profileState?.data || DEFAULT_CUSTOMER_PROFILE;
+  const withProfileDraft = (updater) => {
+    const base = profileDraft || profileState?.data || DEFAULT_CUSTOMER_PROFILE;
+    if (typeof updater === 'function') {
+      setProfileDraft(updater(base));
+      return;
+    }
+    setProfileDraft({ ...base, ...(updater || {}) });
+  };
 
   const handleSignIn = async (event) => {
     event.preventDefault();
@@ -2486,6 +2652,67 @@ const AccountView = ({
     setIsSubmitting(false);
   };
 
+  const handleSaveProfile = async (event) => {
+    event.preventDefault();
+    setAccountSubmitting(true);
+    setAccountStatus({ type: 'idle', message: '' });
+
+    const result = await onSaveProfile({
+      ...profileForm,
+      fullName: (profileForm.fullName || '').trim(),
+      phone: (profileForm.phone || '').trim(),
+      marketingPreferences: {
+        email: Boolean(profileForm.marketingPreferences?.email),
+        sms: Boolean(profileForm.marketingPreferences?.sms),
+      },
+    });
+    setAccountStatus({ type: result.ok ? 'success' : 'error', message: result.message });
+    if (result.ok) {
+      setProfileDraft(null);
+    }
+    setAccountSubmitting(false);
+  };
+
+  const handleAddAddress = async (event) => {
+    event.preventDefault();
+    setAccountSubmitting(true);
+    setAccountStatus({ type: 'idle', message: '' });
+
+    const result = await onAddAddress(addressForm);
+    setAccountStatus({ type: result.ok ? 'success' : 'error', message: result.message });
+    if (result.ok) {
+      setAddressForm({
+        label: '',
+        recipientName: '',
+        phone: '',
+        addressLine1: '',
+        addressLine2: '',
+        city: '',
+        region: '',
+        postalCode: '',
+        country: 'US',
+        isDefault: false,
+      });
+    }
+    setAccountSubmitting(false);
+  };
+
+  const handleSetDefault = async (addressId) => {
+    setAccountSubmitting(true);
+    setAccountStatus({ type: 'idle', message: '' });
+    const result = await onSetDefaultAddress(addressId);
+    setAccountStatus({ type: result.ok ? 'success' : 'error', message: result.message });
+    setAccountSubmitting(false);
+  };
+
+  const handleDeleteAddress = async (addressId) => {
+    setAccountSubmitting(true);
+    setAccountStatus({ type: 'idle', message: '' });
+    const result = await onDeleteAddress(addressId);
+    setAccountStatus({ type: result.ok ? 'success' : 'error', message: result.message });
+    setAccountSubmitting(false);
+  };
+
   if (authState.isLoading) {
     return (
       <div className="pt-32 pb-24 bg-[#0B0C0C] min-h-screen text-[#F9F6F0]">
@@ -2546,16 +2773,207 @@ const AccountView = ({
   if (authState.user) {
     return (
       <div className="pt-32 pb-24 bg-[#0B0C0C] min-h-screen text-[#F9F6F0]">
-        <div className="max-w-4xl mx-auto px-6">
+        <div className="max-w-6xl mx-auto px-6">
           <h1 className="text-5xl font-serif mb-6">My Account</h1>
-          <div className="bg-[#151515] border border-gray-800 p-8">
-            <p className="text-xs uppercase tracking-widest text-gray-400 mb-2">Signed In</p>
-            <p className="text-lg text-[#F9F6F0] break-all">{authState.user.email}</p>
-            <p className="text-sm text-gray-400 mt-3">
-              Your rewards profile and cart now load under this account on this device.
-            </p>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-[#151515] border border-gray-800 p-6">
+              <p className="text-xs uppercase tracking-widest text-gray-400 mb-2">Signed In</p>
+              <p className="text-lg text-[#F9F6F0] break-all">{authState.user.email}</p>
+              <p className="text-sm text-gray-400 mt-3">
+                Save profile details once and use them across checkout and rewards.
+              </p>
 
-            <div className="mt-6 border border-gray-800 bg-[#0B0C0C] p-4">
+              <form onSubmit={handleSaveProfile} className="mt-6 space-y-4" noValidate>
+                <input
+                  type="text"
+                  value={profileForm.fullName}
+                  onChange={(event) => withProfileDraft((prev) => ({ ...prev, fullName: event.target.value }))}
+                  placeholder="Full name"
+                  className="w-full border border-gray-700 bg-[#0B0C0C] p-3 outline-none focus:border-[#D4AF37]"
+                />
+                <input
+                  type="tel"
+                  value={profileForm.phone}
+                  onChange={(event) => withProfileDraft((prev) => ({ ...prev, phone: event.target.value }))}
+                  placeholder="Phone"
+                  className="w-full border border-gray-700 bg-[#0B0C0C] p-3 outline-none focus:border-[#D4AF37]"
+                />
+                <div className="space-y-2 text-sm text-gray-300">
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(profileForm.marketingPreferences?.email)}
+                      onChange={(event) => withProfileDraft((prev) => ({
+                        ...prev,
+                        marketingPreferences: {
+                          email: event.target.checked,
+                          sms: Boolean(prev.marketingPreferences?.sms),
+                        },
+                      }))}
+                    />
+                    Email marketing updates
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(profileForm.marketingPreferences?.sms)}
+                      onChange={(event) => withProfileDraft((prev) => ({
+                        ...prev,
+                        marketingPreferences: {
+                          email: Boolean(prev.marketingPreferences?.email),
+                          sms: event.target.checked,
+                        },
+                      }))}
+                    />
+                    SMS marketing updates
+                  </label>
+                </div>
+                <button
+                  type="submit"
+                  disabled={accountSubmitting || profileState?.isLoading}
+                  className={`bg-[#D4AF37] text-[#0B0C0C] px-5 py-3 text-xs font-bold uppercase tracking-wider ${(accountSubmitting || profileState?.isLoading) ? 'opacity-60 cursor-not-allowed' : 'hover:bg-[#b5952f]'}`}
+                >
+                  {profileState?.isLoading ? 'Loading...' : 'Save Profile'}
+                </button>
+              </form>
+              {profileState?.error && (
+                <p className="text-sm text-red-400 mt-3">{profileState.error}</p>
+              )}
+            </div>
+
+            <div className="bg-[#151515] border border-gray-800 p-6">
+              <p className="text-xs uppercase tracking-widest text-gray-400 mb-3">Saved Addresses</p>
+              {addressesState?.isLoading ? (
+                <p className="text-sm text-gray-400">Loading addresses...</p>
+              ) : addressesState?.error ? (
+                <p className="text-sm text-red-400">{addressesState.error}</p>
+              ) : !addressesState?.items?.length ? (
+                <p className="text-sm text-gray-400">No saved addresses yet.</p>
+              ) : (
+                <div className="space-y-3 mb-5">
+                  {addressesState.items.map((address) => (
+                    <div key={address.id} className="border border-gray-700 p-3">
+                      <div className="flex justify-between items-start gap-3">
+                        <div>
+                          <p className="text-sm text-[#F9F6F0]">
+                            {address.label || address.recipientName || 'Address'}
+                            {address.isDefault ? <span className="ml-2 text-xs text-[#D4AF37] uppercase tracking-wider">Default</span> : null}
+                          </p>
+                          <p className="text-xs text-gray-300 mt-1">
+                            {[address.addressLine1, address.addressLine2, `${address.city}, ${address.region} ${address.postalCode}`, address.country]
+                              .filter(Boolean)
+                              .join(' • ')}
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          {!address.isDefault && (
+                            <button
+                              type="button"
+                              onClick={() => handleSetDefault(address.id)}
+                              className="text-xs text-[#D4AF37] underline underline-offset-2"
+                            >
+                              Set Default
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteAddress(address.id)}
+                            className="text-xs text-red-400 underline underline-offset-2"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <form onSubmit={handleAddAddress} className="space-y-3" noValidate>
+                <input
+                  type="text"
+                  value={addressForm.label}
+                  onChange={(event) => setAddressForm((prev) => ({ ...prev, label: event.target.value }))}
+                  placeholder="Label (Home, Office, etc)"
+                  className="w-full border border-gray-700 bg-[#0B0C0C] p-3 outline-none focus:border-[#D4AF37]"
+                />
+                <input
+                  type="text"
+                  value={addressForm.recipientName}
+                  onChange={(event) => setAddressForm((prev) => ({ ...prev, recipientName: event.target.value }))}
+                  placeholder="Recipient name"
+                  className="w-full border border-gray-700 bg-[#0B0C0C] p-3 outline-none focus:border-[#D4AF37]"
+                />
+                <input
+                  type="text"
+                  value={addressForm.addressLine1}
+                  onChange={(event) => setAddressForm((prev) => ({ ...prev, addressLine1: event.target.value }))}
+                  placeholder="Address line 1"
+                  className="w-full border border-gray-700 bg-[#0B0C0C] p-3 outline-none focus:border-[#D4AF37]"
+                  required
+                />
+                <input
+                  type="text"
+                  value={addressForm.addressLine2}
+                  onChange={(event) => setAddressForm((prev) => ({ ...prev, addressLine2: event.target.value }))}
+                  placeholder="Address line 2 (optional)"
+                  className="w-full border border-gray-700 bg-[#0B0C0C] p-3 outline-none focus:border-[#D4AF37]"
+                />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <input
+                    type="text"
+                    value={addressForm.city}
+                    onChange={(event) => setAddressForm((prev) => ({ ...prev, city: event.target.value }))}
+                    placeholder="City"
+                    className="w-full border border-gray-700 bg-[#0B0C0C] p-3 outline-none focus:border-[#D4AF37]"
+                    required
+                  />
+                  <input
+                    type="text"
+                    value={addressForm.region}
+                    onChange={(event) => setAddressForm((prev) => ({ ...prev, region: event.target.value }))}
+                    placeholder="State/Region"
+                    className="w-full border border-gray-700 bg-[#0B0C0C] p-3 outline-none focus:border-[#D4AF37]"
+                    required
+                  />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <input
+                    type="text"
+                    value={addressForm.postalCode}
+                    onChange={(event) => setAddressForm((prev) => ({ ...prev, postalCode: event.target.value }))}
+                    placeholder="Postal code"
+                    className="w-full border border-gray-700 bg-[#0B0C0C] p-3 outline-none focus:border-[#D4AF37]"
+                    required
+                  />
+                  <input
+                    type="text"
+                    value={addressForm.country}
+                    onChange={(event) => setAddressForm((prev) => ({ ...prev, country: event.target.value.toUpperCase() }))}
+                    placeholder="Country code (US)"
+                    className="w-full border border-gray-700 bg-[#0B0C0C] p-3 outline-none focus:border-[#D4AF37]"
+                    required
+                  />
+                </div>
+                <label className="text-xs text-gray-400 flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={addressForm.isDefault}
+                    onChange={(event) => setAddressForm((prev) => ({ ...prev, isDefault: event.target.checked }))}
+                  />
+                  Set as default shipping address
+                </label>
+                <button
+                  type="submit"
+                  disabled={accountSubmitting}
+                  className={`bg-[#D4AF37] text-[#0B0C0C] px-5 py-3 text-xs font-bold uppercase tracking-wider ${accountSubmitting ? 'opacity-60 cursor-not-allowed' : 'hover:bg-[#b5952f]'}`}
+                >
+                  Add Address
+                </button>
+              </form>
+            </div>
+
+            <div className="bg-[#151515] border border-gray-800 p-6 lg:col-span-2">
               <p className="text-xs uppercase tracking-widest text-gray-400 mb-3">Recent Orders</p>
               {ordersState?.isLoading ? (
                 <p className="text-sm text-gray-400">Loading orders...</p>
@@ -2583,30 +3001,36 @@ const AccountView = ({
                   ))}
                 </div>
               )}
-            </div>
 
-            <div className="flex flex-wrap gap-3 mt-6">
-              <button
-                type="button"
-                onClick={() => setView('rewards')}
-                className="bg-[#D4AF37] text-[#0B0C0C] px-5 py-3 text-xs font-bold uppercase tracking-wider hover:bg-[#b5952f]"
-              >
-                Open Rewards
-              </button>
-              <button
-                type="button"
-                onClick={() => setView('shop_all')}
-                className="border border-[#D4AF37] text-[#D4AF37] px-5 py-3 text-xs font-bold uppercase tracking-wider hover:bg-[#D4AF37] hover:text-[#0B0C0C]"
-              >
-                Continue Shopping
-              </button>
-              <button
-                type="button"
-                onClick={onSignOut}
-                className="border border-gray-700 text-gray-300 px-5 py-3 text-xs font-bold uppercase tracking-wider hover:border-red-500 hover:text-red-400"
-              >
-                Sign Out
-              </button>
+              {accountStatus.message && (
+                <p className={`text-sm mt-4 ${accountStatus.type === 'error' ? 'text-red-400' : 'text-green-400'}`} role="status">
+                  {accountStatus.message}
+                </p>
+              )}
+
+              <div className="flex flex-wrap gap-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setView('rewards')}
+                  className="bg-[#D4AF37] text-[#0B0C0C] px-5 py-3 text-xs font-bold uppercase tracking-wider hover:bg-[#b5952f]"
+                >
+                  Open Rewards
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setView('shop_all')}
+                  className="border border-[#D4AF37] text-[#D4AF37] px-5 py-3 text-xs font-bold uppercase tracking-wider hover:bg-[#D4AF37] hover:text-[#0B0C0C]"
+                >
+                  Continue Shopping
+                </button>
+                <button
+                  type="button"
+                  onClick={onSignOut}
+                  className="border border-gray-700 text-gray-300 px-5 py-3 text-xs font-bold uppercase tracking-wider hover:border-red-500 hover:text-red-400"
+                >
+                  Sign Out
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -3464,6 +3888,16 @@ const App = () => {
     error: '',
     items: [],
   });
+  const [profileState, setProfileState] = useState({
+    isLoading: false,
+    error: '',
+    data: { ...DEFAULT_CUSTOMER_PROFILE },
+  });
+  const [addressesState, setAddressesState] = useState({
+    isLoading: false,
+    error: '',
+    items: [],
+  });
   const [passwordRecovery, setPasswordRecovery] = useState({ ...DEFAULT_PASSWORD_RECOVERY_STATE });
 
   useEffect(() => {
@@ -3758,6 +4192,75 @@ const App = () => {
     };
 
     loadOrders();
+    return () => {
+      cancelled = true;
+    };
+  }, [authState.session?.accessToken, authState.user?.id, currentView]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const accessToken = authState.session?.accessToken;
+    const userId = authState.user?.id;
+
+    if (!accessToken || !userId) {
+      setProfileState({ isLoading: false, error: '', data: { ...DEFAULT_CUSTOMER_PROFILE } });
+      return undefined;
+    }
+
+    const loadProfile = async () => {
+      setProfileState((previous) => ({ ...previous, isLoading: true, error: '' }));
+      try {
+        const payload = await loadCustomerProfileFromApi(accessToken);
+        if (cancelled) return;
+        const profile = payload?.profile && typeof payload.profile === 'object'
+          ? {
+              ...DEFAULT_CUSTOMER_PROFILE,
+              ...payload.profile,
+              marketingPreferences: {
+                email: Boolean(payload.profile?.marketingPreferences?.email ?? true),
+                sms: Boolean(payload.profile?.marketingPreferences?.sms ?? false),
+              },
+            }
+          : { ...DEFAULT_CUSTOMER_PROFILE };
+        setProfileState({ isLoading: false, error: '', data: profile });
+      } catch (error) {
+        if (cancelled) return;
+        const message = error instanceof Error ? error.message : 'Unable to load customer profile.';
+        setProfileState({ isLoading: false, error: message, data: { ...DEFAULT_CUSTOMER_PROFILE } });
+      }
+    };
+
+    loadProfile();
+    return () => {
+      cancelled = true;
+    };
+  }, [authState.session?.accessToken, authState.user?.id, currentView]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const accessToken = authState.session?.accessToken;
+    const userId = authState.user?.id;
+
+    if (!accessToken || !userId) {
+      setAddressesState({ isLoading: false, error: '', items: [] });
+      return undefined;
+    }
+
+    const loadAddresses = async () => {
+      setAddressesState((previous) => ({ ...previous, isLoading: true, error: '' }));
+      try {
+        const payload = await loadCustomerAddressesFromApi(accessToken, 50);
+        if (cancelled) return;
+        const items = Array.isArray(payload?.addresses) ? payload.addresses : [];
+        setAddressesState({ isLoading: false, error: '', items });
+      } catch (error) {
+        if (cancelled) return;
+        const message = error instanceof Error ? error.message : 'Unable to load customer addresses.';
+        setAddressesState({ isLoading: false, error: message, items: [] });
+      }
+    };
+
+    loadAddresses();
     return () => {
       cancelled = true;
     };
@@ -4122,6 +4625,100 @@ const App = () => {
     }
   }, [navigateToView, passwordRecovery.accessToken]);
 
+  const handleSaveCustomerProfile = useCallback(async (profileInput) => {
+    const accessToken = authState.session?.accessToken;
+    const userId = authState.user?.id;
+    if (!accessToken || !userId) {
+      return { ok: false, message: 'Sign in to update your profile.' };
+    }
+
+    try {
+      const payload = await saveCustomerProfileToApi(accessToken, profileInput);
+      const nextProfile = payload?.profile && typeof payload.profile === 'object'
+        ? {
+            ...DEFAULT_CUSTOMER_PROFILE,
+            ...payload.profile,
+            marketingPreferences: {
+              email: Boolean(payload.profile?.marketingPreferences?.email ?? true),
+              sms: Boolean(payload.profile?.marketingPreferences?.sms ?? false),
+            },
+          }
+        : {
+            ...DEFAULT_CUSTOMER_PROFILE,
+            ...profileInput,
+          };
+      setProfileState({ isLoading: false, error: '', data: nextProfile });
+      return { ok: true, message: 'Profile saved.' };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to save profile right now.';
+      return { ok: false, message };
+    }
+  }, [authState.session?.accessToken, authState.user?.id]);
+
+  const handleAddCustomerAddress = useCallback(async (addressInput) => {
+    const accessToken = authState.session?.accessToken;
+    const userId = authState.user?.id;
+    if (!accessToken || !userId) {
+      return { ok: false, message: 'Sign in to save addresses.' };
+    }
+
+    try {
+      await createCustomerAddressInApi(accessToken, addressInput);
+      const refreshed = await loadCustomerAddressesFromApi(accessToken, 50);
+      const items = Array.isArray(refreshed?.addresses) ? refreshed.addresses : [];
+      setAddressesState({ isLoading: false, error: '', items });
+      return { ok: true, message: 'Address saved.' };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to save address right now.';
+      return { ok: false, message };
+    }
+  }, [authState.session?.accessToken, authState.user?.id]);
+
+  const handleSetDefaultCustomerAddress = useCallback(async (addressId) => {
+    const accessToken = authState.session?.accessToken;
+    const userId = authState.user?.id;
+    if (!accessToken || !userId) {
+      return { ok: false, message: 'Sign in to manage addresses.' };
+    }
+
+    try {
+      const currentAddress = addressesState.items.find((item) => item.id === addressId);
+      if (!currentAddress) {
+        return { ok: false, message: 'Address not found.' };
+      }
+      await updateCustomerAddressInApi(accessToken, addressId, {
+        ...currentAddress,
+        isDefault: true,
+      });
+      const refreshed = await loadCustomerAddressesFromApi(accessToken, 50);
+      const items = Array.isArray(refreshed?.addresses) ? refreshed.addresses : [];
+      setAddressesState({ isLoading: false, error: '', items });
+      return { ok: true, message: 'Default address updated.' };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to set default address.';
+      return { ok: false, message };
+    }
+  }, [addressesState.items, authState.session?.accessToken, authState.user?.id]);
+
+  const handleDeleteCustomerAddress = useCallback(async (addressId) => {
+    const accessToken = authState.session?.accessToken;
+    const userId = authState.user?.id;
+    if (!accessToken || !userId) {
+      return { ok: false, message: 'Sign in to manage addresses.' };
+    }
+
+    try {
+      await deleteCustomerAddressInApi(accessToken, addressId);
+      const refreshed = await loadCustomerAddressesFromApi(accessToken, 50);
+      const items = Array.isArray(refreshed?.addresses) ? refreshed.addresses : [];
+      setAddressesState({ isLoading: false, error: '', items });
+      return { ok: true, message: 'Address deleted.' };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to delete address.';
+      return { ok: false, message };
+    }
+  }, [authState.session?.accessToken, authState.user?.id]);
+
   const joinRewards = useCallback((email) => {
     if (!authState.user?.id) {
       return { ok: false, message: 'Sign in to activate rewards on your account.' };
@@ -4330,12 +4927,18 @@ const App = () => {
         <AccountView
           authState={authState}
           ordersState={ordersState}
+          profileState={profileState}
+          addressesState={addressesState}
           onSignIn={handleSignIn}
           onSignUp={handleSignUp}
           onSignOut={handleSignOut}
           onRequestPasswordReset={handleRequestPasswordReset}
           passwordRecovery={passwordRecovery}
           onCompletePasswordReset={handleCompletePasswordReset}
+          onSaveProfile={handleSaveCustomerProfile}
+          onAddAddress={handleAddCustomerAddress}
+          onSetDefaultAddress={handleSetDefaultCustomerAddress}
+          onDeleteAddress={handleDeleteCustomerAddress}
           setView={setView}
         />
       );
