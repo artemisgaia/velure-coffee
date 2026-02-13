@@ -51,39 +51,23 @@
             <fieldset class="card-block account-block">
               <legend>Account (Optional)</legend>
 
-              <div id="auth-signed-in" class="hidden">
+              <div class="toggle-row">
+                <input id="enable-account-auth" type="checkbox" />
+                <label for="enable-account-auth">Sign in or create account for rewards and saved orders</label>
+              </div>
+
+              <p id="auth-mode-summary" class="account-summary">
+                Guest checkout active. Enable account access only if you want rewards and saved order history.
+              </p>
+
+              <div id="auth-signed-in" class="hidden account-inline-row">
                 <p class="auth-copy">Signed in as <strong id="auth-email-display"></strong>. Your order will be saved to your account.</p>
                 <button id="auth-signout" class="text-button" type="button">Sign out</button>
               </div>
 
-              <div id="auth-guest">
-                <p class="auth-copy">Checkout as guest or sign in to save orders and unlock account rewards.</p>
-
-                <div class="auth-tabs" role="tablist" aria-label="Checkout account access">
-                  <button id="auth-tab-signin" type="button" class="auth-tab auth-tab--active" role="tab" aria-selected="true">Sign In</button>
-                  <button id="auth-tab-signup" type="button" class="auth-tab" role="tab" aria-selected="false">Sign Up</button>
-                </div>
-
-                <div id="auth-pane-signin" class="auth-pane">
-                  <label for="auth-signin-email">Account email</label>
-                  <input id="auth-signin-email" type="email" autocomplete="email" />
-                  <label for="auth-signin-password">Password</label>
-                  <input id="auth-signin-password" type="password" autocomplete="current-password" />
-                  <button id="auth-signin-submit" class="text-button" type="button">Sign In</button>
-                </div>
-
-                <div id="auth-pane-signup" class="auth-pane hidden">
-                  <label for="auth-signup-email">Email</label>
-                  <input id="auth-signup-email" type="email" autocomplete="email" />
-                  <label for="auth-signup-password">Password (min 8 characters)</label>
-                  <input id="auth-signup-password" type="password" autocomplete="new-password" />
-                  <label for="auth-signup-confirm">Confirm password</label>
-                  <input id="auth-signup-confirm" type="password" autocomplete="new-password" />
-                  <button id="auth-signup-submit" class="text-button" type="button">Create account</button>
-                </div>
-
-                <p id="auth-status" class="auth-status" role="status" aria-live="polite"></p>
-              </div>
+              <button id="open-auth-modal" class="text-button hidden" type="button">
+                Open account panel
+              </button>
             </fieldset>
 
             <fieldset class="card-block">
@@ -189,6 +173,45 @@
         </aside>
       </div>
     </main>
+
+    <div id="auth-modal" class="auth-modal hidden" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="auth-modal-title">
+      <button id="auth-modal-backdrop" class="auth-modal__backdrop" type="button" aria-label="Close account panel"></button>
+      <div class="auth-modal__panel">
+        <div class="auth-modal__header">
+          <h2 id="auth-modal-title">Account Access</h2>
+          <button id="auth-modal-close" class="auth-modal__close" type="button" aria-label="Close account panel">Close</button>
+        </div>
+
+        <div id="auth-guest">
+          <p class="auth-copy">Sign in or create an account to save this order and unlock account rewards.</p>
+
+          <div class="auth-tabs" role="tablist" aria-label="Checkout account access">
+            <button id="auth-tab-signin" type="button" class="auth-tab auth-tab--active" role="tab" aria-selected="true">Sign In</button>
+            <button id="auth-tab-signup" type="button" class="auth-tab" role="tab" aria-selected="false">Sign Up</button>
+          </div>
+
+          <div id="auth-pane-signin" class="auth-pane">
+            <label for="auth-signin-email">Account email</label>
+            <input id="auth-signin-email" type="email" autocomplete="email" />
+            <label for="auth-signin-password">Password</label>
+            <input id="auth-signin-password" type="password" autocomplete="current-password" />
+            <button id="auth-signin-submit" class="text-button" type="button">Sign In</button>
+          </div>
+
+          <div id="auth-pane-signup" class="auth-pane hidden">
+            <label for="auth-signup-email">Email</label>
+            <input id="auth-signup-email" type="email" autocomplete="email" />
+            <label for="auth-signup-password">Password (min 8 characters)</label>
+            <input id="auth-signup-password" type="password" autocomplete="new-password" />
+            <label for="auth-signup-confirm">Confirm password</label>
+            <input id="auth-signup-confirm" type="password" autocomplete="new-password" />
+            <button id="auth-signup-submit" class="text-button" type="button">Create account</button>
+          </div>
+
+          <p id="auth-status" class="auth-status" role="status" aria-live="polite"></p>
+        </div>
+      </div>
+    </div>
 
     <div class="mobile-cta" role="region" aria-label="Checkout action bar">
       <div class="mobile-cta__totals">

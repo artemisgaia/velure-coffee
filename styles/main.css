@@ -201,6 +201,24 @@ h2 {
   font-size: 0.88rem;
 }
 
+.account-summary {
+  margin: 10px 0 0;
+  color: var(--ink-muted);
+  font-size: 0.82rem;
+}
+
+.account-inline-row {
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #0d0f10;
+}
+
+.account-inline-row .text-button {
+  margin-top: 8px;
+}
+
 .auth-tabs {
   display: inline-flex;
   gap: 8px;
@@ -260,6 +278,60 @@ h2 {
   color: var(--ink-muted);
 }
 
+.auth-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  padding: 12px;
+}
+
+.auth-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(0, 0, 0, 0.65);
+  cursor: pointer;
+}
+
+.auth-modal__panel {
+  position: relative;
+  width: min(560px, 100%);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg-panel);
+  box-shadow: var(--shadow);
+  padding: 12px;
+}
+
+.auth-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.auth-modal__close {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-muted);
+  min-height: 34px;
+  padding: 0 12px;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.auth-modal__close:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 label {
   display: block;
   font-size: 0.78rem;
@@ -309,6 +381,10 @@ select:disabled {
 
 .hidden {
   display: none;
+}
+
+body.modal-open {
+  overflow: hidden;
 }
 
 .row-2 {

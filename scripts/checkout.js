@@ -68,6 +68,12 @@ const state = {
 const dom = {
   form: document.getElementById('checkout-form'),
   notice: document.getElementById('checkout-notice'),
+  enableAccountAuth: document.getElementById('enable-account-auth'),
+  authModeSummary: document.getElementById('auth-mode-summary'),
+  openAuthModal: document.getElementById('open-auth-modal'),
+  authModal: document.getElementById('auth-modal'),
+  authModalBackdrop: document.getElementById('auth-modal-backdrop'),
+  authModalClose: document.getElementById('auth-modal-close'),
   authSignedIn: document.getElementById('auth-signed-in'),
   authEmailDisplay: document.getElementById('auth-email-display'),
   authSignOut: document.getElementById('auth-signout'),
@@ -275,11 +281,49 @@ const getAppliedDiscountCode = () => {
   return normalizeLower(dom.discountCode.value);
 };
 
+const setAuthModalOpen = (isOpen) => {
+  if (!dom.authModal) return;
+  const signedIn = isSignedIn();
+  const allowed = Boolean(dom.enableAccountAuth?.checked);
+  const shouldOpen = Boolean(isOpen && allowed && !signedIn);
+  dom.authModal.classList.toggle('hidden', !shouldOpen);
+  dom.authModal.setAttribute('aria-hidden', shouldOpen ? 'false' : 'true');
+  document.body.classList.toggle('modal-open', shouldOpen);
+
+  if (shouldOpen) {
+    const shouldFocusSignIn = state.activeAuthTab !== 'signup';
+    window.setTimeout(() => {
+      const target = shouldFocusSignIn ? dom.authSignInEmail : dom.authSignUpEmail;
+      if (target && typeof target.focus === 'function') {
+        target.focus();
+      }
+    }, 0);
+  }
+};
+
 const applyAuthUi = () => {
   const signedIn = isSignedIn();
+  const wantsAccountPanel = Boolean(dom.enableAccountAuth?.checked);
+
+  if (signedIn && dom.enableAccountAuth) {
+    dom.enableAccountAuth.checked = false;
+  }
+
+  const shouldShowOpenButton = Boolean(!signedIn && wantsAccountPanel);
+  if (dom.openAuthModal) dom.openAuthModal.classList.toggle('hidden', !shouldShowOpenButton);
   if (dom.authSignedIn) dom.authSignedIn.classList.toggle('hidden', !signedIn);
   if (dom.authGuest) dom.authGuest.classList.toggle('hidden', signedIn);
   if (dom.discountBlock) dom.discountBlock.classList.toggle('hidden', !signedIn);
+
+  if (dom.authModeSummary) {
+    if (signedIn) {
+      dom.authModeSummary.textContent = 'Signed in. This order will be saved to your account and rewards are enabled.';
+    } else if (wantsAccountPanel) {
+      dom.authModeSummary.textContent = 'Account panel enabled. Sign in or create your account in the popup.';
+    } else {
+      dom.authModeSummary.textContent = 'Guest checkout active. Enable account access only if you want rewards and saved order history.';
+    }
+  }
 
   if (dom.authEmailDisplay) {
     dom.authEmailDisplay.textContent = state.auth.user?.email || '';
@@ -297,8 +341,13 @@ const applyAuthUi = () => {
 
   if (!signedIn) {
     dom.discountCode.value = '';
+    if (!wantsAccountPanel) {
+      setAuthModalOpen(false);
+    }
     return;
   }
+
+  setAuthModalOpen(false);
 
   const enrolled = Boolean(state.rewards.enrolled);
   const activeRewardId = normalizeLower(state.rewards.activeRewardId || '');
@@ -990,6 +1039,9 @@ const setAuthSubmitting = (isSubmitting) => {
   dom.authSignInSubmit.disabled = isSubmitting;
   dom.authSignUpSubmit.disabled = isSubmitting;
   dom.authSignOut.disabled = isSubmitting;
+  if (dom.authModalClose) {
+    dom.authModalClose.disabled = isSubmitting;
+  }
 };
 
 const handleAuthSignIn = async () => {
@@ -1024,6 +1076,10 @@ const handleAuthSignIn = async () => {
         email: normalizeLower(user.email || email),
       },
     };
+    if (dom.enableAccountAuth) {
+      dom.enableAccountAuth.checked = false;
+    }
+    setAuthModalOpen(false);
     saveAuthState();
     await loadRewardsProfile();
     applyAuthUi();
@@ -1076,6 +1132,10 @@ const handleAuthSignUp = async () => {
           email: normalizeLower(user.email || email),
         },
       };
+      if (dom.enableAccountAuth) {
+        dom.enableAccountAuth.checked = false;
+      }
+      setAuthModalOpen(false);
       saveAuthState();
       await loadRewardsProfile();
       applyAuthUi();
@@ -1111,6 +1171,10 @@ const handleAuthSignOut = async () => {
   } finally {
     state.auth = { ...DEFAULT_AUTH_STATE };
     state.rewards = { ...DEFAULT_REWARDS_PROFILE };
+    if (dom.enableAccountAuth) {
+      dom.enableAccountAuth.checked = false;
+    }
+    setAuthModalOpen(false);
     saveAuthState();
     applyAuthUi();
     setAuthStatus('Signed out. Guest checkout is still available.', 'success');
@@ -1122,6 +1186,22 @@ const handleAuthSignOut = async () => {
 
 const bindEvents = () => {
   dom.form.addEventListener('submit', submitCheckout);
+  dom.enableAccountAuth.addEventListener('change', () => {
+    if (isSignedIn()) {
+      dom.enableAccountAuth.checked = false;
+      applyAuthUi();
+      return;
+    }
+    if (dom.enableAccountAuth.checked) {
+      setAuthModalOpen(true);
+    } else {
+      setAuthModalOpen(false);
+    }
+    applyAuthUi();
+  });
+  dom.openAuthModal.addEventListener('click', () => setAuthModalOpen(true));
+  dom.authModalClose.addEventListener('click', () => setAuthModalOpen(false));
+  dom.authModalBackdrop.addEventListener('click', () => setAuthModalOpen(false));
   dom.authTabSignIn.addEventListener('click', () => switchAuthTab('signin'));
   dom.authTabSignUp.addEventListener('click', () => switchAuthTab('signup'));
   dom.authSignInSubmit.addEventListener('click', handleAuthSignIn);
@@ -1138,6 +1218,11 @@ const bindEvents = () => {
     if (event.key === 'Enter') {
       event.preventDefault();
       handleAuthSignUp();
+    }
+  });
+  window.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && dom.authModal && !dom.authModal.classList.contains('hidden')) {
+      setAuthModalOpen(false);
     }
   });
 
@@ -1211,6 +1296,10 @@ const bindEvents = () => {
 
 const initializeCheckout = async () => {
   switchAuthTab('signin');
+  if (dom.enableAccountAuth) {
+    dom.enableAccountAuth.checked = false;
+  }
+  setAuthModalOpen(false);
   applyAuthUi();
   await hydrateAuthSession();
   await loadRewardsProfile();
