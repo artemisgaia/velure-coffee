@@ -85,6 +85,7 @@ const dom = {
   authPaneSignUp: document.getElementById('auth-pane-signup'),
   authSignInEmail: document.getElementById('auth-signin-email'),
   authSignInPassword: document.getElementById('auth-signin-password'),
+  authForgotPassword: document.getElementById('auth-forgot-password'),
   authSignInSubmit: document.getElementById('auth-signin-submit'),
   authSignUpEmail: document.getElementById('auth-signup-email'),
   authSignUpPassword: document.getElementById('auth-signup-password'),
@@ -264,6 +265,16 @@ const supabaseGetUser = async (accessToken) => {
 
 const supabaseSignOut = async (accessToken) => {
   await supabaseRequest('/auth/v1/logout', { method: 'POST', accessToken });
+};
+
+const supabaseSendPasswordResetEmail = async (email, redirectTo) => {
+  await supabaseRequest('/auth/v1/recover', {
+    method: 'POST',
+    body: {
+      email,
+      ...(redirectTo ? { redirect_to: redirectTo } : {}),
+    },
+  });
 };
 
 const setAuthStatus = (message, type = 'info') => {
@@ -1038,9 +1049,32 @@ const loadStripeConfig = async () => {
 const setAuthSubmitting = (isSubmitting) => {
   dom.authSignInSubmit.disabled = isSubmitting;
   dom.authSignUpSubmit.disabled = isSubmitting;
+  dom.authForgotPassword.disabled = isSubmitting;
   dom.authSignOut.disabled = isSubmitting;
   if (dom.authModalClose) {
     dom.authModalClose.disabled = isSubmitting;
+  }
+};
+
+const handleAuthForgotPassword = async () => {
+  const emailCandidate = normalizeLower(dom.authSignInEmail.value || dom.customerEmail.value);
+  if (!isValidEmail(emailCandidate)) {
+    setAuthStatus('Enter your account email first, then select Forgot password.', 'error');
+    return;
+  }
+
+  setAuthSubmitting(true);
+  setAuthStatus('Sending password reset email...', 'info');
+
+  try {
+    const redirectTo = `${window.location.origin}/`;
+    await supabaseSendPasswordResetEmail(emailCandidate, redirectTo);
+    setAuthStatus('Password reset email sent. Check inbox and spam, then open the link.', 'success');
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to send password reset email right now.';
+    setAuthStatus(message, 'error');
+  } finally {
+    setAuthSubmitting(false);
   }
 };
 
@@ -1204,6 +1238,7 @@ const bindEvents = () => {
   dom.authModalBackdrop.addEventListener('click', () => setAuthModalOpen(false));
   dom.authTabSignIn.addEventListener('click', () => switchAuthTab('signin'));
   dom.authTabSignUp.addEventListener('click', () => switchAuthTab('signup'));
+  dom.authForgotPassword.addEventListener('click', handleAuthForgotPassword);
   dom.authSignInSubmit.addEventListener('click', handleAuthSignIn);
   dom.authSignUpSubmit.addEventListener('click', handleAuthSignUp);
   dom.authSignOut.addEventListener('click', handleAuthSignOut);

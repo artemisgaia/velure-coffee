@@ -648,6 +648,11 @@ const DEFAULT_AUTH_STATE = {
   user: null,
   session: null,
 };
+const DEFAULT_PASSWORD_RECOVERY_STATE = {
+  active: false,
+  accessToken: '',
+  email: '',
+};
 
 const normalizeAuthState = (value) => {
   if (!value || typeof value !== 'object') {
@@ -815,6 +820,25 @@ const supabaseSignOut = async (accessToken) => {
   await supabaseRequest('/auth/v1/logout', {
     method: 'POST',
     accessToken,
+  });
+};
+
+const supabaseSendPasswordResetEmail = async (email, redirectTo) => {
+  const payload = {
+    email,
+    ...(redirectTo ? { redirect_to: redirectTo } : {}),
+  };
+  await supabaseRequest('/auth/v1/recover', {
+    method: 'POST',
+    body: payload,
+  });
+};
+
+const supabaseUpdatePassword = async (accessToken, nextPassword) => {
+  await supabaseRequest('/auth/v1/user', {
+    method: 'PUT',
+    accessToken,
+    body: { password: nextPassword },
   });
 };
 
@@ -2367,10 +2391,21 @@ const ContactView = () => {
   );
 };
 
-const AccountView = ({ authState, ordersState, onSignIn, onSignUp, onSignOut, setView }) => {
+const AccountView = ({
+  authState,
+  ordersState,
+  onSignIn,
+  onSignUp,
+  onSignOut,
+  onRequestPasswordReset,
+  passwordRecovery,
+  onCompletePasswordReset,
+  setView,
+}) => {
   const [activeTab, setActiveTab] = useState('signin');
   const [signInForm, setSignInForm] = useState({ email: '', password: '' });
   const [signUpForm, setSignUpForm] = useState({ email: '', password: '', confirmPassword: '' });
+  const [resetPasswordForm, setResetPasswordForm] = useState({ password: '', confirmPassword: '' });
   const [status, setStatus] = useState({ type: 'idle', message: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -2415,11 +2450,94 @@ const AccountView = ({ authState, ordersState, onSignIn, onSignUp, onSignOut, se
     setIsSubmitting(false);
   };
 
+  const handleForgotPassword = async () => {
+    const normalizedEmail = normalizeLower(signInForm.email);
+    if (!isValidEmail(normalizedEmail)) {
+      setStatus({ type: 'error', message: 'Enter your account email first, then select Forgot password.' });
+      return;
+    }
+
+    setIsSubmitting(true);
+    setStatus({ type: 'idle', message: '' });
+    const result = await onRequestPasswordReset(normalizedEmail);
+    setStatus({ type: result.ok ? 'success' : 'error', message: result.message });
+    setIsSubmitting(false);
+  };
+
+  const handleCompleteReset = async (event) => {
+    event.preventDefault();
+    if (resetPasswordForm.password.length < 8) {
+      setStatus({ type: 'error', message: 'New password must be at least 8 characters.' });
+      return;
+    }
+    if (resetPasswordForm.password !== resetPasswordForm.confirmPassword) {
+      setStatus({ type: 'error', message: 'Password confirmation does not match.' });
+      return;
+    }
+
+    setIsSubmitting(true);
+    setStatus({ type: 'idle', message: '' });
+    const result = await onCompletePasswordReset(resetPasswordForm.password);
+    setStatus({ type: result.ok ? 'success' : 'error', message: result.message });
+    if (result.ok) {
+      setResetPasswordForm({ password: '', confirmPassword: '' });
+      setActiveTab('signin');
+    }
+    setIsSubmitting(false);
+  };
+
   if (authState.isLoading) {
     return (
       <div className="pt-32 pb-24 bg-[#0B0C0C] min-h-screen text-[#F9F6F0]">
         <div className="max-w-4xl mx-auto px-6">
           <p className="text-gray-300">Loading account...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (passwordRecovery?.active) {
+    return (
+      <div className="pt-32 pb-24 bg-[#0B0C0C] min-h-screen text-[#F9F6F0]">
+        <div className="max-w-4xl mx-auto px-6">
+          <h1 className="text-5xl font-serif mb-6">Reset Password</h1>
+          <p className="text-gray-300 mb-8">
+            Enter a new password for {passwordRecovery.email || 'your account'}.
+          </p>
+
+          <div className="bg-[#151515] border border-gray-800 p-8">
+            <form onSubmit={handleCompleteReset} noValidate>
+              <div className="space-y-4">
+                <input
+                  type="password"
+                  value={resetPasswordForm.password}
+                  onChange={(event) => setResetPasswordForm((prev) => ({ ...prev, password: event.target.value }))}
+                  placeholder="New password (min 8 chars)"
+                  className="w-full border border-gray-700 bg-[#0B0C0C] p-3 outline-none focus:border-[#D4AF37]"
+                />
+                <input
+                  type="password"
+                  value={resetPasswordForm.confirmPassword}
+                  onChange={(event) => setResetPasswordForm((prev) => ({ ...prev, confirmPassword: event.target.value }))}
+                  placeholder="Confirm new password"
+                  className="w-full border border-gray-700 bg-[#0B0C0C] p-3 outline-none focus:border-[#D4AF37]"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className={`mt-5 bg-[#D4AF37] text-[#0B0C0C] px-6 py-3 text-xs font-bold uppercase tracking-wider ${isSubmitting ? 'opacity-60 cursor-not-allowed' : 'hover:bg-[#b5952f]'}`}
+              >
+                {isSubmitting ? 'Updating...' : 'Update Password'}
+              </button>
+            </form>
+
+            {status.message && (
+              <p className={`text-sm mt-4 ${status.type === 'error' ? 'text-red-400' : 'text-green-400'}`} role="status">
+                {status.message}
+              </p>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -2540,13 +2658,23 @@ const AccountView = ({ authState, ordersState, onSignIn, onSignUp, onSignOut, se
                   className="w-full border border-gray-700 bg-[#0B0C0C] p-3 outline-none focus:border-[#D4AF37]"
                 />
               </div>
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className={`mt-5 bg-[#D4AF37] text-[#0B0C0C] px-6 py-3 text-xs font-bold uppercase tracking-wider ${isSubmitting ? 'opacity-60 cursor-not-allowed' : 'hover:bg-[#b5952f]'}`}
-              >
-                {isSubmitting ? 'Signing In...' : 'Sign In'}
-              </button>
+              <div className="mt-5 flex flex-wrap items-center gap-3">
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className={`bg-[#D4AF37] text-[#0B0C0C] px-6 py-3 text-xs font-bold uppercase tracking-wider ${isSubmitting ? 'opacity-60 cursor-not-allowed' : 'hover:bg-[#b5952f]'}`}
+                >
+                  {isSubmitting ? 'Signing In...' : 'Sign In'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleForgotPassword}
+                  disabled={isSubmitting}
+                  className={`text-xs uppercase tracking-wider underline underline-offset-2 ${isSubmitting ? 'text-gray-500 cursor-not-allowed' : 'text-[#D4AF37] hover:text-[#F9F6F0]'}`}
+                >
+                  Forgot password?
+                </button>
+              </div>
             </form>
           ) : (
             <form onSubmit={handleSignUp} noValidate>
@@ -3336,6 +3464,7 @@ const App = () => {
     error: '',
     items: [],
   });
+  const [passwordRecovery, setPasswordRecovery] = useState({ ...DEFAULT_PASSWORD_RECOVERY_STATE });
 
   useEffect(() => {
     try {
@@ -3347,6 +3476,53 @@ const App = () => {
       console.error('Failed to save auth state', error);
     }
   }, [authState.session, authState.user]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return undefined;
+    }
+
+    const rawHash = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : '';
+    if (!rawHash) {
+      return undefined;
+    }
+
+    const hashParams = new URLSearchParams(rawHash);
+    const hashType = normalizeLower(hashParams.get('type'));
+    const accessToken = (hashParams.get('access_token') || '').trim();
+    if (hashType !== 'recovery' || !accessToken) {
+      return undefined;
+    }
+
+    let cancelled = false;
+    const activateRecovery = async () => {
+      let email = '';
+      try {
+        const user = await supabaseGetUser(accessToken);
+        email = normalizeLower(user?.email || '');
+      } catch {
+        email = '';
+      }
+
+      if (cancelled) {
+        return;
+      }
+
+      setPasswordRecovery({
+        active: true,
+        accessToken,
+        email,
+      });
+      navigateToView('account', { replace: true, preserveScroll: true });
+      trackEvent('password_recovery_opened');
+    };
+
+    activateRecovery();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [navigateToView]);
 
   useEffect(() => {
     let cancelled = false;
@@ -3905,6 +4081,47 @@ const App = () => {
     }
   }, [authState.session?.accessToken, navigateToView]);
 
+  const handleRequestPasswordReset = useCallback(async (email) => {
+    const normalizedEmail = normalizeLower(email);
+    if (!isValidEmail(normalizedEmail)) {
+      return { ok: false, message: 'Enter a valid account email.' };
+    }
+
+    try {
+      const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/` : '';
+      await supabaseSendPasswordResetEmail(normalizedEmail, redirectTo);
+      trackEvent('password_reset_requested', { email: normalizedEmail });
+      return {
+        ok: true,
+        message: 'Password reset email sent. Check inbox and spam, then open the link to set a new password.',
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to send password reset email right now.';
+      return { ok: false, message };
+    }
+  }, []);
+
+  const handleCompletePasswordReset = useCallback(async (nextPassword) => {
+    if (nextPassword.length < 8) {
+      return { ok: false, message: 'New password must be at least 8 characters.' };
+    }
+    if (!passwordRecovery.accessToken) {
+      return { ok: false, message: 'Recovery session expired. Request another reset email.' };
+    }
+
+    try {
+      await supabaseUpdatePassword(passwordRecovery.accessToken, nextPassword);
+      setPasswordRecovery({ ...DEFAULT_PASSWORD_RECOVERY_STATE });
+      setAuthState({ ...DEFAULT_AUTH_STATE });
+      navigateToView('account', { replace: true, preserveScroll: true });
+      trackEvent('password_reset_completed');
+      return { ok: true, message: 'Password updated. Sign in with your new password.' };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to update password right now.';
+      return { ok: false, message };
+    }
+  }, [navigateToView, passwordRecovery.accessToken]);
+
   const joinRewards = useCallback((email) => {
     if (!authState.user?.id) {
       return { ok: false, message: 'Sign in to activate rewards on your account.' };
@@ -4116,6 +4333,9 @@ const App = () => {
           onSignIn={handleSignIn}
           onSignUp={handleSignUp}
           onSignOut={handleSignOut}
+          onRequestPasswordReset={handleRequestPasswordReset}
+          passwordRecovery={passwordRecovery}
+          onCompletePasswordReset={handleCompletePasswordReset}
           setView={setView}
         />
       );

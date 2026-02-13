@@ -248,6 +248,26 @@ h2 {
   gap: 4px;
 }
 
+.auth-link-button {
+  margin-top: 6px;
+  justify-self: start;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.auth-link-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .text-button {
   margin-top: 10px;
   border: 1px solid var(--accent);
