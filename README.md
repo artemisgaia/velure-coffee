@@ -20,6 +20,19 @@ When these are missing, account actions return a clear setup error.
 - `npm run preview` serves the production build locally.
 - `npm run lint` runs ESLint.
 
+## Static Checkout (Premium Flow)
+
+The project now includes a dedicated static checkout page with mobile-first UX:
+
+- `checkout.html`
+- `styles/main.css`
+- `scripts/checkout.js`
+
+This checkout uses Stripe Payment Element and Vercel serverless APIs:
+
+- `GET /api/stripe-config`
+- `POST /api/create-payment-intent`
+
 ## Forms API
 
 The project includes a built-in forms endpoint at `/api/forms`:
@@ -49,6 +62,11 @@ The project also includes `/api/checkout`:
 - Supports origin allowlisting with `CHECKOUT_ALLOWED_ORIGINS` (or `FORMS_ALLOWED_ORIGINS` fallback).
 - Uses `STRIPE_SECRET_KEY` from server environment.
 
+For the static checkout page, use these APIs instead:
+
+- `GET /api/stripe-config`: returns publishable key presence and checkout shipping/tax config.
+- `POST /api/create-payment-intent`: validates cart + shipping inputs, enforces shipping constraints, computes totals, and creates/updates Stripe PaymentIntent metadata.
+
 ## Rewards Sync API
 
 The project includes `/api/rewards` for cross-device rewards sync tied to authenticated users:
@@ -69,6 +87,7 @@ Copy `.env.example` to `.env.local` for local overrides:
 - `VITE_FORMS_ENDPOINT` (frontend): endpoint for form submissions.
 - `VITE_FORMS_CHALLENGE_TOKEN` (frontend): optional token sent with form requests.
 - `VITE_STRIPE_PUBLISHABLE_KEY` (frontend): Stripe publishable key used to render embedded checkout.
+- `STRIPE_PUBLISHABLE_KEY` (server): Stripe publishable key returned by `/api/stripe-config` for static checkout.
 - `FORMS_WEBHOOK_URL` (server): optional webhook target for validated submissions.
 - `FORMS_ALLOWED_ORIGINS` (server): comma-separated allowed origins for `/api/forms`.
 - `FORMS_CHALLENGE_TOKEN` (server): optional token required on incoming form requests.
@@ -76,6 +95,8 @@ Copy `.env.example` to `.env.local` for local overrides:
 - `STRIPE_SECRET_KEY` (server): Stripe secret key for creating checkout sessions.
 - `CHECKOUT_ALLOWED_ORIGINS` (server): optional allowlist for `/api/checkout`.
 - `CHECKOUT_SHIPPING_COUNTRIES` (server): optional comma-separated ISO country codes for shipping address collection (default `US`).
+- `CHECKOUT_TAX_RATE_US` (server): optional tax rate decimal for US (example `0.0825`).
+- `CHECKOUT_TAX_RATE_DEFAULT` (server): optional fallback tax rate decimal.
 - `PUBLIC_SITE_URL` (server): optional canonical site origin used for Stripe success/cancel URLs.
 - `VITE_SUPABASE_URL` (frontend): Supabase project URL for auth.
 - `VITE_SUPABASE_ANON_KEY` (frontend): Supabase anon public key for auth requests.

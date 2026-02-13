@@ -3,6 +3,8 @@ import react from '@vitejs/plugin-react'
 import formsHandler from './api/forms.js'
 import checkoutHandler from './api/checkout.js'
 import rewardsHandler from './api/rewards.js'
+import stripeConfigHandler from './api/stripe-config.js'
+import createPaymentIntentHandler from './api/create-payment-intent.js'
 
 const formsApiPlugin = () => ({
   name: 'forms-api-dev-middleware',
@@ -30,10 +32,34 @@ const formsApiPlugin = () => ({
         next(error)
       }
     })
+
+    server.middlewares.use('/api/stripe-config', async (req, res, next) => {
+      try {
+        await stripeConfigHandler(req, res)
+      } catch (error) {
+        next(error)
+      }
+    })
+
+    server.middlewares.use('/api/create-payment-intent', async (req, res, next) => {
+      try {
+        await createPaymentIntentHandler(req, res)
+      } catch (error) {
+        next(error)
+      }
+    })
   },
 })
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), formsApiPlugin()],
+  build: {
+    rollupOptions: {
+      input: {
+        main: 'index.html',
+        checkout: 'checkout.html',
+      },
+    },
+  },
 })

@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Secure Checkout | Velure Coffee</title>
+    <meta
+      name="description"
+      content="Complete your Velure checkout securely with Stripe. Premium blends, single-origin coffees, and trusted delivery estimates."
+    />
+    <link rel="icon" type="image/png" href="https://res.cloudinary.com/dfygdydcj/image/upload/v1767266284/Velure_favicon_c2vn8q.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&family=Playfair+Display:wght@500;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/styles/main.css" />
+    <script src="https://js.stripe.com/v3"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#checkout-main">Skip to checkout form</a>
+
+    <header class="checkout-header" role="banner">
+      <div class="brand-row">
+        <a class="brand-mark" href="/" aria-label="Velure homepage">
+          <img
+            src="https://res.cloudinary.com/dfygdydcj/image/upload/v1767266284/Velure_favicon_c2vn8q.png"
+            alt="Velure logo"
+            width="36"
+            height="36"
+          />
+          <span>VELURE</span>
+        </a>
+        <a class="back-link" href="/">Back to shop</a>
+      </div>
+    </header>
+
+    <main id="checkout-main" class="checkout-main">
+      <section class="status-wrap" aria-live="polite" aria-atomic="true">
+        <div id="checkout-notice" class="notice notice--info" role="status">
+          Preparing secure checkout...
+        </div>
+      </section>
+
+      <div class="checkout-grid">
+        <section class="checkout-column checkout-column--payment" aria-labelledby="checkout-heading">
+          <h1 id="checkout-heading">Secure Checkout</h1>
+          <p class="lead-copy">
+            Finalize your coffee order with encrypted Stripe checkout. Your card details are never stored on Velure servers.
+          </p>
+
+          <form id="checkout-form" class="checkout-form" novalidate>
+            <fieldset class="card-block">
+              <legend>Contact</legend>
+
+              <label for="customer-name">Full name</label>
+              <input id="customer-name" name="customerName" autocomplete="name" required />
+
+              <label for="customer-email">Email</label>
+              <input id="customer-email" name="customerEmail" type="email" autocomplete="email" required />
+
+              <div class="toggle-row">
+                <input id="enable-phone" type="checkbox" />
+                <label for="enable-phone">Add phone for delivery updates</label>
+              </div>
+
+              <div id="phone-wrap" class="hidden">
+                <label for="customer-phone">Phone (optional)</label>
+                <input id="customer-phone" name="customerPhone" type="tel" inputmode="tel" autocomplete="tel" />
+              </div>
+            </fieldset>
+
+            <fieldset class="card-block">
+              <legend>Shipping</legend>
+
+              <label for="shipping-country">Country</label>
+              <select id="shipping-country" name="shippingCountry" required></select>
+
+              <label for="shipping-service">Shipping service</label>
+              <select id="shipping-service" name="shippingService" required></select>
+
+              <label for="shipping-address1">Address line 1</label>
+              <input id="shipping-address1" name="shippingAddress1" autocomplete="shipping address-line1" required />
+
+              <label for="shipping-address2">Address line 2</label>
+              <input id="shipping-address2" name="shippingAddress2" autocomplete="shipping address-line2" />
+
+              <div class="row-2">
+                <div>
+                  <label for="shipping-city">City</label>
+                  <input id="shipping-city" name="shippingCity" autocomplete="shipping address-level2" required />
+                </div>
+                <div>
+                  <label for="shipping-region">State / Region</label>
+                  <input id="shipping-region" name="shippingRegion" autocomplete="shipping address-level1" required />
+                </div>
+              </div>
+
+              <label for="shipping-postal" id="postal-label">ZIP code</label>
+              <input id="shipping-postal" name="shippingPostal" autocomplete="shipping postal-code" required />
+            </fieldset>
+
+            <fieldset class="card-block">
+              <legend>Adjustments</legend>
+              <label for="discount-code">Rewards or discount</label>
+              <select id="discount-code" name="discountCode">
+                <option value="">No discount</option>
+                <option value="five_off">$5 rewards credit</option>
+                <option value="free_shipping">Free shipping reward</option>
+              </select>
+            </fieldset>
+
+            <fieldset class="card-block payment-block">
+              <legend>Payment</legend>
+              <div id="payment-element" aria-label="Secure payment fields"></div>
+            </fieldset>
+
+            <button id="pay-button-desktop" class="pay-button pay-button--desktop" type="submit">
+              Pay Securely
+            </button>
+          </form>
+
+          <ul class="trust-list" aria-label="Checkout trust details">
+            <li>Encrypted Stripe checkout with automatic eligible payment methods.</li>
+            <li>No card details are stored on Velure systems.</li>
+            <li>Shipping estimates update by destination and service.</li>
+          </ul>
+        </section>
+
+        <aside class="checkout-column checkout-column--summary" aria-labelledby="summary-heading">
+          <h2 id="summary-heading">Order Summary</h2>
+          <ul id="line-items" class="line-items" aria-label="Items in your order"></ul>
+
+          <dl class="totals" aria-label="Order totals">
+            <div><dt>Subtotal</dt><dd id="subtotal-value">$0.00</dd></div>
+            <div><dt>Discount</dt><dd id="discount-value">$0.00</dd></div>
+            <div><dt>Shipping</dt><dd id="shipping-value">$0.00</dd></div>
+            <div><dt>Tax</dt><dd id="tax-value">$0.00</dd></div>
+            <div class="total"><dt>Total</dt><dd id="total-value">$0.00</dd></div>
+          </dl>
+
+          <p id="shipping-estimate" class="shipping-estimate">Shipping estimate will appear once destination is selected.</p>
+          <p class="policy-copy">
+            By placing your order, you agree to Velure shipping and returns policies. Roast level, grind type, and brew method notes are included in your order confirmation.
+          </p>
+        </aside>
+      </div>
+    </main>
+
+    <div class="mobile-cta" role="region" aria-label="Checkout action bar">
+      <div class="mobile-cta__totals">
+        <span>Total</span>
+        <strong id="mobile-total-value">$0.00</strong>
+      </div>
+      <button id="pay-button-mobile" class="pay-button pay-button--mobile" type="submit" form="checkout-form">
+        Pay Securely
+      </button>
+    </div>
+
+    <script type="module" src="/scripts/checkout.js"></script>
+  </body>
+</html>

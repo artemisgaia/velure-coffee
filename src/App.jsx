@@ -3649,6 +3649,10 @@ const App = () => {
     });
 
     closeCart();
+    if (typeof window !== 'undefined') {
+      window.location.assign('/checkout.html');
+      return;
+    }
     navigateToView('checkout');
   }, [cart, closeCart, navigateToView, rewardsProfile.activeRewardId]);
 
