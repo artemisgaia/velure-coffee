@@ -663,6 +663,18 @@ const DEFAULT_CUSTOMER_PROFILE = {
   },
   updatedAt: '',
 };
+const DEFAULT_ACCOUNT_ADDRESS_FORM = {
+  label: '',
+  recipientName: '',
+  phone: '',
+  addressLine1: '',
+  addressLine2: '',
+  city: '',
+  region: '',
+  postalCode: '',
+  country: 'US',
+  isDefault: false,
+};
 
 const normalizeAuthState = (value) => {
   if (!value || typeof value !== 'object') {
@@ -2540,6 +2552,7 @@ const AccountView = ({
   onCompletePasswordReset,
   onSaveProfile,
   onAddAddress,
+  onUpdateAddress,
   onSetDefaultAddress,
   onDeleteAddress,
   setView,
@@ -2551,20 +2564,13 @@ const AccountView = ({
   const [status, setStatus] = useState({ type: 'idle', message: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [profileDraft, setProfileDraft] = useState(null);
-  const [addressForm, setAddressForm] = useState({
-    label: '',
-    recipientName: '',
-    phone: '',
-    addressLine1: '',
-    addressLine2: '',
-    city: '',
-    region: '',
-    postalCode: '',
-    country: 'US',
-    isDefault: false,
-  });
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [addressForm, setAddressForm] = useState({ ...DEFAULT_ACCOUNT_ADDRESS_FORM });
+  const [isAddressFormOpen, setIsAddressFormOpen] = useState(false);
+  const [editingAddressId, setEditingAddressId] = useState('');
   const [accountStatus, setAccountStatus] = useState({ type: 'idle', message: '' });
   const [accountSubmitting, setAccountSubmitting] = useState(false);
+  const savedProfile = profileState?.data || DEFAULT_CUSTOMER_PROFILE;
   const profileForm = profileDraft || profileState?.data || DEFAULT_CUSTOMER_PROFILE;
   const withProfileDraft = (updater) => {
     const base = profileDraft || profileState?.data || DEFAULT_CUSTOMER_PROFILE;
@@ -2573,6 +2579,11 @@ const AccountView = ({
       return;
     }
     setProfileDraft({ ...base, ...(updater || {}) });
+  };
+  const resetAddressForm = () => {
+    setAddressForm({ ...DEFAULT_ACCOUNT_ADDRESS_FORM });
+    setEditingAddressId('');
+    setIsAddressFormOpen(false);
   };
 
   const handleSignIn = async (event) => {
@@ -2669,30 +2680,72 @@ const AccountView = ({
     setAccountStatus({ type: result.ok ? 'success' : 'error', message: result.message });
     if (result.ok) {
       setProfileDraft(null);
+      setIsEditingProfile(false);
     }
     setAccountSubmitting(false);
   };
 
-  const handleAddAddress = async (event) => {
+  const handleStartProfileEdit = () => {
+    const currentProfile = profileState?.data || DEFAULT_CUSTOMER_PROFILE;
+    setProfileDraft({
+      ...DEFAULT_CUSTOMER_PROFILE,
+      ...currentProfile,
+      marketingPreferences: {
+        email: Boolean(currentProfile?.marketingPreferences?.email ?? true),
+        sms: Boolean(currentProfile?.marketingPreferences?.sms ?? false),
+      },
+    });
+    setIsEditingProfile(true);
+    setAccountStatus({ type: 'idle', message: '' });
+  };
+
+  const handleCancelProfileEdit = () => {
+    setProfileDraft(null);
+    setIsEditingProfile(false);
+  };
+
+  const handleStartAddAddress = () => {
+    setAddressForm({ ...DEFAULT_ACCOUNT_ADDRESS_FORM });
+    setEditingAddressId('');
+    setIsAddressFormOpen(true);
+    setAccountStatus({ type: 'idle', message: '' });
+  };
+
+  const handleStartEditAddress = (address) => {
+    if (!address?.id) return;
+    setAddressForm({
+      label: address.label || '',
+      recipientName: address.recipientName || '',
+      phone: address.phone || '',
+      addressLine1: address.addressLine1 || '',
+      addressLine2: address.addressLine2 || '',
+      city: address.city || '',
+      region: address.region || '',
+      postalCode: address.postalCode || '',
+      country: address.country || 'US',
+      isDefault: Boolean(address.isDefault),
+    });
+    setEditingAddressId(address.id);
+    setIsAddressFormOpen(true);
+    setAccountStatus({ type: 'idle', message: '' });
+  };
+
+  const handleCancelAddressForm = () => {
+    resetAddressForm();
+    setAccountStatus({ type: 'idle', message: '' });
+  };
+
+  const handleSaveAddress = async (event) => {
     event.preventDefault();
     setAccountSubmitting(true);
     setAccountStatus({ type: 'idle', message: '' });
 
-    const result = await onAddAddress(addressForm);
+    const result = editingAddressId
+      ? await onUpdateAddress(editingAddressId, addressForm)
+      : await onAddAddress(addressForm);
     setAccountStatus({ type: result.ok ? 'success' : 'error', message: result.message });
     if (result.ok) {
-      setAddressForm({
-        label: '',
-        recipientName: '',
-        phone: '',
-        addressLine1: '',
-        addressLine2: '',
-        city: '',
-        region: '',
-        postalCode: '',
-        country: 'US',
-        isDefault: false,
-      });
+      resetAddressForm();
     }
     setAccountSubmitting(false);
   };
@@ -2783,72 +2836,127 @@ const AccountView = ({
                 Save profile details once and use them across checkout and rewards.
               </p>
 
-              <form onSubmit={handleSaveProfile} className="mt-6 space-y-4" noValidate>
-                <input
-                  type="text"
-                  value={profileForm.fullName}
-                  onChange={(event) => withProfileDraft((prev) => ({ ...prev, fullName: event.target.value }))}
-                  placeholder="Full name"
-                  className="w-full border border-gray-700 bg-[#0B0C0C] p-3 outline-none focus:border-[#D4AF37]"
-                />
-                <input
-                  type="tel"
-                  value={profileForm.phone}
-                  onChange={(event) => withProfileDraft((prev) => ({ ...prev, phone: event.target.value }))}
-                  placeholder="Phone"
-                  className="w-full border border-gray-700 bg-[#0B0C0C] p-3 outline-none focus:border-[#D4AF37]"
-                />
-                <div className="space-y-2 text-sm text-gray-300">
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={Boolean(profileForm.marketingPreferences?.email)}
-                      onChange={(event) => withProfileDraft((prev) => ({
-                        ...prev,
-                        marketingPreferences: {
-                          email: event.target.checked,
-                          sms: Boolean(prev.marketingPreferences?.sms),
-                        },
-                      }))}
-                    />
-                    Email marketing updates
-                  </label>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={Boolean(profileForm.marketingPreferences?.sms)}
-                      onChange={(event) => withProfileDraft((prev) => ({
-                        ...prev,
-                        marketingPreferences: {
-                          email: Boolean(prev.marketingPreferences?.email),
-                          sms: event.target.checked,
-                        },
-                      }))}
-                    />
-                    SMS marketing updates
-                  </label>
+              {!isEditingProfile ? (
+                <div className="mt-6 space-y-3">
+                  <p className="text-sm text-gray-300">
+                    <span className="text-gray-500">Full name:</span>{' '}
+                    {savedProfile.fullName || 'Not added yet'}
+                  </p>
+                  <p className="text-sm text-gray-300">
+                    <span className="text-gray-500">Phone:</span>{' '}
+                    {savedProfile.phone || 'Not added yet'}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleStartProfileEdit}
+                    disabled={profileState?.isLoading || accountSubmitting}
+                    className={`bg-[#D4AF37] text-[#0B0C0C] px-5 py-3 text-xs font-bold uppercase tracking-wider ${(profileState?.isLoading || accountSubmitting) ? 'opacity-60 cursor-not-allowed' : 'hover:bg-[#b5952f]'}`}
+                  >
+                    {profileState?.isLoading ? 'Loading...' : 'Edit Profile'}
+                  </button>
                 </div>
-                <button
-                  type="submit"
-                  disabled={accountSubmitting || profileState?.isLoading}
-                  className={`bg-[#D4AF37] text-[#0B0C0C] px-5 py-3 text-xs font-bold uppercase tracking-wider ${(accountSubmitting || profileState?.isLoading) ? 'opacity-60 cursor-not-allowed' : 'hover:bg-[#b5952f]'}`}
-                >
-                  {profileState?.isLoading ? 'Loading...' : 'Save Profile'}
-                </button>
-              </form>
+              ) : (
+                <form onSubmit={handleSaveProfile} className="mt-6 space-y-4" noValidate>
+                  <input
+                    type="text"
+                    value={profileForm.fullName}
+                    onChange={(event) => withProfileDraft((prev) => ({ ...prev, fullName: event.target.value }))}
+                    placeholder="Full name"
+                    className="w-full border border-gray-700 bg-[#0B0C0C] p-3 outline-none focus:border-[#D4AF37]"
+                  />
+                  <input
+                    type="tel"
+                    value={profileForm.phone}
+                    onChange={(event) => withProfileDraft((prev) => ({ ...prev, phone: event.target.value }))}
+                    placeholder="Phone"
+                    className="w-full border border-gray-700 bg-[#0B0C0C] p-3 outline-none focus:border-[#D4AF37]"
+                  />
+                  <div className="space-y-2 text-sm text-gray-300">
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(profileForm.marketingPreferences?.email)}
+                        onChange={(event) => withProfileDraft((prev) => ({
+                          ...prev,
+                          marketingPreferences: {
+                            email: event.target.checked,
+                            sms: Boolean(prev.marketingPreferences?.sms),
+                          },
+                        }))}
+                      />
+                      Email marketing updates
+                    </label>
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(profileForm.marketingPreferences?.sms)}
+                        onChange={(event) => withProfileDraft((prev) => ({
+                          ...prev,
+                          marketingPreferences: {
+                            email: Boolean(prev.marketingPreferences?.email),
+                            sms: event.target.checked,
+                          },
+                        }))}
+                      />
+                      SMS marketing updates
+                    </label>
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    <button
+                      type="submit"
+                      disabled={accountSubmitting || profileState?.isLoading}
+                      className={`bg-[#D4AF37] text-[#0B0C0C] px-5 py-3 text-xs font-bold uppercase tracking-wider ${(accountSubmitting || profileState?.isLoading) ? 'opacity-60 cursor-not-allowed' : 'hover:bg-[#b5952f]'}`}
+                    >
+                      Save Profile
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleCancelProfileEdit}
+                      disabled={accountSubmitting}
+                      className={`border border-gray-700 text-gray-300 px-5 py-3 text-xs font-bold uppercase tracking-wider ${accountSubmitting ? 'opacity-60 cursor-not-allowed' : 'hover:border-gray-500'}`}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              )}
               {profileState?.error && (
                 <p className="text-sm text-red-400 mt-3">{profileState.error}</p>
               )}
             </div>
 
             <div className="bg-[#151515] border border-gray-800 p-6">
-              <p className="text-xs uppercase tracking-widest text-gray-400 mb-3">Saved Addresses</p>
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <p className="text-xs uppercase tracking-widest text-gray-400">Saved Addresses</p>
+                {!isAddressFormOpen && (
+                  <button
+                    type="button"
+                    onClick={handleStartAddAddress}
+                    disabled={accountSubmitting || addressesState?.isLoading}
+                    className={`text-xs uppercase tracking-wider px-3 py-2 border border-[#D4AF37] text-[#D4AF37] ${(accountSubmitting || addressesState?.isLoading) ? 'opacity-60 cursor-not-allowed' : 'hover:bg-[#D4AF37] hover:text-[#0B0C0C]'}`}
+                  >
+                    Add New Address
+                  </button>
+                )}
+              </div>
               {addressesState?.isLoading ? (
                 <p className="text-sm text-gray-400">Loading addresses...</p>
               ) : addressesState?.error ? (
                 <p className="text-sm text-red-400">{addressesState.error}</p>
               ) : !addressesState?.items?.length ? (
-                <p className="text-sm text-gray-400">No saved addresses yet.</p>
+                <div className="space-y-3">
+                  <p className="text-sm text-gray-400">No saved addresses yet.</p>
+                  {!isAddressFormOpen && (
+                    <button
+                      type="button"
+                      onClick={handleStartAddAddress}
+                      disabled={accountSubmitting}
+                      className={`bg-[#D4AF37] text-[#0B0C0C] px-5 py-3 text-xs font-bold uppercase tracking-wider ${accountSubmitting ? 'opacity-60 cursor-not-allowed' : 'hover:bg-[#b5952f]'}`}
+                    >
+                      Add Your First Address
+                    </button>
+                  )}
+                </div>
               ) : (
                 <div className="space-y-3 mb-5">
                   {addressesState.items.map((address) => (
@@ -2877,6 +2985,13 @@ const AccountView = ({
                           )}
                           <button
                             type="button"
+                            onClick={() => handleStartEditAddress(address)}
+                            className="text-xs text-[#D4AF37] underline underline-offset-2"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
                             onClick={() => handleDeleteAddress(address.id)}
                             className="text-xs text-red-400 underline underline-offset-2"
                           >
@@ -2889,88 +3004,103 @@ const AccountView = ({
                 </div>
               )}
 
-              <form onSubmit={handleAddAddress} className="space-y-3" noValidate>
-                <input
-                  type="text"
-                  value={addressForm.label}
-                  onChange={(event) => setAddressForm((prev) => ({ ...prev, label: event.target.value }))}
-                  placeholder="Label (Home, Office, etc)"
-                  className="w-full border border-gray-700 bg-[#0B0C0C] p-3 outline-none focus:border-[#D4AF37]"
-                />
-                <input
-                  type="text"
-                  value={addressForm.recipientName}
-                  onChange={(event) => setAddressForm((prev) => ({ ...prev, recipientName: event.target.value }))}
-                  placeholder="Recipient name"
-                  className="w-full border border-gray-700 bg-[#0B0C0C] p-3 outline-none focus:border-[#D4AF37]"
-                />
-                <input
-                  type="text"
-                  value={addressForm.addressLine1}
-                  onChange={(event) => setAddressForm((prev) => ({ ...prev, addressLine1: event.target.value }))}
-                  placeholder="Address line 1"
-                  className="w-full border border-gray-700 bg-[#0B0C0C] p-3 outline-none focus:border-[#D4AF37]"
-                  required
-                />
-                <input
-                  type="text"
-                  value={addressForm.addressLine2}
-                  onChange={(event) => setAddressForm((prev) => ({ ...prev, addressLine2: event.target.value }))}
-                  placeholder="Address line 2 (optional)"
-                  className="w-full border border-gray-700 bg-[#0B0C0C] p-3 outline-none focus:border-[#D4AF37]"
-                />
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {isAddressFormOpen && (
+                <form onSubmit={handleSaveAddress} className="space-y-3" noValidate>
+                  <p className="text-xs uppercase tracking-widest text-gray-500">
+                    {editingAddressId ? 'Edit Address' : 'Add Address'}
+                  </p>
                   <input
                     type="text"
-                    value={addressForm.city}
-                    onChange={(event) => setAddressForm((prev) => ({ ...prev, city: event.target.value }))}
-                    placeholder="City"
+                    value={addressForm.label}
+                    onChange={(event) => setAddressForm((prev) => ({ ...prev, label: event.target.value }))}
+                    placeholder="Label (Home, Office, etc)"
+                    className="w-full border border-gray-700 bg-[#0B0C0C] p-3 outline-none focus:border-[#D4AF37]"
+                  />
+                  <input
+                    type="text"
+                    value={addressForm.recipientName}
+                    onChange={(event) => setAddressForm((prev) => ({ ...prev, recipientName: event.target.value }))}
+                    placeholder="Recipient name"
+                    className="w-full border border-gray-700 bg-[#0B0C0C] p-3 outline-none focus:border-[#D4AF37]"
+                  />
+                  <input
+                    type="text"
+                    value={addressForm.addressLine1}
+                    onChange={(event) => setAddressForm((prev) => ({ ...prev, addressLine1: event.target.value }))}
+                    placeholder="Address line 1"
                     className="w-full border border-gray-700 bg-[#0B0C0C] p-3 outline-none focus:border-[#D4AF37]"
                     required
                   />
                   <input
                     type="text"
-                    value={addressForm.region}
-                    onChange={(event) => setAddressForm((prev) => ({ ...prev, region: event.target.value }))}
-                    placeholder="State/Region"
+                    value={addressForm.addressLine2}
+                    onChange={(event) => setAddressForm((prev) => ({ ...prev, addressLine2: event.target.value }))}
+                    placeholder="Address line 2 (optional)"
                     className="w-full border border-gray-700 bg-[#0B0C0C] p-3 outline-none focus:border-[#D4AF37]"
-                    required
                   />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <input
-                    type="text"
-                    value={addressForm.postalCode}
-                    onChange={(event) => setAddressForm((prev) => ({ ...prev, postalCode: event.target.value }))}
-                    placeholder="Postal code"
-                    className="w-full border border-gray-700 bg-[#0B0C0C] p-3 outline-none focus:border-[#D4AF37]"
-                    required
-                  />
-                  <input
-                    type="text"
-                    value={addressForm.country}
-                    onChange={(event) => setAddressForm((prev) => ({ ...prev, country: event.target.value.toUpperCase() }))}
-                    placeholder="Country code (US)"
-                    className="w-full border border-gray-700 bg-[#0B0C0C] p-3 outline-none focus:border-[#D4AF37]"
-                    required
-                  />
-                </div>
-                <label className="text-xs text-gray-400 flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={addressForm.isDefault}
-                    onChange={(event) => setAddressForm((prev) => ({ ...prev, isDefault: event.target.checked }))}
-                  />
-                  Set as default shipping address
-                </label>
-                <button
-                  type="submit"
-                  disabled={accountSubmitting}
-                  className={`bg-[#D4AF37] text-[#0B0C0C] px-5 py-3 text-xs font-bold uppercase tracking-wider ${accountSubmitting ? 'opacity-60 cursor-not-allowed' : 'hover:bg-[#b5952f]'}`}
-                >
-                  Add Address
-                </button>
-              </form>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <input
+                      type="text"
+                      value={addressForm.city}
+                      onChange={(event) => setAddressForm((prev) => ({ ...prev, city: event.target.value }))}
+                      placeholder="City"
+                      className="w-full border border-gray-700 bg-[#0B0C0C] p-3 outline-none focus:border-[#D4AF37]"
+                      required
+                    />
+                    <input
+                      type="text"
+                      value={addressForm.region}
+                      onChange={(event) => setAddressForm((prev) => ({ ...prev, region: event.target.value }))}
+                      placeholder="State/Region"
+                      className="w-full border border-gray-700 bg-[#0B0C0C] p-3 outline-none focus:border-[#D4AF37]"
+                      required
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <input
+                      type="text"
+                      value={addressForm.postalCode}
+                      onChange={(event) => setAddressForm((prev) => ({ ...prev, postalCode: event.target.value }))}
+                      placeholder="Postal code"
+                      className="w-full border border-gray-700 bg-[#0B0C0C] p-3 outline-none focus:border-[#D4AF37]"
+                      required
+                    />
+                    <input
+                      type="text"
+                      value={addressForm.country}
+                      onChange={(event) => setAddressForm((prev) => ({ ...prev, country: event.target.value.toUpperCase() }))}
+                      placeholder="Country code (US)"
+                      className="w-full border border-gray-700 bg-[#0B0C0C] p-3 outline-none focus:border-[#D4AF37]"
+                      required
+                    />
+                  </div>
+                  <label className="text-xs text-gray-400 flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={addressForm.isDefault}
+                      onChange={(event) => setAddressForm((prev) => ({ ...prev, isDefault: event.target.checked }))}
+                    />
+                    Set as default shipping address
+                  </label>
+                  <div className="flex flex-wrap gap-3">
+                    <button
+                      type="submit"
+                      disabled={accountSubmitting}
+                      className={`bg-[#D4AF37] text-[#0B0C0C] px-5 py-3 text-xs font-bold uppercase tracking-wider ${accountSubmitting ? 'opacity-60 cursor-not-allowed' : 'hover:bg-[#b5952f]'}`}
+                    >
+                      {editingAddressId ? 'Save Address Changes' : 'Add Address'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleCancelAddressForm}
+                      disabled={accountSubmitting}
+                      className={`border border-gray-700 text-gray-300 px-5 py-3 text-xs font-bold uppercase tracking-wider ${accountSubmitting ? 'opacity-60 cursor-not-allowed' : 'hover:border-gray-500'}`}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              )}
             </div>
 
             <div className="bg-[#151515] border border-gray-800 p-6 lg:col-span-2">
@@ -4674,6 +4804,25 @@ const App = () => {
     }
   }, [authState.session?.accessToken, authState.user?.id]);
 
+  const handleUpdateCustomerAddress = useCallback(async (addressId, addressInput) => {
+    const accessToken = authState.session?.accessToken;
+    const userId = authState.user?.id;
+    if (!accessToken || !userId) {
+      return { ok: false, message: 'Sign in to manage addresses.' };
+    }
+
+    try {
+      await updateCustomerAddressInApi(accessToken, addressId, addressInput);
+      const refreshed = await loadCustomerAddressesFromApi(accessToken, 50);
+      const items = Array.isArray(refreshed?.addresses) ? refreshed.addresses : [];
+      setAddressesState({ isLoading: false, error: '', items });
+      return { ok: true, message: 'Address updated.' };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to update address right now.';
+      return { ok: false, message };
+    }
+  }, [authState.session?.accessToken, authState.user?.id]);
+
   const handleSetDefaultCustomerAddress = useCallback(async (addressId) => {
     const accessToken = authState.session?.accessToken;
     const userId = authState.user?.id;
@@ -4937,6 +5086,7 @@ const App = () => {
           onCompletePasswordReset={handleCompletePasswordReset}
           onSaveProfile={handleSaveCustomerProfile}
           onAddAddress={handleAddCustomerAddress}
+          onUpdateAddress={handleUpdateCustomerAddress}
           onSetDefaultAddress={handleSetDefaultCustomerAddress}
           onDeleteAddress={handleDeleteCustomerAddress}
           setView={setView}
