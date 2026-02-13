@@ -3,6 +3,8 @@ import { calculatePackageWeightLbs, calculateShippingCents, getDestinationConstr
 const API_ENDPOINTS = {
   stripeConfig: '/api/stripe-config',
   createPaymentIntent: '/api/create-payment-intent',
+  rewards: '/api/rewards',
+  orders: '/api/orders',
 };
 
 const PRODUCT_CATALOG = {
@@ -22,6 +24,13 @@ const DISCOUNT_LABELS = {
 };
 
 const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+const AUTH_STORAGE_KEY = 'velure_auth_state_v1';
+const DEFAULT_AUTH_STATE = { user: null, session: null };
+const DEFAULT_REWARDS_PROFILE = {
+  enrolled: false,
+  points: 0,
+  activeRewardId: null,
+};
 
 const state = {
   stripe: null,
@@ -51,11 +60,30 @@ const state = {
     tax: 0,
     total: 0,
   },
+  auth: { ...DEFAULT_AUTH_STATE },
+  rewards: { ...DEFAULT_REWARDS_PROFILE },
+  activeAuthTab: 'signin',
 };
 
 const dom = {
   form: document.getElementById('checkout-form'),
   notice: document.getElementById('checkout-notice'),
+  authSignedIn: document.getElementById('auth-signed-in'),
+  authEmailDisplay: document.getElementById('auth-email-display'),
+  authSignOut: document.getElementById('auth-signout'),
+  authGuest: document.getElementById('auth-guest'),
+  authStatus: document.getElementById('auth-status'),
+  authTabSignIn: document.getElementById('auth-tab-signin'),
+  authTabSignUp: document.getElementById('auth-tab-signup'),
+  authPaneSignIn: document.getElementById('auth-pane-signin'),
+  authPaneSignUp: document.getElementById('auth-pane-signup'),
+  authSignInEmail: document.getElementById('auth-signin-email'),
+  authSignInPassword: document.getElementById('auth-signin-password'),
+  authSignInSubmit: document.getElementById('auth-signin-submit'),
+  authSignUpEmail: document.getElementById('auth-signup-email'),
+  authSignUpPassword: document.getElementById('auth-signup-password'),
+  authSignUpConfirm: document.getElementById('auth-signup-confirm'),
+  authSignUpSubmit: document.getElementById('auth-signup-submit'),
   customerName: document.getElementById('customer-name'),
   customerEmail: document.getElementById('customer-email'),
   enablePhone: document.getElementById('enable-phone'),
@@ -71,6 +99,7 @@ const dom = {
   shippingRegion: document.getElementById('shipping-region'),
   shippingPostal: document.getElementById('shipping-postal'),
   postalLabel: document.getElementById('postal-label'),
+  discountBlock: document.getElementById('discount-block'),
   discountCode: document.getElementById('discount-code'),
   paymentElement: document.getElementById('payment-element'),
   lineItems: document.getElementById('line-items'),
@@ -90,6 +119,315 @@ const normalizeLower = (value) => normalize(value).toLowerCase();
 const cents = (amount) => Math.round(Number(amount || 0) * 100);
 
 const money = (amount) => currencyFormatter.format(Number(amount || 0));
+const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+
+const normalizeAuthState = (value) => {
+  if (!value || typeof value !== 'object') return { ...DEFAULT_AUTH_STATE };
+
+  const session = value.session && typeof value.session === 'object'
+    ? {
+        accessToken: normalize(value.session.accessToken),
+        refreshToken: normalize(value.session.refreshToken),
+        expiresAt: Number.isFinite(Number(value.session.expiresAt)) ? Number(value.session.expiresAt) : 0,
+      }
+    : null;
+
+  const user = value.user && typeof value.user === 'object'
+    ? {
+        id: normalize(value.user.id),
+        email: normalizeLower(value.user.email),
+      }
+    : null;
+
+  if (!session?.accessToken || !user?.id) {
+    return { ...DEFAULT_AUTH_STATE };
+  }
+
+  return { session, user };
+};
+
+const saveAuthState = () => {
+  try {
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(state.auth));
+  } catch {
+    // ignore
+  }
+};
+
+const loadAuthState = () => {
+  try {
+    const raw = localStorage.getItem(AUTH_STORAGE_KEY);
+    state.auth = normalizeAuthState(raw ? JSON.parse(raw) : DEFAULT_AUTH_STATE);
+  } catch {
+    state.auth = { ...DEFAULT_AUTH_STATE };
+  }
+};
+
+const getSupabaseConfig = () => {
+  const url = normalize(import.meta.env.VITE_SUPABASE_URL).replace(/\/+$/, '');
+  const anonKey = normalize(import.meta.env.VITE_SUPABASE_ANON_KEY);
+  if (!url || !anonKey) return null;
+  return { url, anonKey };
+};
+
+const parseSupabaseError = (payload, fallbackMessage) => {
+  if (!payload || typeof payload !== 'object') return fallbackMessage;
+  if (typeof payload.error_description === 'string' && payload.error_description.trim()) return payload.error_description;
+  if (typeof payload.msg === 'string' && payload.msg.trim()) return payload.msg;
+  if (typeof payload.error === 'string' && payload.error.trim()) return payload.error;
+  if (typeof payload.message === 'string' && payload.message.trim()) return payload.message;
+  return fallbackMessage;
+};
+
+const supabaseRequest = async (path, options = {}) => {
+  const config = getSupabaseConfig();
+  if (!config) {
+    throw new Error('Account auth is not configured yet.');
+  }
+
+  const response = await fetch(`${config.url}${path}`, {
+    method: options.method || 'GET',
+    headers: {
+      apikey: config.anonKey,
+      'Content-Type': 'application/json',
+      ...(options.accessToken ? { Authorization: `Bearer ${options.accessToken}` } : {}),
+    },
+    body: options.body ? JSON.stringify(options.body) : undefined,
+  });
+
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) {
+    throw new Error(parseSupabaseError(payload, 'Unable to complete auth request.'));
+  }
+  return payload;
+};
+
+const createSessionFromSupabasePayload = (payload) => {
+  const source = payload?.session && typeof payload.session === 'object'
+    ? payload.session
+    : payload;
+  const accessToken = normalize(source?.access_token);
+  const refreshToken = normalize(source?.refresh_token);
+  const expiresAtSeconds = Number(source?.expires_at);
+  const expiresInSeconds = Number(source?.expires_in);
+  const expiresAt = Number.isFinite(expiresAtSeconds)
+    ? expiresAtSeconds * 1000
+    : (Number.isFinite(expiresInSeconds) ? Date.now() + (expiresInSeconds * 1000) : 0);
+
+  if (!accessToken || !refreshToken) return null;
+  return { accessToken, refreshToken, expiresAt };
+};
+
+const supabaseSignIn = async (email, password) => {
+  const payload = await supabaseRequest('/auth/v1/token?grant_type=password', {
+    method: 'POST',
+    body: { email, password },
+  });
+  return {
+    session: createSessionFromSupabasePayload(payload),
+    user: payload?.user || null,
+  };
+};
+
+const supabaseSignUp = async (email, password) => {
+  const payload = await supabaseRequest('/auth/v1/signup', {
+    method: 'POST',
+    body: { email, password },
+  });
+  return {
+    session: createSessionFromSupabasePayload(payload),
+    user: payload?.user || payload?.session?.user || null,
+  };
+};
+
+const supabaseRefreshSession = async (refreshToken) => {
+  const payload = await supabaseRequest('/auth/v1/token?grant_type=refresh_token', {
+    method: 'POST',
+    body: { refresh_token: refreshToken },
+  });
+  return {
+    session: createSessionFromSupabasePayload(payload),
+    user: payload?.user || null,
+  };
+};
+
+const supabaseGetUser = async (accessToken) => {
+  const payload = await supabaseRequest('/auth/v1/user', { method: 'GET', accessToken });
+  return payload && typeof payload === 'object' ? payload : null;
+};
+
+const supabaseSignOut = async (accessToken) => {
+  await supabaseRequest('/auth/v1/logout', { method: 'POST', accessToken });
+};
+
+const setAuthStatus = (message, type = 'info') => {
+  if (!dom.authStatus) return;
+  dom.authStatus.textContent = message || '';
+  dom.authStatus.style.color = type === 'error'
+    ? '#ffd7d5'
+    : (type === 'success' ? '#d2f3e2' : '#c8bfac');
+};
+
+const isSignedIn = () => Boolean(state.auth.user?.id && state.auth.session?.accessToken);
+
+const getAppliedDiscountCode = () => {
+  if (!isSignedIn()) return '';
+  return normalizeLower(dom.discountCode.value);
+};
+
+const applyAuthUi = () => {
+  const signedIn = isSignedIn();
+  if (dom.authSignedIn) dom.authSignedIn.classList.toggle('hidden', !signedIn);
+  if (dom.authGuest) dom.authGuest.classList.toggle('hidden', signedIn);
+  if (dom.discountBlock) dom.discountBlock.classList.toggle('hidden', !signedIn);
+
+  if (dom.authEmailDisplay) {
+    dom.authEmailDisplay.textContent = state.auth.user?.email || '';
+  }
+
+  if (signedIn && !normalize(dom.customerEmail.value) && state.auth.user?.email) {
+    dom.customerEmail.value = state.auth.user.email;
+  }
+
+  dom.discountCode.innerHTML = '';
+  const noneOption = document.createElement('option');
+  noneOption.value = '';
+  noneOption.textContent = 'No discount';
+  dom.discountCode.appendChild(noneOption);
+
+  if (!signedIn) {
+    dom.discountCode.value = '';
+    return;
+  }
+
+  const enrolled = Boolean(state.rewards.enrolled);
+  const activeRewardId = normalizeLower(state.rewards.activeRewardId || '');
+  if (enrolled && activeRewardId && DISCOUNT_LABELS[activeRewardId]) {
+    const option = document.createElement('option');
+    option.value = activeRewardId;
+    option.textContent = DISCOUNT_LABELS[activeRewardId];
+    dom.discountCode.appendChild(option);
+    dom.discountCode.value = activeRewardId;
+  } else {
+    dom.discountCode.value = '';
+  }
+};
+
+const switchAuthTab = (tab) => {
+  state.activeAuthTab = tab === 'signup' ? 'signup' : 'signin';
+  const isSignIn = state.activeAuthTab === 'signin';
+  dom.authPaneSignIn.classList.toggle('hidden', !isSignIn);
+  dom.authPaneSignUp.classList.toggle('hidden', isSignIn);
+  dom.authTabSignIn.classList.toggle('auth-tab--active', isSignIn);
+  dom.authTabSignUp.classList.toggle('auth-tab--active', !isSignIn);
+  dom.authTabSignIn.setAttribute('aria-selected', isSignIn ? 'true' : 'false');
+  dom.authTabSignUp.setAttribute('aria-selected', isSignIn ? 'false' : 'true');
+  setAuthStatus('');
+};
+
+const loadRewardsProfile = async () => {
+  if (!isSignedIn()) {
+    state.rewards = { ...DEFAULT_REWARDS_PROFILE };
+    applyAuthUi();
+    return;
+  }
+
+  try {
+    const response = await fetch(API_ENDPOINTS.rewards, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${state.auth.session.accessToken}`,
+      },
+      credentials: 'same-origin',
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || !payload?.ok) {
+      state.rewards = { ...DEFAULT_REWARDS_PROFILE };
+      applyAuthUi();
+      return;
+    }
+
+    const profile = payload.profile && typeof payload.profile === 'object' ? payload.profile : {};
+    state.rewards = {
+      enrolled: Boolean(profile.enrolled),
+      points: Number.isFinite(Number(profile.points)) ? Math.max(0, Math.floor(Number(profile.points))) : 0,
+      activeRewardId: typeof profile.activeRewardId === 'string' ? normalizeLower(profile.activeRewardId) : null,
+    };
+  } catch {
+    state.rewards = { ...DEFAULT_REWARDS_PROFILE };
+  }
+
+  if (!state.rewards.enrolled) {
+    setAuthStatus('Signed in. Join rewards in your account to unlock redemption.', 'info');
+  } else if (!state.rewards.activeRewardId) {
+    setAuthStatus('Signed in. Redeem a reward in your account to apply it at checkout.', 'info');
+  }
+
+  applyAuthUi();
+};
+
+const hydrateAuthSession = async () => {
+  loadAuthState();
+  if (!isSignedIn()) {
+    applyAuthUi();
+    return;
+  }
+
+  try {
+    let { session, user } = state.auth;
+    const shouldRefresh = session.expiresAt && session.expiresAt <= Date.now() + 60_000;
+    if (shouldRefresh && session.refreshToken) {
+      const refreshed = await supabaseRefreshSession(session.refreshToken);
+      if (refreshed.session) {
+        session = refreshed.session;
+        user = refreshed.user || user;
+      }
+    }
+
+    if (!user?.id) {
+      const fetchedUser = await supabaseGetUser(session.accessToken);
+      user = fetchedUser ? { id: fetchedUser.id, email: fetchedUser.email || '' } : null;
+    }
+
+    if (!user?.id || !session?.accessToken) {
+      state.auth = { ...DEFAULT_AUTH_STATE };
+      saveAuthState();
+      applyAuthUi();
+      return;
+    }
+
+    state.auth = {
+      session,
+      user: {
+        id: normalize(user.id),
+        email: normalizeLower(user.email),
+      },
+    };
+    saveAuthState();
+    applyAuthUi();
+  } catch {
+    state.auth = { ...DEFAULT_AUTH_STATE };
+    saveAuthState();
+    applyAuthUi();
+  }
+};
+
+const saveOrderToAccount = async (paymentIntentId) => {
+  if (!paymentIntentId || !isSignedIn()) return;
+  try {
+    await fetch(API_ENDPOINTS.orders, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${state.auth.session.accessToken}`,
+      },
+      credentials: 'same-origin',
+      body: JSON.stringify({ paymentIntentId }),
+    });
+  } catch {
+    // Do not block checkout success UI if order sync fails.
+  }
+};
 
 const setNotice = (type, message) => {
   dom.notice.className = `notice notice--${type}`;
@@ -181,7 +519,7 @@ const renderTotals = () => {
 
 const selectedCountry = () => normalize(dom.shippingCountry.value).toUpperCase();
 const selectedService = () => normalizeLower(dom.shippingService.value || 'standard');
-const selectedDiscount = () => normalizeLower(dom.discountCode.value);
+const selectedDiscount = () => getAppliedDiscountCode();
 
 const getTaxRate = (countryCode) => {
   const rate = Number(state.checkoutConfig.taxRates?.[countryCode]);
@@ -360,6 +698,7 @@ const collectCheckoutPayload = () => {
     items: state.lineItems,
     discountCode: selectedDiscount() || undefined,
     customer: {
+      userId: state.auth.user?.id || '',
       name: normalize(dom.customerName.value),
       email: normalize(dom.customerEmail.value).toLowerCase(),
       phone: dom.enablePhone.checked ? normalize(dom.customerPhone.value) : '',
@@ -444,7 +783,10 @@ const refreshPaymentIntent = async () => {
   try {
     const response = await fetch(API_ENDPOINTS.createPaymentIntent, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(isSignedIn() ? { Authorization: `Bearer ${state.auth.session.accessToken}` } : {}),
+      },
       credentials: 'same-origin',
       body: JSON.stringify(payload),
     });
@@ -506,10 +848,11 @@ const clearCartStorage = () => {
   }
 };
 
-const handlePostPaymentStatus = (paymentIntent) => {
+const handlePostPaymentStatus = async (paymentIntent) => {
   const status = normalize(paymentIntent?.status);
 
   if (status === 'succeeded') {
+    await saveOrderToAccount(normalize(paymentIntent?.id));
     setNotice('success', 'Payment confirmed. Your order is complete.');
     clearCartStorage();
     state.lineItems = [];
@@ -520,6 +863,7 @@ const handlePostPaymentStatus = (paymentIntent) => {
   }
 
   if (status === 'processing') {
+    await saveOrderToAccount(normalize(paymentIntent?.id));
     setNotice('info', 'Payment is processing. We will email your receipt shortly.');
     return;
   }
@@ -576,7 +920,7 @@ const submitCheckout = async (event) => {
       return;
     }
 
-    handlePostPaymentStatus(result.paymentIntent);
+    await handlePostPaymentStatus(result.paymentIntent);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Checkout failed unexpectedly.';
     setNotice('error', message);
@@ -585,10 +929,15 @@ const submitCheckout = async (event) => {
   }
 };
 
-const handleReturnQuery = () => {
+const handleReturnQuery = async () => {
   const params = new URLSearchParams(window.location.search);
   const status = normalizeLower(params.get('redirect_status'));
+  const paymentIntentId = normalize(params.get('payment_intent'));
   if (!status) return;
+
+  if ((status === 'succeeded' || status === 'processing') && paymentIntentId) {
+    await saveOrderToAccount(paymentIntentId);
+  }
 
   if (status === 'succeeded') {
     setNotice('success', 'Payment confirmed. Thank you for your Velure order.');
@@ -637,8 +986,160 @@ const loadStripeConfig = async () => {
   };
 };
 
+const setAuthSubmitting = (isSubmitting) => {
+  dom.authSignInSubmit.disabled = isSubmitting;
+  dom.authSignUpSubmit.disabled = isSubmitting;
+  dom.authSignOut.disabled = isSubmitting;
+};
+
+const handleAuthSignIn = async () => {
+  const email = normalizeLower(dom.authSignInEmail.value);
+  const password = normalize(dom.authSignInPassword.value);
+
+  if (!isValidEmail(email) || password.length < 8) {
+    setAuthStatus('Enter a valid email and password (8+ characters).', 'error');
+    return;
+  }
+
+  setAuthSubmitting(true);
+  setAuthStatus('Signing in...', 'info');
+  try {
+    const result = await supabaseSignIn(email, password);
+    if (!result.session?.accessToken) {
+      throw new Error('Could not start account session.');
+    }
+
+    let user = result.user;
+    if (!user?.id) {
+      user = await supabaseGetUser(result.session.accessToken);
+    }
+    if (!user?.id) {
+      throw new Error('Unable to load account profile.');
+    }
+
+    state.auth = {
+      session: result.session,
+      user: {
+        id: normalize(user.id),
+        email: normalizeLower(user.email || email),
+      },
+    };
+    saveAuthState();
+    await loadRewardsProfile();
+    applyAuthUi();
+    setAuthStatus('Signed in. Account rewards are now available.', 'success');
+    estimateClientTotals();
+    scheduleRefresh(120);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to sign in right now.';
+    setAuthStatus(message, 'error');
+  } finally {
+    setAuthSubmitting(false);
+  }
+};
+
+const handleAuthSignUp = async () => {
+  const email = normalizeLower(dom.authSignUpEmail.value);
+  const password = normalize(dom.authSignUpPassword.value);
+  const confirmPassword = normalize(dom.authSignUpConfirm.value);
+
+  if (!isValidEmail(email)) {
+    setAuthStatus('Enter a valid email address.', 'error');
+    return;
+  }
+  if (password.length < 8) {
+    setAuthStatus('Password must be at least 8 characters.', 'error');
+    return;
+  }
+  if (password !== confirmPassword) {
+    setAuthStatus('Password confirmation does not match.', 'error');
+    return;
+  }
+
+  setAuthSubmitting(true);
+  setAuthStatus('Creating account...', 'info');
+  try {
+    const result = await supabaseSignUp(email, password);
+    if (result.session?.accessToken) {
+      let user = result.user;
+      if (!user?.id) {
+        user = await supabaseGetUser(result.session.accessToken);
+      }
+      if (!user?.id) {
+        throw new Error('Account created, but profile loading failed.');
+      }
+
+      state.auth = {
+        session: result.session,
+        user: {
+          id: normalize(user.id),
+          email: normalizeLower(user.email || email),
+        },
+      };
+      saveAuthState();
+      await loadRewardsProfile();
+      applyAuthUi();
+      setAuthStatus('Account created and signed in.', 'success');
+      estimateClientTotals();
+      scheduleRefresh(120);
+      return;
+    }
+
+    setAuthStatus('Account created. Confirm your email, then sign in.', 'success');
+    switchAuthTab('signin');
+    dom.authSignInEmail.value = email;
+    dom.authSignInPassword.value = '';
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to create account right now.';
+    setAuthStatus(message, 'error');
+  } finally {
+    setAuthSubmitting(false);
+  }
+};
+
+const handleAuthSignOut = async () => {
+  setAuthSubmitting(true);
+  setAuthStatus('Signing out...', 'info');
+
+  try {
+    const token = normalize(state.auth.session?.accessToken);
+    if (token) {
+      await supabaseSignOut(token);
+    }
+  } catch {
+    // Ignore signout transport errors.
+  } finally {
+    state.auth = { ...DEFAULT_AUTH_STATE };
+    state.rewards = { ...DEFAULT_REWARDS_PROFILE };
+    saveAuthState();
+    applyAuthUi();
+    setAuthStatus('Signed out. Guest checkout is still available.', 'success');
+    estimateClientTotals();
+    scheduleRefresh(120);
+    setAuthSubmitting(false);
+  }
+};
+
 const bindEvents = () => {
   dom.form.addEventListener('submit', submitCheckout);
+  dom.authTabSignIn.addEventListener('click', () => switchAuthTab('signin'));
+  dom.authTabSignUp.addEventListener('click', () => switchAuthTab('signup'));
+  dom.authSignInSubmit.addEventListener('click', handleAuthSignIn);
+  dom.authSignUpSubmit.addEventListener('click', handleAuthSignUp);
+  dom.authSignOut.addEventListener('click', handleAuthSignOut);
+
+  dom.authSignInPassword.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      handleAuthSignIn();
+    }
+  });
+  dom.authSignUpConfirm.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      handleAuthSignUp();
+    }
+  });
 
   dom.enablePhone.addEventListener('change', () => {
     if (dom.enablePhone.checked) {
@@ -679,6 +1180,10 @@ const bindEvents = () => {
   });
 
   dom.discountCode.addEventListener('change', () => {
+    if (!isSignedIn()) {
+      dom.discountCode.value = '';
+      return;
+    }
     estimateClientTotals();
     scheduleRefresh(120);
   });
@@ -705,6 +1210,11 @@ const bindEvents = () => {
 };
 
 const initializeCheckout = async () => {
+  switchAuthTab('signin');
+  applyAuthUi();
+  await hydrateAuthSession();
+  await loadRewardsProfile();
+
   try {
     setNotice('info', 'Loading checkout configuration...');
     await loadStripeConfig();
@@ -725,7 +1235,7 @@ const initializeCheckout = async () => {
   updateShippingEstimate();
   setPostalLabel(selectedCountry());
   bindEvents();
-  handleReturnQuery();
+  await handleReturnQuery();
 
   if (!state.checkoutConfig.hasPublishableKey) {
     setNotice('error', 'Checkout is unavailable. Stripe publishable key is missing.');
@@ -743,6 +1253,10 @@ const initializeCheckout = async () => {
     setPayDisabled(true);
     setNotice('warning', 'Your cart is empty. Add products to continue.');
     return;
+  }
+
+  if (!normalize(dom.customerEmail.value) && state.auth.user?.email) {
+    dom.customerEmail.value = state.auth.user.email;
   }
 
   await refreshPaymentIntent();

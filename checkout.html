@@ -48,6 +48,44 @@
           </p>
 
           <form id="checkout-form" class="checkout-form" novalidate>
+            <fieldset class="card-block account-block">
+              <legend>Account (Optional)</legend>
+
+              <div id="auth-signed-in" class="hidden">
+                <p class="auth-copy">Signed in as <strong id="auth-email-display"></strong>. Your order will be saved to your account.</p>
+                <button id="auth-signout" class="text-button" type="button">Sign out</button>
+              </div>
+
+              <div id="auth-guest">
+                <p class="auth-copy">Checkout as guest or sign in to save orders and unlock account rewards.</p>
+
+                <div class="auth-tabs" role="tablist" aria-label="Checkout account access">
+                  <button id="auth-tab-signin" type="button" class="auth-tab auth-tab--active" role="tab" aria-selected="true">Sign In</button>
+                  <button id="auth-tab-signup" type="button" class="auth-tab" role="tab" aria-selected="false">Sign Up</button>
+                </div>
+
+                <div id="auth-pane-signin" class="auth-pane">
+                  <label for="auth-signin-email">Account email</label>
+                  <input id="auth-signin-email" type="email" autocomplete="email" />
+                  <label for="auth-signin-password">Password</label>
+                  <input id="auth-signin-password" type="password" autocomplete="current-password" />
+                  <button id="auth-signin-submit" class="text-button" type="button">Sign In</button>
+                </div>
+
+                <div id="auth-pane-signup" class="auth-pane hidden">
+                  <label for="auth-signup-email">Email</label>
+                  <input id="auth-signup-email" type="email" autocomplete="email" />
+                  <label for="auth-signup-password">Password (min 8 characters)</label>
+                  <input id="auth-signup-password" type="password" autocomplete="new-password" />
+                  <label for="auth-signup-confirm">Confirm password</label>
+                  <input id="auth-signup-confirm" type="password" autocomplete="new-password" />
+                  <button id="auth-signup-submit" class="text-button" type="button">Create account</button>
+                </div>
+
+                <p id="auth-status" class="auth-status" role="status" aria-live="polite"></p>
+              </div>
+            </fieldset>
+
             <fieldset class="card-block">
               <legend>Contact</legend>
 
@@ -105,7 +143,7 @@
               <input id="shipping-postal" name="shippingPostal" autocomplete="shipping postal-code" required />
             </fieldset>
 
-            <fieldset class="card-block">
+            <fieldset id="discount-block" class="card-block hidden">
               <legend>Adjustments</legend>
               <label for="discount-code">Rewards or discount</label>
               <select id="discount-code" name="discountCode">

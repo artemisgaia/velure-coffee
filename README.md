@@ -32,6 +32,7 @@ This checkout uses Stripe Payment Element and Vercel serverless APIs:
 
 - `GET /api/stripe-config`
 - `POST /api/create-payment-intent`
+- `GET/POST /api/orders` (account order history + save completed orders)
 
 ## Forms API
 
@@ -66,6 +67,9 @@ For the static checkout page, use these APIs instead:
 
 - `GET /api/stripe-config`: returns publishable key presence and checkout shipping/tax config.
 - `POST /api/create-payment-intent`: validates cart + shipping inputs, enforces shipping constraints, computes package-weight shipping by country zone, and creates/updates Stripe PaymentIntent metadata.
+  - Reward discounts are account-linked and require an authenticated user with an active reward on profile.
+- `GET /api/orders`: returns signed-in user's saved orders.
+- `POST /api/orders`: verifies Stripe PaymentIntent + signed-in user and persists order history in Supabase.
 
 ## Rewards Sync API
 
@@ -79,6 +83,7 @@ The project includes `/api/rewards` for cross-device rewards sync tied to authen
 Create the required table/policies in Supabase using:
 
 - `supabase/rewards_profiles.sql`
+- `supabase/customer_orders.sql`
 
 ## Environment Variables
 

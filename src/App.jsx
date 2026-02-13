@@ -1044,6 +1044,26 @@ const syncRewardsProfileToApi = async (accessToken, profile) => {
   return response.json();
 };
 
+const loadOrdersFromApi = async (accessToken, limit = 20) => {
+  const response = await fetch(`/api/orders?limit=${encodeURIComponent(String(limit))}`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    credentials: 'same-origin',
+  });
+
+  if (!response.ok) {
+    const errorPayload = await response.json().catch(() => ({}));
+    const message = typeof errorPayload?.error === 'string' && errorPayload.error
+      ? errorPayload.error
+      : 'Unable to load account orders.';
+    throw new Error(message);
+  }
+
+  return response.json();
+};
+
 // --- SUB-COMPONENTS ---
 
 const ProductCard = ({ product, openProductDetail }) => (
@@ -1482,14 +1502,16 @@ const CartDrawer = ({
   cart,
   removeFromCart,
   rewardsProfile,
+  authUser,
   onRedeemReward,
   onRemoveReward,
   onProceedToCheckout,
 }) => {
   const drawerRef = useRef(null);
   const subtotal = cart.reduce((sum, item) => sum + item.price, 0);
-  const pricing = getCheckoutPricing(subtotal, rewardsProfile.activeRewardId);
-  const activeReward = getRewardOffer(rewardsProfile.activeRewardId);
+  const activeRewardId = authUser ? rewardsProfile.activeRewardId : null;
+  const pricing = getCheckoutPricing(subtotal, activeRewardId);
+  const activeReward = getRewardOffer(activeRewardId);
   const [rewardStatus, setRewardStatus] = useState({ type: 'idle', message: '' });
 
   useEffect(() => {
@@ -1604,52 +1626,61 @@ const CartDrawer = ({
         </div>
 
         <div className="p-6 bg-white border-t border-gray-200">
-          <div className="mb-4 p-4 bg-[#F4F0E7] border border-[#e2d9c4]">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-xs uppercase tracking-widest text-gray-600">Rewards Wallet</p>
-              <p className="text-sm font-bold text-[#0B0C0C]">{rewardsProfile.points} pts</p>
-            </div>
-
-            {!rewardsProfile.enrolled && (
-              <p className="text-xs text-gray-600 mb-3">
-                Join rewards from the Rewards page to unlock instant redemptions.
-              </p>
-            )}
-
-            {activeReward ? (
-              <div className="border border-[#D4AF37] bg-white p-3">
-                <p className="text-xs text-gray-600 uppercase tracking-wide mb-1">Active Reward</p>
-                <p className="text-sm font-bold text-[#0B0C0C]">{activeReward.name}</p>
-                <button
-                  type="button"
-                  onClick={handleRemoveReward}
-                  className="mt-2 text-xs font-bold uppercase tracking-wider text-[#0B0C0C] underline underline-offset-2"
-                >
-                  Remove Reward
-                </button>
+          {authUser ? (
+            <div className="mb-4 p-4 bg-[#F4F0E7] border border-[#e2d9c4]">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs uppercase tracking-widest text-gray-600">Rewards Wallet</p>
+                <p className="text-sm font-bold text-[#0B0C0C]">{rewardsProfile.points} pts</p>
               </div>
-            ) : (
-              <div className="grid grid-cols-1 gap-2">
-                {REWARD_OFFERS.map((offer) => (
+
+              {!rewardsProfile.enrolled && (
+                <p className="text-xs text-gray-600 mb-3">
+                  Join rewards from the Rewards page to unlock instant redemptions.
+                </p>
+              )}
+
+              {activeReward ? (
+                <div className="border border-[#D4AF37] bg-white p-3">
+                  <p className="text-xs text-gray-600 uppercase tracking-wide mb-1">Active Reward</p>
+                  <p className="text-sm font-bold text-[#0B0C0C]">{activeReward.name}</p>
                   <button
-                    key={offer.id}
                     type="button"
-                    onClick={() => handleApplyReward(offer.id)}
-                    disabled={!rewardsProfile.enrolled || rewardsProfile.points < offer.pointsCost || cart.length === 0}
-                    className="text-left border border-gray-300 p-3 text-xs uppercase tracking-wide font-bold text-[#0B0C0C] enabled:hover:border-[#D4AF37] disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={handleRemoveReward}
+                    className="mt-2 text-xs font-bold uppercase tracking-wider text-[#0B0C0C] underline underline-offset-2"
                   >
-                    {offer.name} - {offer.pointsCost} pts
+                    Remove Reward
                   </button>
-                ))}
-              </div>
-            )}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-2">
+                  {REWARD_OFFERS.map((offer) => (
+                    <button
+                      key={offer.id}
+                      type="button"
+                      onClick={() => handleApplyReward(offer.id)}
+                      disabled={!rewardsProfile.enrolled || rewardsProfile.points < offer.pointsCost || cart.length === 0}
+                      className="text-left border border-gray-300 p-3 text-xs uppercase tracking-wide font-bold text-[#0B0C0C] enabled:hover:border-[#D4AF37] disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {offer.name} - {offer.pointsCost} pts
+                    </button>
+                  ))}
+                </div>
+              )}
 
-            {rewardStatus.message && (
-              <p className={`mt-3 text-xs ${rewardStatus.type === 'error' ? 'text-red-600' : 'text-green-700'}`} role="status">
-                {rewardStatus.message}
+              {rewardStatus.message && (
+                <p className={`mt-3 text-xs ${rewardStatus.type === 'error' ? 'text-red-600' : 'text-green-700'}`} role="status">
+                  {rewardStatus.message}
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className="mb-4 p-4 bg-[#F4F0E7] border border-[#e2d9c4]">
+              <p className="text-xs uppercase tracking-widest text-gray-600 mb-1">Guest Checkout</p>
+              <p className="text-xs text-gray-700">
+                Rewards are account-linked. Sign in at checkout to save this order and unlock rewards.
               </p>
-            )}
-          </div>
+            </div>
+          )}
 
           <div className="flex justify-between items-center mb-4">
             <span className="font-sans text-gray-600">Subtotal</span>
@@ -1678,7 +1709,9 @@ const CartDrawer = ({
             {`CONTINUE TO CHECKOUT — $${pricing.total.toFixed(2)}`}
           </button>
           <p className="text-xs text-center text-gray-400 mt-3">
-            Processed securely by Stripe Checkout. Earn {Math.floor((pricing.subtotal - pricing.rewardDiscount) * REWARDS_POINTS_PER_DOLLAR)} pts on this order.
+            {authUser
+              ? `Processed securely by Stripe Checkout. Earn ${Math.floor((pricing.subtotal - pricing.rewardDiscount) * REWARDS_POINTS_PER_DOLLAR)} pts on this order.`
+              : 'Processed securely by Stripe Checkout.'}
           </p>
         </div>
 
@@ -1696,7 +1729,8 @@ const CheckoutView = ({
   onCheckoutSuccess,
 }) => {
   const subtotal = cart.reduce((sum, item) => sum + item.price, 0);
-  const pricing = getCheckoutPricing(subtotal, rewardsProfile.activeRewardId);
+  const activeRewardId = authUser ? rewardsProfile.activeRewardId : null;
+  const pricing = getCheckoutPricing(subtotal, activeRewardId);
   const [customerEmail, setCustomerEmail] = useState(authUser?.email || rewardsProfile.email || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEmbeddedBooting, setIsEmbeddedBooting] = useState(false);
@@ -1726,7 +1760,7 @@ const CheckoutView = ({
     .filter(Boolean);
 
   const checkoutRequestKey = checkoutItems.length
-    ? `${checkoutItems.map((item) => `${item.productId}:${item.quantity}`).join('|')}|reward:${rewardsProfile.activeRewardId || 'none'}`
+    ? `${checkoutItems.map((item) => `${item.productId}:${item.quantity}`).join('|')}|reward:${activeRewardId || 'none'}`
     : '';
 
   useEffect(() => {
@@ -1927,7 +1961,7 @@ const CheckoutView = ({
       currency: 'USD',
       value: Number(pricing.total.toFixed(2)),
       item_count: cart.length,
-      reward_id: rewardsProfile.activeRewardId || undefined,
+      reward_id: activeRewardId || undefined,
     });
 
     try {
@@ -1937,7 +1971,7 @@ const CheckoutView = ({
         credentials: 'same-origin',
         body: JSON.stringify({
           items: getCheckoutItemsFromCart(cart),
-          rewardId: rewardsProfile.activeRewardId || null,
+          rewardId: activeRewardId || null,
           customerEmail: normalizedEmail || undefined,
           uiMode: 'embedded',
         }),
@@ -1981,7 +2015,7 @@ const CheckoutView = ({
     isEmbeddedBooting,
     isSubmitting,
     pricing.total,
-    rewardsProfile.activeRewardId,
+    activeRewardId,
   ]);
 
   useEffect(() => {
@@ -2333,7 +2367,7 @@ const ContactView = () => {
   );
 };
 
-const AccountView = ({ authState, onSignIn, onSignUp, onSignOut, setView }) => {
+const AccountView = ({ authState, ordersState, onSignIn, onSignUp, onSignOut, setView }) => {
   const [activeTab, setActiveTab] = useState('signin');
   const [signInForm, setSignInForm] = useState({ email: '', password: '' });
   const [signUpForm, setSignUpForm] = useState({ email: '', password: '', confirmPassword: '' });
@@ -2402,6 +2436,37 @@ const AccountView = ({ authState, onSignIn, onSignUp, onSignOut, setView }) => {
             <p className="text-sm text-gray-400 mt-3">
               Your rewards profile and cart now load under this account on this device.
             </p>
+
+            <div className="mt-6 border border-gray-800 bg-[#0B0C0C] p-4">
+              <p className="text-xs uppercase tracking-widest text-gray-400 mb-3">Recent Orders</p>
+              {ordersState?.isLoading ? (
+                <p className="text-sm text-gray-400">Loading orders...</p>
+              ) : ordersState?.error ? (
+                <p className="text-sm text-red-400">{ordersState.error}</p>
+              ) : !ordersState?.items?.length ? (
+                <p className="text-sm text-gray-400">No saved orders yet. Complete checkout while signed in to save orders here.</p>
+              ) : (
+                <div className="space-y-3">
+                  {ordersState.items.slice(0, 5).map((order) => (
+                    <div key={order.id || order.payment_intent_id} className="border border-gray-700 p-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-xs text-gray-400 uppercase tracking-wider">
+                          {order.payment_status || 'unknown'}
+                        </p>
+                        <p className="text-sm text-[#D4AF37] font-bold">
+                          ${(Number(order.total || order.amount_total || 0)).toFixed(2)} {order.currency || 'USD'}
+                        </p>
+                      </div>
+                      <p className="text-xs text-gray-300 mt-1">{order.item_preview || 'Order items'}</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {order.created_at ? new Date(order.created_at).toLocaleString() : ''}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <div className="flex flex-wrap gap-3 mt-6">
               <button
                 type="button"
@@ -2552,6 +2617,40 @@ const RewardsView = ({ setView, rewardsProfile, onJoinRewards, onRedeemReward, o
     setJoinEmail(authUser?.email || rewardsProfile.email || '');
   }, [authUser?.email, rewardsProfile.email]);
 
+  if (!authUser) {
+    return (
+      <div className="pt-32 pb-24 bg-[#0B0C0C] min-h-screen text-[#F9F6F0]">
+        <div className="max-w-3xl mx-auto px-6">
+          <h1 className="text-5xl font-serif mb-4">Velure Rewards App</h1>
+          <p className="text-gray-300 text-lg mb-8">
+            Rewards are account-linked and only available to signed-in customers.
+          </p>
+          <div className="bg-[#151515] border border-gray-800 p-6">
+            <p className="text-sm text-gray-300 mb-5">
+              Sign in or create an account to unlock points, redemptions, and saved rewards history.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => setView('account')}
+                className="bg-[#D4AF37] text-[#0B0C0C] px-5 py-3 text-xs font-bold uppercase tracking-wider hover:bg-[#b5952f]"
+              >
+                Sign In / Sign Up
+              </button>
+              <button
+                type="button"
+                onClick={() => setView('shop_all')}
+                className="border border-[#D4AF37] text-[#D4AF37] px-5 py-3 text-xs font-bold uppercase tracking-wider hover:bg-[#D4AF37] hover:text-[#0B0C0C]"
+              >
+                Continue Shopping
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const handleJoinRewards = async () => {
     if (!joinEmail.trim() || !isValidEmail(joinEmail)) {
       setStatus({ type: 'error', message: 'Enter a valid email address to join rewards.' });
@@ -2620,19 +2719,6 @@ const RewardsView = ({ setView, rewardsProfile, onJoinRewards, onRedeemReward, o
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="bg-[#151515] border border-gray-800 p-6">
             <h2 className="font-serif text-3xl mb-4">Join & Redeem</h2>
-
-            {!authUser && (
-              <div className="mb-5 p-4 border border-gray-700 bg-[#0B0C0C]">
-                <p className="text-sm text-gray-300 mb-3">Sign in to create an account-linked rewards wallet.</p>
-                <button
-                  type="button"
-                  onClick={() => setView('account')}
-                  className="border border-[#D4AF37] text-[#D4AF37] px-4 py-2 text-xs font-bold uppercase tracking-wider hover:bg-[#D4AF37] hover:text-[#0B0C0C]"
-                >
-                  Sign In / Sign Up
-                </button>
-              </div>
-            )}
 
             {!rewardsProfile.enrolled && authUser && (
               <div className="mb-6">
@@ -3245,6 +3331,11 @@ const App = () => {
       return { ...DEFAULT_AUTH_STATE };
     }
   });
+  const [ordersState, setOrdersState] = useState({
+    isLoading: false,
+    error: '',
+    items: [],
+  });
 
   useEffect(() => {
     try {
@@ -3467,6 +3558,36 @@ const App = () => {
   ]);
 
   useEffect(() => {
+    let cancelled = false;
+    const accessToken = authState.session?.accessToken;
+    const userId = authState.user?.id;
+
+    if (!accessToken || !userId) {
+      setOrdersState({ isLoading: false, error: '', items: [] });
+      return undefined;
+    }
+
+    const loadOrders = async () => {
+      setOrdersState((previous) => ({ ...previous, isLoading: true, error: '' }));
+      try {
+        const payload = await loadOrdersFromApi(accessToken, 20);
+        if (cancelled) return;
+        const items = Array.isArray(payload?.orders) ? payload.orders : [];
+        setOrdersState({ isLoading: false, error: '', items });
+      } catch (error) {
+        if (cancelled) return;
+        const message = error instanceof Error ? error.message : 'Unable to load account orders.';
+        setOrdersState({ isLoading: false, error: message, items: [] });
+      }
+    };
+
+    loadOrders();
+    return () => {
+      cancelled = true;
+    };
+  }, [authState.session?.accessToken, authState.user?.id, currentView]);
+
+  useEffect(() => {
     if (typeof window === 'undefined') return undefined;
 
     const currentPath = window.location.pathname !== '/' ? window.location.pathname.replace(/\/+$/, '') : '/';
@@ -3663,13 +3784,14 @@ const App = () => {
     if (cart.length === 0) return;
 
     const subtotal = cart.reduce((sum, item) => sum + item.price, 0);
-    const pricing = getCheckoutPricing(subtotal, rewardsProfile.activeRewardId);
+    const activeRewardId = authState.user ? rewardsProfile.activeRewardId : null;
+    const pricing = getCheckoutPricing(subtotal, activeRewardId);
 
     trackEvent('begin_checkout', {
       currency: 'USD',
       value: Number(pricing.total.toFixed(2)),
       item_count: cart.length,
-      reward_id: rewardsProfile.activeRewardId || undefined,
+      reward_id: activeRewardId || undefined,
     });
 
     closeCart();
@@ -3678,7 +3800,7 @@ const App = () => {
       return;
     }
     navigateToView('checkout');
-  }, [cart, closeCart, navigateToView, rewardsProfile.activeRewardId]);
+  }, [authState.user, cart, closeCart, navigateToView, rewardsProfile.activeRewardId]);
 
   const openProductDetail = (product) => {
     navigateToView('product_detail', { productId: product.id });
@@ -3821,6 +3943,10 @@ const App = () => {
   }, [authState.user?.id]);
 
   const redeemReward = useCallback((rewardId) => {
+    if (!authState.user?.id) {
+      return { ok: false, message: 'Sign in to redeem account rewards.' };
+    }
+
     const rewardOffer = getRewardOffer(rewardId);
     if (!rewardOffer) {
       return { ok: false, message: 'Invalid reward selection.' };
@@ -3869,9 +3995,13 @@ const App = () => {
     }
 
     return result;
-  }, []);
+  }, [authState.user?.id]);
 
   const removeReward = useCallback(() => {
+    if (!authState.user?.id) {
+      return { ok: false, message: 'Sign in to manage account rewards.' };
+    }
+
     let result = { ok: false, message: 'No active reward to remove.' };
 
     setRewardsProfile((previousProfile) => {
@@ -3903,9 +4033,14 @@ const App = () => {
     }
 
     return result;
-  }, []);
+  }, [authState.user?.id]);
 
   const handleCheckoutSuccess = useCallback((checkoutPayload) => {
+    if (!authState.user?.id) {
+      setCart([]);
+      return;
+    }
+
     const earnedPoints = Math.max(0, Math.floor(Number(checkoutPayload?.earnablePoints || 0)));
     const usedRewardId = checkoutPayload?.reward?.id || null;
 
@@ -3940,7 +4075,7 @@ const App = () => {
       reward_id: usedRewardId || undefined,
       total: checkoutPayload?.total,
     });
-  }, []);
+  }, [authState.user?.id]);
 
   // --- CONTENT MAPPING ---
   
@@ -3977,6 +4112,7 @@ const App = () => {
       case 'account': return (
         <AccountView
           authState={authState}
+          ordersState={ordersState}
           onSignIn={handleSignIn}
           onSignUp={handleSignUp}
           onSignOut={handleSignOut}
@@ -4056,6 +4192,7 @@ const App = () => {
         cart={cart} 
         removeFromCart={removeFromCart}
         rewardsProfile={rewardsProfile}
+        authUser={authState.user}
         onRedeemReward={redeemReward}
         onRemoveReward={removeReward}
         onProceedToCheckout={proceedToCheckout}

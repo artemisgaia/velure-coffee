@@ -49,6 +49,70 @@ const isAllowedOrigin = (req) => {
   }
 };
 
+const getSupabaseConfig = () => {
+  const supabaseUrl = normalize(globalThis.process?.env?.SUPABASE_URL || globalThis.process?.env?.VITE_SUPABASE_URL || '').replace(/\/+$/, '');
+  const anonKey = normalize(globalThis.process?.env?.SUPABASE_ANON_KEY || globalThis.process?.env?.VITE_SUPABASE_ANON_KEY || '');
+  const serviceRoleKey = normalize(globalThis.process?.env?.SUPABASE_SERVICE_ROLE_KEY || '');
+
+  if (!supabaseUrl || !anonKey || !serviceRoleKey) {
+    throw new Error('Missing Supabase server configuration.');
+  }
+
+  return { supabaseUrl, anonKey, serviceRoleKey };
+};
+
+const verifyAccessToken = async (config, accessToken) => {
+  const response = await fetch(`${config.supabaseUrl}/auth/v1/user`, {
+    method: 'GET',
+    headers: {
+      apikey: config.anonKey,
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    return null;
+  }
+
+  const payload = await response.json().catch(() => null);
+  if (!payload?.id) {
+    return null;
+  }
+
+  return {
+    id: normalize(payload.id),
+    email: normalizeLower(payload.email),
+  };
+};
+
+const loadRewardsProfile = async (config, userId) => {
+  const query = new URLSearchParams({
+    user_id: `eq.${userId}`,
+    select: 'profile',
+    limit: '1',
+  });
+
+  const response = await fetch(`${config.supabaseUrl}/rest/v1/rewards_profiles?${query.toString()}`, {
+    method: 'GET',
+    headers: {
+      apikey: config.serviceRoleKey,
+      Authorization: `Bearer ${config.serviceRoleKey}`,
+      Accept: 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    return null;
+  }
+
+  const rows = await response.json().catch(() => []);
+  if (!Array.isArray(rows) || rows.length === 0) {
+    return null;
+  }
+
+  return rows[0]?.profile && typeof rows[0].profile === 'object' ? rows[0].profile : null;
+};
+
 const parseBody = async (req) => {
   if (req.body && typeof req.body === 'object') return req.body;
   if (typeof req.body === 'string') return req.body ? JSON.parse(req.body) : {};
@@ -69,12 +133,15 @@ const parseBody = async (req) => {
 };
 
 const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+const isValidUuid = (value) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 
 const sanitizeCustomer = (body) => {
   const customer = body?.customer && typeof body.customer === 'object' ? body.customer : {};
   const name = normalize(customer.name || body.customerName).slice(0, 120);
   const email = normalizeLower(customer.email || body.customerEmail).slice(0, 180);
   const phone = normalize(customer.phone || body.customerPhone).slice(0, 40);
+  const userIdCandidate = normalize(customer.userId || body.customerUserId);
+  const userId = isValidUuid(userIdCandidate) ? userIdCandidate : '';
 
   if (!name || name.length < 2) {
     return { ok: false, error: 'Please enter your full name.' };
@@ -84,7 +151,7 @@ const sanitizeCustomer = (body) => {
     return { ok: false, error: 'Please enter a valid email address.' };
   }
 
-  return { ok: true, customer: { name, email, phone } };
+  return { ok: true, customer: { name, email, phone, userId } };
 };
 
 const sanitizeShipping = (body) => {
@@ -262,9 +329,15 @@ const createMetadata = ({ orderDraftId, customer, shipping, totals, items, itemP
     customerName: customer.name,
     customerEmail: customer.email,
     customerPhone: customer.phone || '',
+    customerUserId: customer.userId || '',
     shippingCountry: shipping.country,
     shippingService: shipping.service,
     shippingZone: zoneKey,
+    shippingAddress1: shipping.address1 || '',
+    shippingAddress2: shipping.address2 || '',
+    shippingCity: shipping.city || '',
+    shippingRegion: shipping.region || '',
+    shippingPostalCode: shipping.postalCode || '',
     packageWeightLbs: Number(totals.packageWeightLbs || 0).toFixed(2),
     subtotal: toAmount(totals.subtotalCents).toFixed(2),
     discount: toAmount(totals.discountCents).toFixed(2),
@@ -280,21 +353,6 @@ const appendMetadata = (params, metadata) => {
   for (const [key, value] of Object.entries(metadata)) {
     params.append(`metadata[${key}]`, normalize(String(value)).slice(0, 500));
   }
-};
-
-const appendShipping = (params, customer, shipping) => {
-  params.append('shipping[name]', customer.name);
-  if (customer.phone) {
-    params.append('shipping[phone]', customer.phone);
-  }
-  params.append('shipping[address][line1]', shipping.address1);
-  if (shipping.address2) {
-    params.append('shipping[address][line2]', shipping.address2);
-  }
-  params.append('shipping[address][city]', shipping.city);
-  params.append('shipping[address][state]', shipping.region);
-  params.append('shipping[address][postal_code]', shipping.postalCode);
-  params.append('shipping[address][country]', shipping.country);
 };
 
 const stripeRequest = async ({ path, stripeSecretKey, params }) => {
@@ -356,6 +414,10 @@ export default async function handler(req, res) {
     return;
   }
 
+  const authHeader = normalize(req.headers.authorization);
+  const isBearer = authHeader.toLowerCase().startsWith('bearer ');
+  const accessToken = isBearer ? normalize(authHeader.slice(7)) : '';
+
   let body;
   try {
     body = await parseBody(req);
@@ -398,6 +460,60 @@ export default async function handler(req, res) {
   }
 
   const discountCode = normalizeLower(body.discountCode || body.rewardId);
+  let authenticatedUser = null;
+  let supabaseConfig = null;
+
+  if (accessToken) {
+    try {
+      supabaseConfig = getSupabaseConfig();
+      authenticatedUser = await verifyAccessToken(supabaseConfig, accessToken);
+    } catch {
+      authenticatedUser = null;
+    }
+  }
+
+  if (customerValidation.customer.userId && authenticatedUser?.id && customerValidation.customer.userId !== authenticatedUser.id) {
+    sendJson(res, 403, {
+      ok: false,
+      code: 'auth_mismatch',
+      error: 'Account mismatch detected. Please refresh checkout and sign in again.',
+    });
+    return;
+  }
+
+  if (discountCode) {
+    if (!supabaseConfig) {
+      sendJson(res, 503, {
+        ok: false,
+        code: 'rewards_unavailable',
+        error: 'Rewards are temporarily unavailable. Continue without reward discount.',
+      });
+      return;
+    }
+
+    if (!accessToken || !authenticatedUser?.id) {
+      sendJson(res, 401, {
+        ok: false,
+        code: 'auth_required',
+        error: 'Sign in to apply account rewards.',
+      });
+      return;
+    }
+
+    const rewardsProfile = await loadRewardsProfile(supabaseConfig, authenticatedUser.id);
+    const activeRewardId = normalizeLower(rewardsProfile?.activeRewardId);
+    const enrolled = Boolean(rewardsProfile?.enrolled);
+
+    if (!enrolled || activeRewardId !== discountCode) {
+      sendJson(res, 422, {
+        ok: false,
+        code: 'reward_not_active',
+        error: 'Selected reward is not active on this account.',
+      });
+      return;
+    }
+  }
+
   const totals = calculateTotals(itemValidation.items, shipping, discountCode);
   if (totals.shippingErrorCode) {
     sendJson(res, 422, {
@@ -419,9 +535,13 @@ export default async function handler(req, res) {
 
   const orderDraftId = normalize(body.orderDraftId) || `velure-${randomUUID()}`;
   const itemPreview = getItemPreview(itemValidation.items);
+  const metadataCustomer = {
+    ...customerValidation.customer,
+    userId: authenticatedUser?.id || '',
+  };
   const metadata = createMetadata({
     orderDraftId,
-    customer: customerValidation.customer,
+    customer: metadataCustomer,
     shipping,
     totals,
     items: itemValidation.items,
@@ -439,7 +559,6 @@ export default async function handler(req, res) {
     params.append('description', summary);
     params.append('receipt_email', customerValidation.customer.email);
     appendMetadata(params, metadata);
-    appendShipping(params, customerValidation.customer, shipping);
     return params;
   };
 
