@@ -40,10 +40,11 @@ The project also includes `/api/checkout`:
 
 - Recalculates totals server-side from trusted product IDs and quantities.
 - Supports optional rewards redemptions via `rewardId` (`five_off`, `free_shipping`).
-- Requires `customerName` and `customerEmail` in the checkout request payload.
+- Accepts optional `customerName` and `customerEmail` to prefill customer data.
 - Supports `uiMode`:
   - `embedded`: returns `clientSecret` and `checkoutSessionId` for in-page embedded Stripe Checkout.
   - `hosted` (fallback): returns `checkoutUrl` for hosted redirect.
+- Embedded checkout is configured to collect billing address, shipping address, phone, and country directly in Stripe UI.
 - Returns computed pricing breakdown (`subtotal`, `shipping`, `rewardDiscount`, `total`) and `earnablePoints`.
 - Supports origin allowlisting with `CHECKOUT_ALLOWED_ORIGINS` (or `FORMS_ALLOWED_ORIGINS` fallback).
 - Uses `STRIPE_SECRET_KEY` from server environment.
@@ -74,6 +75,7 @@ Copy `.env.example` to `.env.local` for local overrides:
 - `FORMS_WEBHOOK_SECRET` (server): optional HMAC secret for signed webhook forwarding.
 - `STRIPE_SECRET_KEY` (server): Stripe secret key for creating checkout sessions.
 - `CHECKOUT_ALLOWED_ORIGINS` (server): optional allowlist for `/api/checkout`.
+- `CHECKOUT_SHIPPING_COUNTRIES` (server): optional comma-separated ISO country codes for shipping address collection (default `US`).
 - `PUBLIC_SITE_URL` (server): optional canonical site origin used for Stripe success/cancel URLs.
 - `VITE_SUPABASE_URL` (frontend): Supabase project URL for auth.
 - `VITE_SUPABASE_ANON_KEY` (frontend): Supabase anon public key for auth requests.

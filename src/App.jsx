@@ -1673,7 +1673,6 @@ const CheckoutView = ({
 }) => {
   const subtotal = cart.reduce((sum, item) => sum + item.price, 0);
   const pricing = getCheckoutPricing(subtotal, rewardsProfile.activeRewardId);
-  const [customerName, setCustomerName] = useState('');
   const [customerEmail, setCustomerEmail] = useState(authUser?.email || rewardsProfile.email || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEmbeddedBooting, setIsEmbeddedBooting] = useState(false);
@@ -1687,6 +1686,7 @@ const CheckoutView = ({
   const pendingCheckoutPayloadRef = useRef(null);
   const checkoutMetricsRef = useRef({ total: pricing.total, itemCount: cart.length });
   const hasProcessedCheckoutRef = useRef(false);
+  const sessionRequestKeyRef = useRef('');
 
   const checkoutItems = getCheckoutItemsFromCart(cart)
     .map((entry) => {
@@ -1701,12 +1701,30 @@ const CheckoutView = ({
     })
     .filter(Boolean);
 
+  const checkoutRequestKey = checkoutItems.length
+    ? `${checkoutItems.map((item) => `${item.productId}:${item.quantity}`).join('|')}|reward:${rewardsProfile.activeRewardId || 'none'}`
+    : '';
+
   useEffect(() => {
     checkoutMetricsRef.current = {
       total: pricing.total,
       itemCount: cart.length,
     };
   }, [cart.length, pricing.total]);
+
+  useEffect(() => {
+    if (cart.length !== 0) return;
+    sessionRequestKeyRef.current = '';
+    setEmbeddedClientSecret('');
+    setEmbeddedSessionId('');
+  }, [cart.length]);
+
+  useEffect(() => {
+    if (cart.length === 0) return;
+    if (!STRIPE_PUBLISHABLE_KEY) {
+      setCheckoutError('Stripe publishable key is missing. Set VITE_STRIPE_PUBLISHABLE_KEY.');
+    }
+  }, [cart.length]);
 
   useEffect(() => {
     if (!customerEmail && (authUser?.email || rewardsProfile.email)) {
@@ -1856,25 +1874,19 @@ const CheckoutView = ({
     setEmbeddedSessionId('');
     setIsEmbeddedMounted(false);
     setIsEmbeddedBooting(false);
+    sessionRequestKeyRef.current = '';
     hasProcessedCheckoutRef.current = false;
   };
 
-  const handleStartStripeCheckout = async (event) => {
-    event.preventDefault();
-
-    if (cart.length === 0 || isSubmitting || isEmbeddedBooting) return;
+  const handleStartStripeCheckout = useCallback(async ({ force = false } = {}) => {
+    if (cart.length === 0 || (!force && (isSubmitting || isEmbeddedBooting))) return;
     setCheckoutError('');
-    setCheckoutNotice('');
-
-    const normalizedName = customerName.trim();
-    const normalizedEmail = customerEmail.trim().toLowerCase();
-
-    if (!normalizedName || normalizedName.length < 2) {
-      setCheckoutError('Please enter your full name.');
-      return;
+    if (force) {
+      setCheckoutNotice('');
     }
 
-    if (!isValidEmail(normalizedEmail)) {
+    const normalizedEmail = customerEmail.trim().toLowerCase();
+    if (normalizedEmail && !isValidEmail(normalizedEmail)) {
       setCheckoutError('Please enter a valid email address.');
       return;
     }
@@ -1902,8 +1914,7 @@ const CheckoutView = ({
         body: JSON.stringify({
           items: getCheckoutItemsFromCart(cart),
           rewardId: rewardsProfile.activeRewardId || null,
-          customerName: normalizedName,
-          customerEmail: normalizedEmail,
+          customerEmail: normalizedEmail || undefined,
           uiMode: 'embedded',
         }),
       });
@@ -1926,6 +1937,7 @@ const CheckoutView = ({
       if (payload?.uiMode === 'embedded' && payload?.clientSecret) {
         setEmbeddedSessionId(typeof payload.checkoutSessionId === 'string' ? payload.checkoutSessionId : '');
         setEmbeddedClientSecret(payload.clientSecret);
+        sessionRequestKeyRef.current = checkoutRequestKey;
       } else if (payload?.checkoutUrl) {
         window.location.assign(payload.checkoutUrl);
       } else {
@@ -1938,7 +1950,24 @@ const CheckoutView = ({
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [
+    cart,
+    checkoutRequestKey,
+    customerEmail,
+    isEmbeddedBooting,
+    isSubmitting,
+    pricing.total,
+    rewardsProfile.activeRewardId,
+  ]);
+
+  useEffect(() => {
+    if (!checkoutRequestKey || cart.length === 0) return;
+    if (sessionRequestKeyRef.current === checkoutRequestKey) return;
+    if (!STRIPE_PUBLISHABLE_KEY) return;
+
+    sessionRequestKeyRef.current = checkoutRequestKey;
+    handleStartStripeCheckout();
+  }, [cart.length, checkoutRequestKey, handleStartStripeCheckout]);
 
   const isEmbeddedActive = Boolean(embeddedClientSecret || isEmbeddedMounted || isEmbeddedBooting);
 
@@ -2030,53 +2059,20 @@ const CheckoutView = ({
           </section>
 
           <section className="bg-[#0B0C0C] text-[#F9F6F0] p-6 md:p-8">
-            <h2 className="font-serif text-2xl mb-3">{isEmbeddedActive ? 'Secure Payment' : 'Customer Information'}</h2>
+            <h2 className="font-serif text-2xl mb-3">Secure Payment</h2>
             <p className="text-sm text-gray-300 mb-6">
-              {isEmbeddedActive
-                ? 'Complete payment directly on this page. Stripe processes payment securely.'
-                : 'Your name, email, and purchased products are sent to Stripe with your order.'
-              }
+              Complete payment directly on this page. Stripe securely collects checkout details including email, phone, billing/shipping address, and country.
             </p>
 
             {!isEmbeddedActive && (
-              <form onSubmit={handleStartStripeCheckout} className="space-y-4">
-                <label className="block">
-                  <span className="text-xs uppercase tracking-widest text-gray-300">Full Name</span>
-                  <input
-                    type="text"
-                    required
-                    autoComplete="name"
-                    value={customerName}
-                    onChange={(event) => setCustomerName(event.target.value)}
-                    className="mt-2 w-full bg-[#111] border border-[#3a3a3a] px-4 py-3 text-[#F9F6F0] placeholder:text-gray-500 focus:outline-none focus:border-[#D4AF37]"
-                    placeholder="Joe Hart"
-                  />
-                </label>
-
-                <label className="block">
-                  <span className="text-xs uppercase tracking-widest text-gray-300">Email</span>
-                  <input
-                    type="email"
-                    required
-                    autoComplete="email"
-                    value={customerEmail}
-                    onChange={(event) => setCustomerEmail(event.target.value)}
-                    className="mt-2 w-full bg-[#111] border border-[#3a3a3a] px-4 py-3 text-[#F9F6F0] placeholder:text-gray-500 focus:outline-none focus:border-[#D4AF37]"
-                    placeholder="you@example.com"
-                  />
-                </label>
-
-                <button
-                  type="submit"
-                  disabled={cart.length === 0 || isSubmitting}
-                  className={`w-full py-4 font-bold tracking-widest text-sm uppercase transition-colors ${(cart.length === 0 || isSubmitting)
-                    ? 'bg-[#3b3b3b] text-gray-400 cursor-not-allowed'
-                    : 'bg-[#D4AF37] text-[#0B0C0C] hover:bg-[#c29d2e]'
-                  }`}
-                >
-                  {isSubmitting ? 'Preparing secure checkout...' : 'Continue to Secure Payment'}
-                </button>
-              </form>
+              <div className="rounded-sm border border-white/15 bg-white/5 p-4 min-h-[120px] flex items-center">
+                <p className="text-sm text-gray-300">
+                  {cart.length === 0
+                    ? 'Add items to cart to begin checkout.'
+                    : (isSubmitting ? 'Preparing secure checkout...' : 'Loading secure checkout...')
+                  }
+                </p>
+              </div>
             )}
 
             {isEmbeddedActive && (
@@ -2089,10 +2085,13 @@ const CheckoutView = ({
                 </div>
                 <button
                   type="button"
-                  onClick={resetEmbeddedCheckout}
+                  onClick={() => {
+                    resetEmbeddedCheckout();
+                    handleStartStripeCheckout({ force: true });
+                  }}
                   className="w-full border border-[#D4AF37] text-[#D4AF37] py-3 text-xs font-bold uppercase tracking-wider hover:bg-[#D4AF37] hover:text-[#0B0C0C]"
                 >
-                  Edit Customer Info
+                  Reload Checkout
                 </button>
               </div>
             )}
@@ -2101,6 +2100,19 @@ const CheckoutView = ({
               <p className="mt-4 text-sm border border-red-500/40 bg-red-500/10 text-red-200 px-4 py-3" role="alert">
                 {checkoutError}
               </p>
+            )}
+
+            {!isEmbeddedActive && checkoutError && cart.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  resetEmbeddedCheckout();
+                  handleStartStripeCheckout({ force: true });
+                }}
+                className="mt-4 w-full border border-[#D4AF37] text-[#D4AF37] py-3 text-xs font-bold uppercase tracking-wider hover:bg-[#D4AF37] hover:text-[#0B0C0C]"
+              >
+                Retry Secure Checkout
+              </button>
             )}
 
             <p className="mt-5 text-xs text-gray-400">

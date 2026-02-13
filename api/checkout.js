@@ -11,6 +11,7 @@ const STANDARD_SHIPPING_FEE = 6.95;
 const FREE_SHIPPING_THRESHOLD = 50;
 const REWARDS_POINTS_PER_DOLLAR = 5;
 const STRIPE_DEFAULT_CURRENCY = 'usd';
+const DEFAULT_SHIPPING_COUNTRIES = ['US'];
 
 const REWARD_OFFERS = {
   five_off: {
@@ -120,15 +121,15 @@ const validateReward = (rewardId) => {
 
 const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-const validateCustomer = (name, email) => {
+const parseCustomer = (name, email) => {
   const normalizedName = normalize(name).slice(0, 120);
   const normalizedEmail = normalizeLower(email).slice(0, 180);
 
-  if (!normalizedName || normalizedName.length < 2) {
+  if (normalizedName && normalizedName.length < 2) {
     return { ok: false, error: 'Please enter your full name.' };
   }
 
-  if (!normalizedEmail || !isValidEmail(normalizedEmail)) {
+  if (normalizedEmail && !isValidEmail(normalizedEmail)) {
     return { ok: false, error: 'Please enter a valid email address.' };
   }
 
@@ -142,6 +143,20 @@ const validateCustomer = (name, email) => {
 };
 
 const normalizeUiMode = (value) => (normalizeLower(value) === 'embedded' ? 'embedded' : 'hosted');
+
+const parseShippingCountries = () => {
+  const envValue = getEnv('CHECKOUT_SHIPPING_COUNTRIES');
+  if (!envValue) {
+    return DEFAULT_SHIPPING_COUNTRIES;
+  }
+
+  const countries = envValue
+    .split(',')
+    .map((country) => normalize(country).toUpperCase())
+    .filter((country) => /^[A-Z]{2}$/.test(country));
+
+  return countries.length ? countries : DEFAULT_SHIPPING_COUNTRIES;
+};
 
 const calculatePricing = (subtotal, reward) => {
   const roundedSubtotal = Number(subtotal.toFixed(2));
@@ -269,13 +284,25 @@ const createStripeCheckoutSession = async ({ items, pricing, reward, customer, u
     params.append('cancel_url', `${origin}/checkout?checkout=cancelled`);
   }
   params.append('customer_creation', 'always');
-  params.append('customer_email', customer.email);
-  params.append('payment_intent_data[receipt_email]', customer.email);
+  if (customer.email) {
+    params.append('customer_email', customer.email);
+    params.append('payment_intent_data[receipt_email]', customer.email);
+  }
   params.append('payment_intent_data[description]', summary.slice(0, 500));
-  params.append('payment_intent_data[metadata][customer_name]', customer.name);
-  params.append('payment_intent_data[metadata][customer_email]', customer.email);
+  if (customer.name) {
+    params.append('payment_intent_data[metadata][customer_name]', customer.name);
+  }
+  if (customer.email) {
+    params.append('payment_intent_data[metadata][customer_email]', customer.email);
+  }
   params.append('payment_intent_data[metadata][item_summary]', summary.slice(0, 450));
+  params.append('billing_address_collection', 'required');
   params.append('phone_number_collection[enabled]', 'true');
+
+  const shippingCountries = parseShippingCountries();
+  shippingCountries.forEach((countryCode, index) => {
+    params.append(`shipping_address_collection[allowed_countries][${index}]`, countryCode);
+  });
 
   for (const item of items) {
     const product = PRODUCT_CATALOG[item.productId];
@@ -303,8 +330,12 @@ const createStripeCheckoutSession = async ({ items, pricing, reward, customer, u
 
   params.append('metadata[item_summary]', summary.slice(0, 450));
   params.append('metadata[reward_id]', reward?.id || 'none');
-  params.append('metadata[customer_name]', customer.name);
-  params.append('metadata[customer_email]', customer.email);
+  if (customer.name) {
+    params.append('metadata[customer_name]', customer.name);
+  }
+  if (customer.email) {
+    params.append('metadata[customer_email]', customer.email);
+  }
   params.append('metadata[expected_total_usd]', pricing.total.toFixed(2));
   params.append('metadata[expected_total_cents]', String(amountCents));
 
@@ -423,7 +454,7 @@ export default async function handler(req, res) {
     return;
   }
 
-  const customerValidation = validateCustomer(body.customerName, body.customerEmail);
+  const customerValidation = parseCustomer(body.customerName, body.customerEmail);
   if (!customerValidation.ok) {
     sendJson(res, 422, { ok: false, error: customerValidation.error });
     return;
