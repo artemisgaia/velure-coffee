@@ -1,3 +1,5 @@
+import { calculatePackageWeightLbs, calculateShippingCents, getDestinationConstraint, SHIPPING_ZONES } from '../shared/shipping.js';
+
 const API_ENDPOINTS = {
   stripeConfig: '/api/stripe-config',
   createPaymentIntent: '/api/create-payment-intent',
@@ -12,45 +14,7 @@ const PRODUCT_CATALOG = {
   aureo: { name: 'AUREO', subtitle: 'Golden Nut Toffee Coffee Beans', price: 26 },
 };
 
-const DEFAULT_ZONES = {
-  US: {
-    label: 'United States',
-    services: {
-      standard: { label: 'Standard (3-5 business days)', shippingCents: 695, freeShippingThresholdCents: 5000 },
-      priority: { label: 'Priority (2-3 business days)', shippingCents: 1295, freeShippingThresholdCents: 0 },
-    },
-  },
-  CA: {
-    label: 'Canada',
-    services: {
-      standard: { label: 'International Standard (5-9 business days)', shippingCents: 1295, freeShippingThresholdCents: 0 },
-    },
-  },
-  GB: {
-    label: 'United Kingdom',
-    services: {
-      standard: { label: 'International Standard (6-10 business days)', shippingCents: 1495, freeShippingThresholdCents: 0 },
-    },
-  },
-  AU: {
-    label: 'Australia',
-    quoteRequired: true,
-    services: {
-      quote: { label: 'Freight quote required', shippingCents: 0, freeShippingThresholdCents: 0 },
-    },
-  },
-};
-
-const COUNTRY_FALLBACK_LABELS = {
-  DE: 'Germany',
-  FR: 'France',
-  JP: 'Japan',
-};
-
-const ITEM_RULES = {
-  fuse: { unsupportedCountries: ['GB'] },
-  zen: { quoteRequiredCountries: ['CA'] },
-};
+const DEFAULT_ZONES = { ...SHIPPING_ZONES };
 
 const DISCOUNT_LABELS = {
   five_off: '$5 rewards credit',
@@ -233,14 +197,13 @@ const estimateClientTotals = () => {
   }, 0);
 
   const country = selectedCountry();
-  const zone = state.checkoutConfig.shippingZones[country];
-  const serviceKey = selectedService();
-  const service = zone?.services?.[serviceKey] || zone?.services?.standard || Object.values(zone?.services || {})[0];
-  let shippingCents = service?.shippingCents || 0;
-
-  if (service?.freeShippingThresholdCents && subtotalCents >= service.freeShippingThresholdCents) {
-    shippingCents = 0;
-  }
+  const packageWeightLbs = calculatePackageWeightLbs(state.lineItems);
+  const shippingQuote = calculateShippingCents({
+    countryCode: country,
+    packageWeightLbs,
+    service: selectedService(),
+  });
+  let shippingCents = shippingQuote.ok ? shippingQuote.shippingCents : 0;
 
   let discountCents = 0;
   if (selectedDiscount() === 'five_off') {
@@ -286,34 +249,27 @@ const getClientConstraint = () => {
     };
   }
 
-  if (zone.quoteRequired || selectedService() === 'quote') {
+  if (!zone.services?.[selectedService()]) {
     return {
       blocked: true,
-      type: 'warning',
-      code: 'quote_required_lane',
-      message: 'This lane requires a custom shipping quote before payment.',
+      type: 'error',
+      code: 'invalid_shipping_service',
+      message: 'Selected shipping service is unavailable for this destination.',
     };
   }
 
-  for (const item of state.lineItems) {
-    const rule = ITEM_RULES[item.productId];
-    if (!rule) continue;
-    if (Array.isArray(rule.unsupportedCountries) && rule.unsupportedCountries.includes(country)) {
-      return {
-        blocked: true,
-        type: 'error',
-        code: 'item_restricted',
-        message: `${PRODUCT_CATALOG[item.productId].name} cannot ship to this destination.`,
-      };
-    }
-    if (Array.isArray(rule.quoteRequiredCountries) && rule.quoteRequiredCountries.includes(country)) {
-      return {
-        blocked: true,
-        type: 'warning',
-        code: 'quote_required_item',
-        message: `${PRODUCT_CATALOG[item.productId].name} requires freight quote for this destination.`,
-      };
-    }
+  const destinationConstraint = getDestinationConstraint({
+    countryCode: country,
+    region: normalize(dom.shippingRegion.value),
+    address1: normalize(dom.shippingAddress1.value),
+  });
+  if (!destinationConstraint.ok) {
+    return {
+      blocked: true,
+      type: destinationConstraint.severity === 'warning' ? 'warning' : 'error',
+      code: destinationConstraint.code,
+      message: destinationConstraint.message,
+    };
   }
 
   return { blocked: false, type: 'success', code: 'ok', message: 'Destination and cart are eligible for checkout.' };
@@ -323,19 +279,30 @@ const updateShippingEstimate = () => {
   const country = selectedCountry();
   const zone = state.checkoutConfig.shippingZones[country];
   const service = zone?.services?.[selectedService()];
+  const packageWeightLbs = calculatePackageWeightLbs(state.lineItems);
+  const shippingQuote = calculateShippingCents({
+    countryCode: country,
+    packageWeightLbs,
+    service: selectedService(),
+  });
 
   if (!zone) {
     dom.shippingEstimate.textContent = state.checkoutConfig.unsupportedMessage || 'Shipping is unavailable to this country.';
     return;
   }
 
-  if (zone.quoteRequired) {
-    dom.shippingEstimate.textContent = state.checkoutConfig.quoteMessage || 'Custom freight quote required before payment.';
+  const destinationConstraint = getDestinationConstraint({
+    countryCode: country,
+    region: normalize(dom.shippingRegion.value),
+    address1: normalize(dom.shippingAddress1.value),
+  });
+  if (!destinationConstraint.ok) {
+    dom.shippingEstimate.textContent = destinationConstraint.message;
     return;
   }
 
-  if (service) {
-    dom.shippingEstimate.textContent = service.label;
+  if (service && shippingQuote.ok) {
+    dom.shippingEstimate.textContent = `${service.label} • ${money(shippingQuote.shippingCents / 100)} estimated shipping at ${packageWeightLbs.toFixed(2)} lb package weight.`;
     return;
   }
 
@@ -344,18 +311,13 @@ const updateShippingEstimate = () => {
 
 const populateCountryOptions = () => {
   const zones = state.checkoutConfig.shippingZones;
-  const knownCountryCodes = Object.keys(zones);
-  const allCodes = [...knownCountryCodes];
-
-  for (const code of Object.keys(COUNTRY_FALLBACK_LABELS)) {
-    if (!allCodes.includes(code)) allCodes.push(code);
-  }
+  const allCodes = Object.keys(zones);
 
   dom.shippingCountry.innerHTML = '';
   for (const countryCode of allCodes) {
     const option = document.createElement('option');
     option.value = countryCode;
-    option.textContent = zones[countryCode]?.label || COUNTRY_FALLBACK_LABELS[countryCode] || countryCode;
+    option.textContent = zones[countryCode]?.label || countryCode;
     dom.shippingCountry.appendChild(option);
   }
 

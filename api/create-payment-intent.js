@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto';
+import { calculatePackageWeightLbs, calculateShippingCents, getDestinationConstraint, SHIPPING_ZONES } from '../shared/shipping.js';
 
 const PRODUCT_CATALOG = {
   fuse: { name: 'FUSE', priceCents: 3800 },
@@ -9,39 +10,9 @@ const PRODUCT_CATALOG = {
   aureo: { name: 'AUREO', priceCents: 2600 },
 };
 
-const SHIPPING_ZONES = {
-  US: {
-    services: {
-      standard: { shippingCents: 695, freeShippingThresholdCents: 5000 },
-      priority: { shippingCents: 1295, freeShippingThresholdCents: 0 },
-    },
-  },
-  CA: {
-    services: {
-      standard: { shippingCents: 1295, freeShippingThresholdCents: 0 },
-    },
-  },
-  GB: {
-    services: {
-      standard: { shippingCents: 1495, freeShippingThresholdCents: 0 },
-    },
-  },
-  AU: {
-    quoteRequired: true,
-    services: {
-      quote: { shippingCents: 0, freeShippingThresholdCents: 0 },
-    },
-  },
-};
-
 const DISCOUNT_OFFERS = {
   five_off: { type: 'fixed', amountCents: 500 },
   free_shipping: { type: 'shipping', amountCents: 0 },
-};
-
-const ITEM_RESTRICTIONS = {
-  fuse: { unsupportedCountries: ['GB'] },
-  zen: { quoteRequiredCountries: ['CA'] },
 };
 
 const normalize = (value) => (typeof value === 'string' ? value.trim() : '');
@@ -162,56 +133,41 @@ const validateItems = (items) => {
 };
 
 const evaluateConstraints = (items, shipping) => {
-  const zone = SHIPPING_ZONES[shipping.country];
-  if (!zone) {
+  if (!items.length) {
+    return {
+      ok: false,
+      code: 'empty_cart',
+      severity: 'warning',
+      message: 'Your cart is empty.',
+    };
+  }
+
+  if (!SHIPPING_ZONES[shipping.country] && shipping.country !== 'ES') {
     return {
       ok: false,
       code: 'unsupported_destination',
       severity: 'error',
-      message: 'We currently do not ship to this destination.',
+      message: 'This destination is not currently available for shipping.',
     };
   }
 
-  if (zone.quoteRequired || shipping.service === 'quote') {
-    return {
-      ok: false,
-      code: 'quote_required_lane',
-      severity: 'warning',
-      message: 'Shipping to this destination requires a custom freight quote.',
-    };
+  const destinationConstraint = getDestinationConstraint({
+    countryCode: shipping.country,
+    region: shipping.region,
+    address1: shipping.address1,
+  });
+  if (!destinationConstraint.ok) {
+    return destinationConstraint;
   }
 
-  const unsupportedItems = [];
-  const quoteItems = [];
-  for (const item of items) {
-    const rule = ITEM_RESTRICTIONS[item.productId];
-    if (!rule) continue;
-
-    if (Array.isArray(rule.unsupportedCountries) && rule.unsupportedCountries.includes(shipping.country)) {
-      unsupportedItems.push(PRODUCT_CATALOG[item.productId].name);
-      continue;
-    }
-
-    if (Array.isArray(rule.quoteRequiredCountries) && rule.quoteRequiredCountries.includes(shipping.country)) {
-      quoteItems.push(PRODUCT_CATALOG[item.productId].name);
-    }
-  }
-
-  if (unsupportedItems.length) {
+  const zone = SHIPPING_ZONES[shipping.country];
+  const serviceKey = normalizeLower(shipping.service || 'standard');
+  if (!zone?.services?.[serviceKey]) {
     return {
       ok: false,
-      code: 'item_restricted',
+      code: 'invalid_shipping_service',
       severity: 'error',
-      message: `Some items cannot ship to this destination: ${unsupportedItems.join(', ')}.`,
-    };
-  }
-
-  if (quoteItems.length) {
-    return {
-      ok: false,
-      code: 'quote_required_item',
-      severity: 'warning',
-      message: `This destination needs a quote for: ${quoteItems.join(', ')}.`,
+      message: 'Selected shipping service is unavailable for this destination.',
     };
   }
 
@@ -237,16 +193,28 @@ const calculateTotals = (items, shipping, discountCode) => {
     return sum + (PRODUCT_CATALOG[item.productId].priceCents * item.quantity);
   }, 0);
 
-  const zone = SHIPPING_ZONES[shipping.country];
-  const serviceConfig = zone.services[shipping.service] || zone.services.standard || Object.values(zone.services)[0];
+  const packageWeightLbs = calculatePackageWeightLbs(items);
+  const shippingQuote = calculateShippingCents({
+    countryCode: shipping.country,
+    packageWeightLbs,
+    service: shipping.service,
+  });
 
-  let shippingCents = serviceConfig.shippingCents;
-  if (
-    serviceConfig.freeShippingThresholdCents > 0
-    && subtotalCents >= serviceConfig.freeShippingThresholdCents
-  ) {
-    shippingCents = 0;
+  if (!shippingQuote.ok) {
+    return {
+      subtotalCents,
+      discountCents: 0,
+      shippingCents: 0,
+      taxCents: 0,
+      totalCents: subtotalCents,
+      packageWeightLbs,
+      currency: 'usd',
+      taxRate: 0,
+      shippingErrorCode: shippingQuote.code || 'invalid_shipping',
+    };
   }
+
+  let shippingCents = shippingQuote.shippingCents;
 
   const discountOffer = DISCOUNT_OFFERS[discountCode] || null;
   let discountCents = 0;
@@ -268,6 +236,7 @@ const calculateTotals = (items, shipping, discountCode) => {
     shippingCents,
     taxCents,
     totalCents,
+    packageWeightLbs,
     currency: 'usd',
     taxRate,
   };
@@ -287,6 +256,7 @@ const digestItems = (items) => {
 };
 
 const createMetadata = ({ orderDraftId, customer, shipping, totals, items, itemPreview }) => {
+  const zoneKey = SHIPPING_ZONES[shipping.country]?.zoneKey || '';
   return {
     orderDraftId,
     customerName: customer.name,
@@ -294,6 +264,8 @@ const createMetadata = ({ orderDraftId, customer, shipping, totals, items, itemP
     customerPhone: customer.phone || '',
     shippingCountry: shipping.country,
     shippingService: shipping.service,
+    shippingZone: zoneKey,
+    packageWeightLbs: Number(totals.packageWeightLbs || 0).toFixed(2),
     subtotal: toAmount(totals.subtotalCents).toFixed(2),
     discount: toAmount(totals.discountCents).toFixed(2),
     shipping: toAmount(totals.shippingCents).toFixed(2),
@@ -427,6 +399,15 @@ export default async function handler(req, res) {
 
   const discountCode = normalizeLower(body.discountCode || body.rewardId);
   const totals = calculateTotals(itemValidation.items, shipping, discountCode);
+  if (totals.shippingErrorCode) {
+    sendJson(res, 422, {
+      ok: false,
+      code: totals.shippingErrorCode,
+      error: 'Unable to calculate shipping for this destination.',
+    });
+    return;
+  }
+
   if (totals.totalCents < 50) {
     sendJson(res, 422, {
       ok: false,
@@ -526,6 +507,7 @@ export default async function handler(req, res) {
       shipping: toAmount(totals.shippingCents),
       tax: toAmount(totals.taxCents),
       total: toAmount(totals.totalCents),
+      packageWeightLbs: Number(totals.packageWeightLbs || 0),
     },
     notices: [
       {

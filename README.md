@@ -65,7 +65,7 @@ The project also includes `/api/checkout`:
 For the static checkout page, use these APIs instead:
 
 - `GET /api/stripe-config`: returns publishable key presence and checkout shipping/tax config.
-- `POST /api/create-payment-intent`: validates cart + shipping inputs, enforces shipping constraints, computes totals, and creates/updates Stripe PaymentIntent metadata.
+- `POST /api/create-payment-intent`: validates cart + shipping inputs, enforces shipping constraints, computes package-weight shipping by country zone, and creates/updates Stripe PaymentIntent metadata.
 
 ## Rewards Sync API
 
@@ -94,7 +94,7 @@ Copy `.env.example` to `.env.local` for local overrides:
 - `FORMS_WEBHOOK_SECRET` (server): optional HMAC secret for signed webhook forwarding.
 - `STRIPE_SECRET_KEY` (server): Stripe secret key for creating checkout sessions.
 - `CHECKOUT_ALLOWED_ORIGINS` (server): optional allowlist for `/api/checkout`.
-- `CHECKOUT_SHIPPING_COUNTRIES` (server): optional comma-separated ISO country codes for shipping address collection (default `US`).
+- `CHECKOUT_SHIPPING_COUNTRIES` (server): optional comma-separated ISO country codes for shipping address collection (defaults to the built-in shipping matrix).
 - `CHECKOUT_TAX_RATE_US` (server): optional tax rate decimal for US (example `0.0825`).
 - `CHECKOUT_TAX_RATE_DEFAULT` (server): optional fallback tax rate decimal.
 - `PUBLIC_SITE_URL` (server): optional canonical site origin used for Stripe success/cancel URLs.

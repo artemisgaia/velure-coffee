@@ -357,42 +357,66 @@ We may update these Terms at any time. Updated Terms are effective when posted.
 
 16. Contact
 Questions about these Terms: concierge@velureritual.com`,
-  shippingReturns: `Last Updated: February 8, 2026
+  shippingReturns: `Last Updated: February 13, 2026
 
 1. Shipping Coverage
-Velure currently ships within supported regions shown at checkout. Some destinations may be limited due to carrier or customs restrictions.
+Velure ships to the contiguous United States (48 states), Canada, and selected international countries shown at checkout.
 
-2. Processing Time
+2. Countries We Currently Ship To
+- U.S. (contiguous 48 states)
+- Zone 1: Canada
+- Zone 2: Belgium, Denmark, Finland, France, Iceland, Italy, Liechtenstein, Luxembourg, Malta, Monaco, Netherlands, Norway, Portugal, Sweden, United Kingdom
+- Zone 3: Australia, Bulgaria, Croatia, Cyprus, Czech Republic, Estonia, Hungary, Indonesia, Latvia, Lithuania, Macau SAR, New Zealand, Philippines, Poland, Romania, Slovakia, Slovenia, South Korea, Thailand, Vietnam
+
+3. Destinations Not Currently Available
+- Spain is temporarily unavailable.
+- Alaska and Hawaii are not available at this time.
+- APO/FPO/DPO military addresses are not available at this time.
+
+4. Processing Time
 Orders are typically processed within 1-3 business days (excluding weekends and major holidays).
 
-3. Delivery Estimates
-Transit times vary by destination and carrier. Delivery windows are estimates and not guarantees.
+5. Delivery Estimates
+- U.S. Standard: 2-5 business days
+- International Standard: 4-15 business days
+Delivery windows are estimates and not guarantees.
 
-4. Free Shipping Offer
-We offer free shipping on qualifying orders over $50 (USD) where available. Eligibility may exclude taxes, duties, and limited-time carrier surcharges.
+6. Shipping Rates (USD, by package weight)
+U.S. Standard:
+- Up to 0.5 lb: $4.50
+- 0.51-0.75 lb: $5.50
+- 0.76-1.00 lb: $6.50
+- 1.01-2.00 lb: $8.00
+- 2.01-3.00 lb: $10.00
+- Over 3 lb: +$1.00 for each additional lb
 
-5. International Orders
+International Standard:
+- Zone 1 (Canada): 1 lb $17, 2 lb $19, 3 lb $21, 4 lb $24, then +$5 per additional lb
+- Zone 2: 1 lb $18, 2 lb $20, 3 lb $23, 4 lb $26, then +$5 per additional lb
+- Zone 3: 1 lb $20, 2 lb $24, 3 lb $28, 4 lb $32, then +$6 per additional lb
+
+7. Duties and Taxes
 For international deliveries, import duties, taxes, and customs fees may apply and are the customer's responsibility unless stated otherwise at checkout.
 
-6. Incorrect Address / Failed Delivery
+8. Incorrect Address / Failed Delivery
 Please verify your shipping address before placing an order. We are not responsible for delays or losses caused by incorrect addresses provided at checkout.
 
-7. Damaged or Missing Items
+9. Damaged or Missing Items
 If your order arrives damaged or incomplete, contact concierge@velureritual.com within 7 days of delivery with photos and order details.
 
-8. Return Eligibility
+10. Return Eligibility
 Unopened products in original condition may be returned within 30 days of delivery unless marked final sale.
 
-9. Non-Returnable Items
+11. Non-Returnable Items
 For food safety reasons, opened consumable products are generally non-returnable unless defective or required by applicable law.
 
-10. Return Process
+12. Return Process
 Email concierge@velureritual.com with your order number and reason for return. If approved, we will provide return instructions.
 
-11. Refund Timing
+13. Refund Timing
 Approved refunds are issued to the original payment method after returned items are received and inspected. Processing time may vary by payment provider.
 
-12. Exchanges
+14. Exchanges
 We do not guarantee direct exchanges. In most cases, approved returns are refunded and a new order can be placed.`,
   rewardsTerms: `Last Updated: February 8, 2026
 
@@ -3541,7 +3565,7 @@ const App = () => {
       },
       shipping_returns: {
         title: 'Shipping & Returns | Velure Coffee',
-        description: 'Shipping timelines, free shipping eligibility, and return/refund rules.',
+        description: 'Shipping coverage, package-weight rates, delivery estimates, and return/refund rules.',
       },
       rewards_terms: {
         title: 'Rewards Terms | Velure Coffee',

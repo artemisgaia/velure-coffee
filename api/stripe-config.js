@@ -1,31 +1,4 @@
-const DEFAULT_SHIPPING_ZONES = {
-  US: {
-    label: 'United States',
-    services: {
-      standard: { label: 'Standard (3-5 business days)', shippingCents: 695, freeShippingThresholdCents: 5000 },
-      priority: { label: 'Priority (2-3 business days)', shippingCents: 1295, freeShippingThresholdCents: 0 },
-    },
-  },
-  CA: {
-    label: 'Canada',
-    services: {
-      standard: { label: 'International Standard (5-9 business days)', shippingCents: 1295, freeShippingThresholdCents: 0 },
-    },
-  },
-  GB: {
-    label: 'United Kingdom',
-    services: {
-      standard: { label: 'International Standard (6-10 business days)', shippingCents: 1495, freeShippingThresholdCents: 0 },
-    },
-  },
-  AU: {
-    label: 'Australia',
-    quoteRequired: true,
-    services: {
-      quote: { label: 'Freight quote required', shippingCents: 0, freeShippingThresholdCents: 0 },
-    },
-  },
-};
+import { DEFAULT_SHIPPING_COUNTRY_ORDER, SHIPPING_ZONES } from '../shared/shipping.js';
 
 const normalize = (value) => (typeof value === 'string' ? value.trim() : '');
 const normalizeLower = (value) => normalize(value).toLowerCase();
@@ -63,7 +36,7 @@ const isAllowedOrigin = (req) => {
 
 const parseShippingCountryOrder = () => {
   const envValue = getEnv('CHECKOUT_SHIPPING_COUNTRIES');
-  const fallback = Object.keys(DEFAULT_SHIPPING_ZONES);
+  const fallback = [...DEFAULT_SHIPPING_COUNTRY_ORDER];
 
   if (!envValue) return fallback;
 
@@ -77,7 +50,7 @@ const parseShippingCountryOrder = () => {
 
 const parseTaxConfig = () => {
   const result = {};
-  for (const code of Object.keys(DEFAULT_SHIPPING_ZONES)) {
+  for (const code of Object.keys(SHIPPING_ZONES)) {
     const rate = Number(getEnv(`CHECKOUT_TAX_RATE_${code}`));
     if (Number.isFinite(rate) && rate >= 0 && rate <= 1) {
       result[code] = rate;
@@ -116,8 +89,8 @@ export default async function handler(req, res) {
   const publishableKey = getEnv('STRIPE_PUBLISHABLE_KEY');
   const shippingCountryOrder = parseShippingCountryOrder();
   const shippingZones = shippingCountryOrder.reduce((accumulator, countryCode) => {
-    if (DEFAULT_SHIPPING_ZONES[countryCode]) {
-      accumulator[countryCode] = DEFAULT_SHIPPING_ZONES[countryCode];
+    if (SHIPPING_ZONES[countryCode]) {
+      accumulator[countryCode] = SHIPPING_ZONES[countryCode];
     }
     return accumulator;
   }, {});
@@ -131,7 +104,7 @@ export default async function handler(req, res) {
     shippingZones,
     taxRates: parseTaxConfig(),
     defaultTaxRate: parseDefaultTaxRate(),
-    quoteMessage: 'Shipping to this destination requires a custom freight quote.',
-    unsupportedMessage: 'We do not currently ship coffee products to that destination.',
+    quoteMessage: '',
+    unsupportedMessage: 'This destination is not currently available for shipping. Spain is temporarily unavailable.',
   });
 }
