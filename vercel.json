@@ -1,0 +1,20 @@
+{
+  "rewrites": [
+    {
+      "source": "/checkout",
+      "destination": "/checkout.html"
+    },
+    {
+      "source": "/products/(.*)",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/blog/(.*)",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/((?!api(?:/|$)|.*\\..*).*)",
+      "destination": "/index.html"
+    }
+  ]
+}

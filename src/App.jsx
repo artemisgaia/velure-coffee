@@ -215,6 +215,7 @@ const ROUTE_PATHS = {
   shop_all: '/collections',
   shop_functional: '/collections/functional',
   shop_single_origin: '/collections/single-origin',
+  blog: '/blog',
   checkout: '/checkout',
   rewards: '/rewards',
   about: '/about',
@@ -229,6 +230,39 @@ const ROUTE_PATHS = {
   rewards_terms: '/rewards-terms',
   subscription_terms: '/subscription-terms',
 };
+
+const BLOG_POSTS = [
+  {
+    slug: 'what-is-lions-mane-coffee',
+    title: 'What Is Lion’s Mane Coffee?',
+    description: 'A factual guide to Lion’s Mane coffee, how it is blended, and what to look for in clean-label options.',
+    publishedAt: '2026-02-22',
+    readTime: '6 min read',
+    heroImage: 'https://res.cloudinary.com/dfygdydcj/image/upload/v1767209595/1766845371046-generated-label-image-0_omteke.jpg',
+    content: `Lion’s Mane coffee is coffee blended with Lion’s Mane mushroom powder. In practical terms, you still get a coffee-forward drink, with the mushroom ingredient added as part of the formulation.\n\nThe quality difference usually comes down to three things: coffee base quality, mushroom ingredient quality, and label transparency. A premium product should clearly state ingredient percentages and serving guidance.\n\nLion’s Mane blends are often chosen by people who want a focused morning ritual. That does not mean miracle effects. It means they prefer a formula designed for a steady, intentional start.\n\nWhen shopping, look for ingredient clarity first. If a label hides quantities or uses vague blend language, that is a red flag. Clean-label blends make the formula easy to verify.\n\nTaste matters too. A strong Lion’s Mane blend should still taste like coffee first. Balanced roast character and smooth body should lead, while functional ingredients support the profile.\n\nIf you want a straightforward entry point, start with one daily serving, brew consistently for one to two weeks, and evaluate how it fits your routine.`,
+    fuseCta: 'FUSE combines medium-roast instant coffee with clearly listed Lion’s Mane and Chaga in a clean, premium format.',
+  },
+  {
+    slug: 'how-to-make-instant-coffee-taste-premium',
+    title: 'How To Make Instant Coffee Taste Premium',
+    description: 'Simple brewing methods that upgrade instant coffee flavor, texture, and overall experience.',
+    publishedAt: '2026-02-25',
+    readTime: '5 min read',
+    heroImage: 'https://res.cloudinary.com/dfygdydcj/image/upload/v1767209738/1767205155639-generated-label-image-1_sd2wkb.jpg',
+    content: `Premium instant coffee starts with premium instant coffee powder. No technique can fully fix low-grade raw material, so product quality is step one.\n\nUse water that is hot but not aggressively boiling. A range around 185°F to 200°F helps preserve aroma and keeps bitterness in check.\n\nMeasure consistently. A common ratio is one tablespoon per 8 to 10 fluid ounces of water. Repeatable ratios give repeatable taste.\n\nStir intentionally. Dissolve the powder fully before adding anything else. This avoids grainy texture and creates a cleaner cup.\n\nUpgrade with small format choices: pre-warm your mug, use filtered water, and choose a cup that concentrates aroma. These details are minor alone, but significant together.\n\nIf you add milk, foam it lightly or warm it first. Cold milk straight from the fridge can flatten aromatic notes in premium blends.\n\nFor iced versions, dissolve in a small amount of warm water first, then pour over ice. This keeps body and flavor intact.`,
+    fuseCta: 'FUSE was built for this style of preparation: smooth instant format, balanced medium roast, and clean functional ingredients.',
+  },
+  {
+    slug: 'guide-to-clean-label-functional-coffee',
+    title: 'A Guide To Clean-Label Functional Coffee',
+    description: 'What clean-label should mean in functional coffee and how to evaluate blends without hype.',
+    publishedAt: '2026-02-29',
+    readTime: '7 min read',
+    heroImage: 'https://res.cloudinary.com/dfygdydcj/image/upload/v1767212482/1767212331011-generated-label-image-0_etlsle.jpg',
+    content: `Clean-label functional coffee means the formula is transparent, readable, and specific. You should understand what is inside without guessing.\n\nStart with the ingredient list. Clear naming and meaningful percentages are signs of confidence. Vague proprietary language is usually the opposite.\n\nNext, review the coffee foundation. Functional additions should support a solid coffee base, not hide weak roast quality.\n\nCheck for unnecessary extras. Premium blends usually avoid synthetic filler behavior and focus on purposeful, limited ingredients.\n\nEvaluate claims carefully. Responsible brands describe flavor, format, sourcing, and intended use without promising medical outcomes.\n\nFinally, judge real-world usability. A clean-label product should fit daily life: simple prep, reliable taste, and consistent serving guidance.\n\nOver time, the best blend is the one you can use consistently, enjoy daily, and trust from label to cup.`,
+    fuseCta: 'FUSE follows clean-label principles with transparent ingredient percentages and a coffee-first flavor profile.',
+  },
+];
 
 const LEGAL_CONTENT = {
   privacy: `Last Updated: February 8, 2026
@@ -607,6 +641,8 @@ const getCheckoutItemsFromCart = (cart) => {
   return Object.entries(itemCounts).map(([productId, quantity]) => ({ productId, quantity }));
 };
 
+const getBlogPostBySlug = (slug) => BLOG_POSTS.find((post) => post.slug === slug) || null;
+
 const getRouteFromPath = (pathname) => {
   const normalizedPathname = pathname !== '/' ? pathname.replace(/\/+$/, '') : pathname;
   const productMatch = normalizedPathname.match(/^\/products\/([^/]+)$/);
@@ -618,12 +654,25 @@ const getRouteFromPath = (pathname) => {
       return {
         view: 'shop_all',
         productId: null,
+        blogSlug: null,
       };
     }
 
     return {
       view: 'product_detail',
       productId,
+      blogSlug: null,
+    };
+  }
+
+  const blogPostMatch = normalizedPathname.match(/^\/blog\/([^/]+)$/);
+  if (blogPostMatch) {
+    const blogSlug = decodeURIComponent(blogPostMatch[1]);
+    const hasPost = Boolean(getBlogPostBySlug(blogSlug));
+    return {
+      view: hasPost ? 'blog_post' : 'blog',
+      productId: null,
+      blogSlug: hasPost ? blogSlug : null,
     };
   }
 
@@ -631,12 +680,17 @@ const getRouteFromPath = (pathname) => {
   return {
     view: matchedView || 'home',
     productId: null,
+    blogSlug: null,
   };
 };
 
 const getPathForView = (view, options = {}) => {
   if (view === 'product_detail' && options.productId) {
     return `/products/${encodeURIComponent(options.productId)}`;
+  }
+
+  if (view === 'blog_post' && options.blogSlug) {
+    return `/blog/${encodeURIComponent(options.blogSlug)}`;
   }
 
   return ROUTE_PATHS[view] || ROUTE_PATHS.home;
@@ -1586,6 +1640,7 @@ const Navigation = ({ currentView, cartCount, setView, toggleCart, authUser, onS
 
         <div className="hidden md:flex space-x-8 text-sm font-sans tracking-widest text-[#F9F6F0] opacity-80">
           <button onClick={() => handleNav('shop_all')} className="hover:text-[#D4AF37] transition-colors uppercase">Shop</button>
+          <button onClick={() => handleNav('blog')} className="hover:text-[#D4AF37] transition-colors uppercase">Journal</button>
           <button onClick={() => handleNav('rewards')} className="hover:text-[#D4AF37] transition-colors uppercase">Rewards</button>
           <button onClick={() => handleNav('about')} className="hover:text-[#D4AF37] transition-colors uppercase">Our Story</button>
           <button onClick={() => handleNav('subscription')} className="hover:text-[#D4AF37] transition-colors uppercase">Subscription</button>
@@ -1646,6 +1701,7 @@ const Navigation = ({ currentView, cartCount, setView, toggleCart, authUser, onS
 	      {mobileMenuOpen && (
 	        <div id="mobile-navigation" className="absolute top-full left-0 w-full bg-[#0B0C0C] border-t border-gray-800 p-6 md:hidden flex flex-col space-y-4 shadow-2xl z-50">
 	           <button onClick={() => handleNav('shop_all')} className="text-[#F9F6F0] text-left font-sans tracking-widest">SHOP</button>
+	           <button onClick={() => handleNav('blog')} className="text-[#F9F6F0] text-left font-sans tracking-widest">JOURNAL</button>
 	           <button onClick={() => handleNav('rewards')} className="text-[#F9F6F0] text-left font-sans tracking-widest">REWARDS</button>
 	           <button onClick={() => handleNav('about')} className="text-[#F9F6F0] text-left font-sans tracking-widest">OUR STORY</button>
            <button onClick={() => handleNav('subscription')} className="text-[#F9F6F0] text-left font-sans tracking-widest">SUBSCRIPTION</button>
@@ -2381,6 +2437,88 @@ const ShopView = ({ category, openProductDetail }) => {
     </div>
   );
 };
+
+const BlogView = ({ openBlogPost }) => (
+  <div className="pt-32 pb-24 bg-[#F9F6F0] min-h-screen">
+    <div className="max-w-5xl mx-auto px-6">
+      <p className="text-xs uppercase tracking-[0.2em] text-[#0B0C0C]/70 mb-3">Velure Journal</p>
+      <h1 className="text-4xl md:text-5xl font-serif text-[#0B0C0C] mb-4">Coffee Guides & Ritual Notes</h1>
+      <p className="text-gray-700 max-w-3xl mb-10">
+        Two calm, factual posts each week for six weeks. No cure language, no hype, just practical guidance you can use and trust.
+      </p>
+
+      <div className="space-y-6">
+        {BLOG_POSTS.map((post) => (
+          <article key={post.slug} className="bg-white border border-gray-200 overflow-hidden">
+            <div className="grid grid-cols-1 md:grid-cols-3">
+              <img
+                src={post.heroImage}
+                alt={post.title}
+                loading="lazy"
+                className="w-full h-56 md:h-full object-cover"
+              />
+              <div className="md:col-span-2 p-6 md:p-8">
+                <p className="text-xs uppercase tracking-widest text-gray-500 mb-2">
+                  {new Date(post.publishedAt).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })} • {post.readTime}
+                </p>
+                <h2 className="font-serif text-3xl text-[#0B0C0C] mb-3">{post.title}</h2>
+                <p className="text-gray-700 mb-6">{post.description}</p>
+                <button
+                  type="button"
+                  onClick={() => openBlogPost(post.slug)}
+                  className="bg-[#0B0C0C] text-[#D4AF37] px-5 py-3 text-xs font-bold uppercase tracking-wider hover:bg-[#1c1c1c]"
+                >
+                  Read Article
+                </button>
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
+    </div>
+  </div>
+);
+
+const BlogPostView = ({ post, onBackToBlog, onOpenFuse }) => (
+  <div className="pt-32 pb-24 bg-[#F9F6F0] min-h-screen">
+    <div className="max-w-3xl mx-auto px-6">
+      <button
+        type="button"
+        onClick={onBackToBlog}
+        className="text-xs uppercase tracking-widest text-[#0B0C0C] hover:text-[#D4AF37] mb-6"
+      >
+        ← Back to Journal
+      </button>
+
+      <img
+        src={post.heroImage}
+        alt={post.title}
+        className="w-full h-64 md:h-80 object-cover mb-8 border border-gray-200"
+      />
+
+      <p className="text-xs uppercase tracking-widest text-gray-500 mb-3">
+        {new Date(post.publishedAt).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })} • {post.readTime}
+      </p>
+      <h1 className="text-4xl md:text-5xl font-serif text-[#0B0C0C] mb-6">{post.title}</h1>
+
+      <div className="prose prose-lg font-sans text-gray-700 whitespace-pre-line">
+        {post.content}
+      </div>
+
+      <div className="mt-10 bg-[#0B0C0C] text-[#F9F6F0] p-6 border border-[#D4AF37]">
+        <p className="text-xs uppercase tracking-widest text-[#D4AF37] mb-2">Product Doorway</p>
+        <p className="text-sm text-gray-300 mb-4">{post.fuseCta}</p>
+        <button
+          type="button"
+          onClick={onOpenFuse}
+          className="bg-[#D4AF37] text-[#0B0C0C] px-5 py-3 text-xs font-bold uppercase tracking-wider hover:bg-[#b5952f]"
+        >
+          Explore FUSE
+        </button>
+      </div>
+    </div>
+  </div>
+);
 
 const TextView = ({ title, content }) => (
   <div className="pt-32 pb-24 bg-[#F9F6F0] min-h-screen">
@@ -3666,6 +3804,7 @@ const Footer = ({ setView }) => {
           <h3 className="text-[#D4AF37] text-xs font-bold uppercase tracking-widest mb-6">Company</h3>
           <ul className="space-y-4 text-sm text-gray-400">
             <li><button type="button" onClick={() => setView('about')} className="hover:text-[#F9F6F0]">Our Story</button></li>
+            <li><button type="button" onClick={() => setView('blog')} className="hover:text-[#F9F6F0]">Journal</button></li>
             <li><button type="button" onClick={() => setView('sourcing')} className="hover:text-[#F9F6F0]">Sourcing</button></li>
             <li><button type="button" onClick={() => setView('wholesale')} className="hover:text-[#F9F6F0]">Wholesale</button></li>
             <li><button type="button" onClick={() => setView('contact')} className="hover:text-[#F9F6F0]">Contact</button></li>
@@ -3851,7 +3990,7 @@ const WholesaleView = ({ setView }) => (
 const App = () => {
   const [route, setRoute] = useState(() => {
     if (typeof window === 'undefined') {
-      return { view: 'home', productId: null };
+      return { view: 'home', productId: null, blogSlug: null };
     }
 
     return getRouteFromPath(window.location.pathname);
@@ -3863,16 +4002,24 @@ const App = () => {
   const selectedProduct = currentView === 'product_detail'
     ? PRODUCTS.find((product) => product.id === route.productId) || null
     : null;
+  const selectedBlogPost = currentView === 'blog_post'
+    ? getBlogPostBySlug(route.blogSlug)
+    : null;
 
   const navigateToView = useCallback((view, options = {}) => {
-    const normalizedView = view === 'product_detail' && !options.productId ? 'shop_all' : view;
+    const normalizedView = view === 'product_detail' && !options.productId
+      ? 'shop_all'
+      : view === 'blog_post' && !options.blogSlug
+        ? 'blog'
+        : view;
     const productId = options.productId || null;
-    const nextPath = getPathForView(normalizedView, { productId });
+    const blogSlug = options.blogSlug || null;
+    const nextPath = getPathForView(normalizedView, { productId, blogSlug });
     const shouldReplace = options.replace === true;
 
     if (typeof window !== 'undefined') {
       const historyAction = shouldReplace ? 'replaceState' : 'pushState';
-      const nextState = { velureBackGuard: true, view: normalizedView, productId };
+      const nextState = { velureBackGuard: true, view: normalizedView, productId, blogSlug };
       if (window.location.pathname !== nextPath || shouldReplace) {
         window.history[historyAction](nextState, '', nextPath);
       }
@@ -3882,7 +4029,7 @@ const App = () => {
       }
     }
 
-    setRoute({ view: normalizedView, productId });
+    setRoute({ view: normalizedView, productId, blogSlug });
   }, []);
 
   const setView = useCallback((view) => {
@@ -4408,9 +4555,14 @@ const App = () => {
         const initialRoute = getRouteFromPath(currentPath);
         window.history.replaceState({ velureBackGuard: true, view: 'home' }, '', ROUTE_PATHS.home);
         window.history.pushState(
-          { velureBackGuard: true, view: initialRoute.view, productId: initialRoute.productId },
+          {
+            velureBackGuard: true,
+            view: initialRoute.view,
+            productId: initialRoute.productId,
+            blogSlug: initialRoute.blogSlug,
+          },
           '',
-          getPathForView(initialRoute.view, { productId: initialRoute.productId })
+          getPathForView(initialRoute.view, { productId: initialRoute.productId, blogSlug: initialRoute.blogSlug })
         );
       } else {
         window.history.replaceState({ velureBackGuard: true, view: 'home' }, '', ROUTE_PATHS.home);
@@ -4428,14 +4580,15 @@ const App = () => {
   useEffect(() => {
     const path = typeof window !== 'undefined'
       ? window.location.pathname
-      : getPathForView(currentView, { productId: route.productId });
+      : getPathForView(currentView, { productId: route.productId, blogSlug: route.blogSlug });
 
     trackEvent('page_view', {
       path,
       view: currentView,
       ...(route.productId ? { product_id: route.productId } : {}),
+      ...(route.blogSlug ? { blog_slug: route.blogSlug } : {}),
     });
-  }, [currentView, route.productId]);
+  }, [currentView, route.blogSlug, route.productId]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -4461,6 +4614,14 @@ const App = () => {
       shop_single_origin: {
         title: 'Single Origin Series | Velure Coffee',
         description: 'Discover Velure single-origin coffee with distinct regional profiles and premium quality.',
+      },
+      blog: {
+        title: 'Journal | Velure Coffee',
+        description: 'Calm, factual coffee guides on Lion’s Mane blends, clean-label coffee, and brewing better cups.',
+      },
+      blog_post: {
+        title: 'Journal | Velure Coffee',
+        description: 'Read premium coffee education and practical brewing guides from Velure.',
       },
       checkout: {
         title: 'Checkout | Velure Coffee',
@@ -4527,6 +4688,8 @@ const App = () => {
         '@context': 'https://schema.org',
         '@type': 'Product',
         name: selectedProduct.name,
+        sku: selectedProduct.id,
+        category: selectedProduct.category === 'single_origin' ? 'Single Origin Coffee' : 'Functional Coffee Blend',
         description,
         image: selectedProduct.images,
         brand: {
@@ -4539,11 +4702,44 @@ const App = () => {
           price: selectedProduct.price.toFixed(2),
           availability: 'https://schema.org/InStock',
           url: canonical,
+          itemCondition: 'https://schema.org/NewCondition',
+          seller: {
+            '@type': 'Organization',
+            name: 'Velure Coffee',
+          },
         },
         aggregateRating: {
           '@type': 'AggregateRating',
           ratingValue: String(selectedProduct.rating),
           reviewCount: String(selectedProduct.reviews),
+        },
+      };
+    }
+
+    if (currentView === 'blog_post' && selectedBlogPost) {
+      title = `${selectedBlogPost.title} | Velure Journal`;
+      description = selectedBlogPost.description || activeMeta.description;
+      image = selectedBlogPost.heroImage || defaultImage;
+      structuredData = {
+        '@context': 'https://schema.org',
+        '@type': 'BlogPosting',
+        headline: selectedBlogPost.title,
+        description,
+        image: [image],
+        mainEntityOfPage: canonical,
+        datePublished: selectedBlogPost.publishedAt,
+        dateModified: selectedBlogPost.publishedAt,
+        author: {
+          '@type': 'Organization',
+          name: 'Velure Coffee',
+        },
+        publisher: {
+          '@type': 'Organization',
+          name: 'Velure Coffee',
+          logo: {
+            '@type': 'ImageObject',
+            url: defaultImage,
+          },
         },
       };
     }
@@ -4563,7 +4759,7 @@ const App = () => {
     upsertMetaByProperty('twitter:image', image);
     upsertCanonical(canonical);
     upsertStructuredData(structuredData);
-  }, [currentView, selectedProduct]);
+  }, [currentView, selectedBlogPost, selectedProduct]);
 
   const addToCart = (product) => {
     setCart((previousCart) => [...previousCart, product]);
@@ -4616,7 +4812,7 @@ const App = () => {
     navigateToView('checkout');
   }, [authState.user, cart, closeCart, navigateToView, rewardsProfile.activeRewardId]);
 
-  const openProductDetail = (product) => {
+  const openProductDetail = useCallback((product) => {
     navigateToView('product_detail', { productId: product.id });
     trackEvent('view_item', {
       currency: 'USD',
@@ -4624,7 +4820,22 @@ const App = () => {
       item_id: product.id,
       item_name: product.name,
     });
-  };
+  }, [navigateToView]);
+
+  const openBlogPost = useCallback((blogSlug) => {
+    if (!blogSlug) return;
+    navigateToView('blog_post', { blogSlug });
+    trackEvent('select_content', {
+      content_type: 'blog_post',
+      item_id: blogSlug,
+    });
+  }, [navigateToView]);
+
+  const openFuseProduct = useCallback(() => {
+    const fuseProduct = PRODUCTS.find((product) => product.id === 'fuse');
+    if (!fuseProduct) return;
+    openProductDetail(fuseProduct);
+  }, [openProductDetail]);
 
   const handleSignIn = useCallback(async (email, password) => {
     setAuthState((previousState) => ({ ...previousState, isLoading: true }));
@@ -5061,11 +5272,22 @@ const App = () => {
       );
     }
 
+    if (currentView === 'blog_post' && selectedBlogPost) {
+      return (
+        <BlogPostView
+          post={selectedBlogPost}
+          onBackToBlog={() => setView('blog')}
+          onOpenFuse={openFuseProduct}
+        />
+      );
+    }
+
     switch (currentView) {
       case 'home': return <HomeView openProductDetail={openProductDetail} setView={setView} />;
       case 'shop_all': return <ShopView category="all" openProductDetail={openProductDetail} />;
       case 'shop_functional': return <ShopView category="functional" openProductDetail={openProductDetail} />;
       case 'shop_single_origin': return <ShopView category="single_origin" openProductDetail={openProductDetail} />;
+      case 'blog': return <BlogView openBlogPost={openBlogPost} />;
       case 'checkout': return (
         <CheckoutView
           cart={cart}
@@ -5109,6 +5331,7 @@ const App = () => {
       );
       case 'subscription': return <SubscriptionView setView={setView} />;
       case 'product_detail': return <ShopView category="all" openProductDetail={openProductDetail} />;
+      case 'blog_post': return <BlogView openBlogPost={openBlogPost} />;
       
       case 'about': return (
         <TextView title="Our Story" content={`In a world that rushes, Velure exists to make you pause. We believe your morning cup is not just caffeine, it is the ritual that sets the tone for your day.\n\nJoe Hart has wanted to build his own coffee brand for a long time. He built Velure around one standard: source from ethical, clean farms and keep every blend transparent.\n\nOur beans are selected for quality and traceability, with no genetically engineered or modified ingredients listed in our formulas. We focus on real coffee beans, thoughtful functional additions, and no unnecessary fillers.\n\nFrom the altitude of the Brazilian highlands to the precision of our functional mushroom blends, every decision we make is guided by uncompromising quality.\n\n"Velure is my invitation to you: Slow down, taste the difference, and start your day with excellence." — Joe Hart, Founder`} />
