@@ -32,6 +32,7 @@ This checkout uses Stripe Payment Element and Vercel serverless APIs:
 
 - `GET /api/stripe-config`
 - `POST /api/create-payment-intent`
+- `POST /api/create-subscription-session`
 - `GET/POST /api/orders` (account order history + save completed orders)
 - `GET/PUT /api/profile` (account full name, phone, marketing preferences)
 - `GET/POST/PUT/DELETE /api/addresses` (saved addresses + default shipping address)
@@ -77,6 +78,7 @@ For the static checkout page, use these APIs instead:
 - `GET /api/addresses`: returns signed-in user's saved addresses for checkout autofill.
 - `GET /api/reviews`: public review list by product and authenticated review eligibility.
 - `POST /api/reviews`: saves/upserts review for signed-in users with verified purchase history.
+- `POST /api/create-subscription-session`: validates customer details + selected product/quantity, then creates a Stripe subscription checkout session.
 
 ## Rewards Sync API
 
@@ -102,13 +104,22 @@ Copy `.env.example` to `.env.local` for local overrides:
 - `VITE_FORMS_ENDPOINT` (frontend): endpoint for form submissions.
 - `VITE_FORMS_CHALLENGE_TOKEN` (frontend): optional token sent with form requests.
 - `VITE_STRIPE_PUBLISHABLE_KEY` (frontend): Stripe publishable key used to render embedded checkout.
+- `VITE_SUBSCRIPTION_ENDPOINT` (frontend): optional subscription endpoint override (default `/api/create-subscription-session`).
 - `STRIPE_PUBLISHABLE_KEY` (server): Stripe publishable key returned by `/api/stripe-config` for static checkout.
 - `FORMS_WEBHOOK_URL` (server): optional webhook target for validated submissions.
 - `FORMS_ALLOWED_ORIGINS` (server): comma-separated allowed origins for `/api/forms`.
 - `FORMS_CHALLENGE_TOKEN` (server): optional token required on incoming form requests.
 - `FORMS_WEBHOOK_SECRET` (server): optional HMAC secret for signed webhook forwarding.
 - `STRIPE_SECRET_KEY` (server): Stripe secret key for creating checkout sessions.
+- `STRIPE_SUBSCRIPTION_PRICE_FUSE` (server): Stripe recurring `price_...` ID for FUSE.
+- `STRIPE_SUBSCRIPTION_PRICE_ZEN` (server): Stripe recurring `price_...` ID for ZEN.
+- `STRIPE_SUBSCRIPTION_PRICE_ONYX` (server): Stripe recurring `price_...` ID for ONYX.
+- `STRIPE_SUBSCRIPTION_PRICE_VITALITY` (server): Stripe recurring `price_...` ID for VITALITY.
+- `STRIPE_SUBSCRIPTION_PRICE_HARVEST` (server): Stripe recurring `price_...` ID for HARVEST.
+- `STRIPE_SUBSCRIPTION_PRICE_AUREO` (server): Stripe recurring `price_...` ID for AUREO.
+- `STRIPE_SUBSCRIPTION_TRIAL_DAYS` (server): optional trial period days for subscriptions (1-31).
 - `CHECKOUT_ALLOWED_ORIGINS` (server): optional allowlist for `/api/checkout`.
+- `SUBSCRIPTIONS_ALLOWED_ORIGINS` (server): optional allowlist for `/api/create-subscription-session`.
 - `CHECKOUT_SHIPPING_COUNTRIES` (server): optional comma-separated ISO country codes for shipping address collection (defaults to the built-in shipping matrix).
 - `CHECKOUT_TAX_RATE_US` (server): optional tax rate decimal for US (example `0.0825`).
 - `CHECKOUT_TAX_RATE_DEFAULT` (server): optional fallback tax rate decimal.

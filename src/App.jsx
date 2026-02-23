@@ -221,34 +221,472 @@ const ROUTE_PATHS = {
 
 const BLOG_POSTS = [
   {
-    slug: 'what-is-lions-mane-coffee',
-    title: 'What Is Lion’s Mane Coffee?',
-    description: 'A factual guide to Lion’s Mane coffee, how it is blended, and what to look for in clean-label options.',
-    publishedAt: '2026-02-22',
+    title: 'How to Make Instant Coffee Taste Premium',
+    slug: 'make-instant-coffee-taste-premium',
+    metaTitle: 'How to Make Instant Coffee Taste Premium (5 Clean Upgrades) | Velure',
+    metaDescription: 'A calm, practical guide to making instant coffee taste premium—better ratios, water temp, mixing, milk, and iced methods. No gimmicks, just ritual.',
+    description: 'A calm, practical guide to making instant coffee taste premium with repeatable, clean upgrades.',
+    publishedAt: '2026-02-23',
     readTime: '6 min read',
-    heroImage: 'https://res.cloudinary.com/dfygdydcj/image/upload/v1767209595/1766845371046-generated-label-image-0_omteke.jpg',
-    content: `Lion’s Mane coffee is coffee blended with Lion’s Mane mushroom powder. In practical terms, you still get a coffee-forward drink, with the mushroom ingredient added as part of the formulation.\n\nThe quality difference usually comes down to three things: coffee base quality, mushroom ingredient quality, and label transparency. A premium product should clearly state ingredient percentages and serving guidance.\n\nLion’s Mane blends are often chosen by people who want a focused morning ritual. That does not mean miracle effects. It means they prefer a formula designed for a steady, intentional start.\n\nWhen shopping, look for ingredient clarity first. If a label hides quantities or uses vague blend language, that is a red flag. Clean-label blends make the formula easy to verify.\n\nTaste matters too. A strong Lion’s Mane blend should still taste like coffee first. Balanced roast character and smooth body should lead, while functional ingredients support the profile.\n\nIf you want a straightforward entry point, start with one daily serving, brew consistently for one to two weeks, and evaluate how it fits your routine.`,
-    fuseCta: 'FUSE combines medium-roast instant coffee with clearly listed Lion’s Mane and Chaga in a clean, premium format.',
-  },
-  {
-    slug: 'how-to-make-instant-coffee-taste-premium',
-    title: 'How To Make Instant Coffee Taste Premium',
-    description: 'Simple brewing methods that upgrade instant coffee flavor, texture, and overall experience.',
-    publishedAt: '2026-02-25',
-    readTime: '5 min read',
+    tags: ['instant coffee', 'brew guide', 'ritual', 'taste'],
+    featured: true,
     heroImage: 'https://res.cloudinary.com/dfygdydcj/image/upload/v1767209738/1767205155639-generated-label-image-1_sd2wkb.jpg',
-    content: `Premium instant coffee starts with premium instant coffee powder. No technique can fully fix low-grade raw material, so product quality is step one.\n\nUse water that is hot but not aggressively boiling. A range around 185°F to 200°F helps preserve aroma and keeps bitterness in check.\n\nMeasure consistently. A common ratio is one tablespoon per 8 to 10 fluid ounces of water. Repeatable ratios give repeatable taste.\n\nStir intentionally. Dissolve the powder fully before adding anything else. This avoids grainy texture and creates a cleaner cup.\n\nUpgrade with small format choices: pre-warm your mug, use filtered water, and choose a cup that concentrates aroma. These details are minor alone, but significant together.\n\nIf you add milk, foam it lightly or warm it first. Cold milk straight from the fridge can flatten aromatic notes in premium blends.\n\nFor iced versions, dissolve in a small amount of warm water first, then pour over ice. This keeps body and flavor intact.`,
-    fuseCta: 'FUSE was built for this style of preparation: smooth instant format, balanced medium roast, and clean functional ingredients.',
+    supportingImages: [
+      {
+        src: 'https://res.cloudinary.com/dfygdydcj/image/upload/v1767209703/1767205155638-generated-label-image-0_smjxbd.jpg',
+        alt: 'Velure ONYX instant coffee setup on black background',
+      },
+      {
+        src: 'https://res.cloudinary.com/dfygdydcj/image/upload/v1767209605/1766845371047-generated-label-image-1_ym8z0w.jpg',
+        alt: 'Velure FUSE instant coffee product styling',
+      },
+    ],
+    content: `Instant coffee can be fast and refined if you treat it like craft, not a shortcut.
+
+This guide is built for one thing: a better cup, with clean inputs and small upgrades you can repeat daily.
+
+## 1) Start with the ratio (the fastest quality upgrade)
+Most instant coffee tastes thin because it is overdiluted.
+
+Try this starting point:
+- 1 tablespoon instant coffee into 8 to 10 fl oz water
+- If you want it bolder, use less water before adding anything else
+
+The goal is balance: body first, then softness.
+
+## 2) Use the right water temperature
+Water that is too cool will not fully dissolve, and boiling water can flatten nuance.
+
+Best range: hot, but not aggressively boiling.
+If you can, let boiled water sit briefly before pouring.
+
+## 3) Dissolve like you mean it
+A premium cup is smooth. No grit, no clumps.
+
+Method:
+1. Add your coffee to the mug
+2. Pour a small splash of hot water first
+3. Stir until fully dissolved
+4. Top up to final volume
+
+This tiny bloom step improves texture immediately.
+
+## 4) Choose one refinement: milk, foam, or spice
+Keep it minimal. One accent is enough.
+
+Option A: Creamy
+- Add a small amount of milk or oat after fully dissolving
+
+Option B: Foamed
+- Foam milk separately and top gently
+
+Option C: Warm spice
+- A pinch of cinnamon or cacao on top
+
+The rule: one element, not a dozen.
+
+## 5) Iced instant that does not taste watered down
+Iced coffee fails when ice becomes the recipe.
+
+Method:
+1. Dissolve coffee in a smaller amount of hot water
+2. Pour over ice
+3. Top with cold water or milk to taste
+
+This keeps intensity while still drinking clean.
+
+## A premium instant ritual, in 60 seconds
+If you want instant coffee to feel like Velure, make it a ritual:
+- A clean mug
+- A consistent ratio
+- A quiet moment before the day accelerates
+
+If you are building your daily cup around ingredient clarity and smooth medium-roast character, start here:
+FUSE — premium instant designed for an intentional morning.
+
+Note: This article is for general information and taste guidance, not medical advice.`,
+    relatedProducts: [
+      { productId: 'fuse', blurb: 'FUSE — medium roast functional instant.' },
+      { productId: 'onyx', blurb: 'ONYX — dark roast single-origin instant.' },
+    ],
   },
   {
-    slug: 'guide-to-clean-label-functional-coffee',
-    title: 'A Guide To Clean-Label Functional Coffee',
-    description: 'What clean-label should mean in functional coffee and how to evaluate blends without hype.',
-    publishedAt: '2026-02-29',
-    readTime: '7 min read',
+    title: 'Lion’s Mane Coffee, Explained (Without the Hype)',
+    slug: 'lions-mane-coffee-explained',
+    metaTitle: 'Lion’s Mane Coffee, Explained (Without the Hype) | Velure',
+    metaDescription: 'What lion’s mane coffee is, why brands add it, what it tastes like, and what to look for on labels—calm, factual, and clean.',
+    description: 'A calm, factual guide to Lion’s Mane coffee, label literacy, and what quality looks like.',
+    publishedAt: '2026-02-23',
+    readTime: '5 min read',
+    tags: ['lion’s mane', 'functional coffee', 'clean label', 'ingredients'],
+    featured: false,
+    heroImage: 'https://res.cloudinary.com/dfygdydcj/image/upload/v1767209595/1766845371046-generated-label-image-0_omteke.jpg',
+    supportingImages: [
+      {
+        src: 'https://res.cloudinary.com/dfygdydcj/image/upload/v1767209610/1766845371052-generated-label-image-4_k8bpjd.jpg',
+        alt: 'Close-up of Velure FUSE packaging details',
+      },
+      {
+        src: 'https://res.cloudinary.com/dfygdydcj/image/upload/v1767209614/1766845371050-generated-label-image-3_ayngvz.jpg',
+        alt: 'Velure functional instant coffee product shot',
+      },
+    ],
+    content: `Lion’s Mane coffee has become a modern staple in functional blends, but the conversation around it is often louder than it needs to be.
+
+Here is the calm, factual version: what it is, why it is used, and how to judge quality through the label.
+
+## What is Lion’s Mane?
+Lion’s Mane is a culinary mushroom often used in powdered form in functional blends. In coffee, it is typically added to support an intentional ritual positioning without changing the core expectation: the coffee still has to taste great.
+
+## What does it taste like in coffee?
+In well-formulated blends, Lion’s Mane tends to read as:
+- soft earthy depth
+- gentle roundness
+- a grounded finish
+
+When it is overdosed or poorly blended, the cup can taste dusty or too mushroom-forward.
+
+## The label tells you everything
+Most confusion disappears when you read the ingredient panel.
+
+Look for:
+- clear naming with no vague proprietary blend language
+- clean, simple ingredients
+- transparency on how much is included (percentages or grams)
+
+A premium ritual brand should be able to show you what is inside.
+
+## How Velure approaches it
+Velure blends are built to stay readable and restrained.
+
+For example, FUSE lists exact proportions:
+- 70% roasted Arabica coffee
+- 15% organic Lion’s Mane
+- 15% organic Chaga
+
+That is the standard we like: clear math, clean inputs, and no performance theatrics.
+
+## The real question: does it fit your ritual?
+Lion’s Mane coffee is not about chasing a miracle. It is about whether you want:
+- a cup that feels more intentional
+- ingredients you can explain
+- a clean blend you will return to daily
+
+If that is the goal, start with transparency and taste first.
+
+Note: This article is for general information and label literacy, not medical advice. Avoid brands that promise disease-related outcomes.`,
+    relatedProducts: [
+      { productId: 'fuse', blurb: 'FUSE — Lion’s Mane + Chaga instant.' },
+      { productId: 'vitality', blurb: 'VITALITY — Lion’s Mane + Chaga ground coffee.' },
+    ],
+  },
+  {
+    title: 'Chaga Coffee, Explained (A Clean, Grounded Guide)',
+    slug: 'chaga-coffee-explained',
+    metaTitle: 'Chaga Coffee, Explained (A Clean, Grounded Guide) | Velure',
+    metaDescription: 'A simple guide to chaga coffee: what chaga is, what it tastes like, why it is used, and how to choose clean blends without gimmicks.',
+    description: 'A grounded guide to chaga coffee, taste profile, and clean formulation standards.',
+    publishedAt: '2026-02-23',
+    readTime: '5 min read',
+    tags: ['chaga', 'functional coffee', 'clean label', 'ingredients'],
+    featured: false,
     heroImage: 'https://res.cloudinary.com/dfygdydcj/image/upload/v1767212482/1767212331011-generated-label-image-0_etlsle.jpg',
-    content: `Clean-label functional coffee means the formula is transparent, readable, and specific. You should understand what is inside without guessing.\n\nStart with the ingredient list. Clear naming and meaningful percentages are signs of confidence. Vague proprietary language is usually the opposite.\n\nNext, review the coffee foundation. Functional additions should support a solid coffee base, not hide weak roast quality.\n\nCheck for unnecessary extras. Premium blends usually avoid synthetic filler behavior and focus on purposeful, limited ingredients.\n\nEvaluate claims carefully. Responsible brands describe flavor, format, sourcing, and intended use without promising medical outcomes.\n\nFinally, judge real-world usability. A clean-label product should fit daily life: simple prep, reliable taste, and consistent serving guidance.\n\nOver time, the best blend is the one you can use consistently, enjoy daily, and trust from label to cup.`,
-    fuseCta: 'FUSE follows clean-label principles with transparent ingredient percentages and a coffee-first flavor profile.',
+    supportingImages: [
+      {
+        src: 'https://res.cloudinary.com/dfygdydcj/image/upload/v1767212504/1767212331099-generated-label-image-2_xwutse.jpg',
+        alt: 'Velure VITALITY blend texture and label focus',
+      },
+      {
+        src: 'https://res.cloudinary.com/dfygdydcj/image/upload/v1767209621/1766845371049-generated-label-image-2_f7zfnx.jpg',
+        alt: 'Functional instant coffee product in studio light',
+      },
+    ],
+    content: `Chaga shows up in premium functional coffees for one main reason: it brings a deeper, darker note that can pair beautifully with coffee when it is done with restraint.
+
+This is your calm guide to understanding it.
+
+## What is Chaga?
+Chaga is a fungus traditionally prepared as a tea-like infusion or used as a powder in modern blends.
+
+In coffee, it is used less as a flavor and more as a supporting note, the way cacao or spice can deepen a profile without dominating it.
+
+## What does chaga taste like in coffee?
+Chaga can read as:
+- earthy and dark
+- slightly woodsy
+- smooth, grounding depth
+
+In a premium blend, it should feel integrated, not like a separate mushroom layer.
+
+## How to choose chaga coffee without getting misled
+Ignore loud promises and read the label.
+
+Green flags:
+- a short, single-purpose ingredient list
+- organic listed where possible
+- clear proportions or meaningful serving information
+- minimal additives
+
+Red flags:
+- oversized claim language
+- unclear blend composition
+- long ingredient lists that dilute the coffee
+
+## A transparent example
+Velure uses ingredient clarity.
+
+FUSE lists:
+- 70% roasted Arabica coffee
+- 15% organic Lion’s Mane
+- 15% organic Chaga
+
+No filler logic.
+
+## Make it part of a ritual, not a performance
+If chaga coffee works for you, it is because it fits your day:
+- quick preparation
+- grounded taste
+- clean formulation
+- consistent repeatability
+
+That is the real premium: a ritual you can keep.
+
+Note: This article is general information and label literacy, not medical advice. Avoid brands that imply disease treatment or guaranteed outcomes.`,
+    relatedProducts: [
+      { productId: 'vitality', blurb: 'VITALITY — daily medium roast with Lion’s Mane + Chaga.' },
+      { productId: 'fuse', blurb: 'FUSE — clean functional instant format.' },
+    ],
+  },
+  {
+    title: 'What “Clean Label” Actually Means for Coffee + Functional Blends',
+    slug: 'clean-label-functional-coffee',
+    metaTitle: 'Clean Label Coffee: What It Means (and What to Avoid) | Velure',
+    metaDescription: 'Clean label, explained: what to look for in coffee + functional blends, how to spot filler ingredients, and how transparency builds trust.',
+    description: 'How to evaluate clean-label coffee and functional blends with practical, no-hype criteria.',
+    publishedAt: '2026-02-23',
+    readTime: '7 min read',
+    tags: ['clean label', 'transparency', 'ingredients', 'functional coffee'],
+    featured: true,
+    heroImage: 'https://res.cloudinary.com/dfygdydcj/image/upload/v1767216044/1767215853330-generated-label-image-0_dp2u51.jpg',
+    supportingImages: [
+      {
+        src: 'https://res.cloudinary.com/dfygdydcj/image/upload/v1767212491/1767212331012-generated-label-image-1_ufyz2v.jpg',
+        alt: 'Velure ingredient-forward coffee label composition',
+      },
+      {
+        src: 'https://res.cloudinary.com/dfygdydcj/image/upload/v1767216063/1767215853334-generated-label-image-3_a9t87e.jpg',
+        alt: 'Premium coffee packaging on dark editorial background',
+      },
+    ],
+    content: `Clean label can mean many things online. For Velure, it means something specific:
+
+You should be able to read the ingredients, understand them, and feel good about repeating the ritual daily.
+
+## 1) Short ingredient lists win
+The cleanest products are often the simplest:
+- coffee
+- a small number of functional ingredients
+- nothing unnecessary
+
+Long lists are not automatically bad, but they increase the odds of fillers and marketing haze.
+
+## 2) Watch for vague blends
+The phrase proprietary blend is not always wrong, but it hides proportions.
+
+For functional coffee, transparency matters. Look for:
+- exact percentages
+- grams per serving
+- clear sourcing language where possible
+
+## 3) Check for taste masking
+When functional ingredients are added poorly, brands sometimes compensate with:
+- heavy sweeteners
+- strong flavorings
+- artificial creaminess
+
+If a product needs disguises, it is usually not built on craft.
+
+## 4) Clean label is also about restraint
+Clean does not mean claims. It means:
+- fewer ingredients
+- clear language
+- verifiable statements
+- no disease-related promises
+
+Premium is calm and factual.
+
+## 5) What Velure does differently
+We treat transparency like design.
+
+FUSE is intentionally readable:
+- 70% roasted Arabica coffee
+- 15% organic Lion’s Mane
+- 15% organic Chaga
+
+A clean ingredient story and a refined daily cup.
+
+## Your clean-label checklist
+Use this when scanning any product:
+- Can I read every ingredient?
+- Is it clear how much is included?
+- Is the language factual and not medical?
+- Would I feel confident consuming this daily?
+- Does it prioritize taste?
+
+If yes, you are in the right territory.
+
+Note: General information only. For personal health questions, consult a qualified professional.`,
+    relatedProducts: [
+      { productId: 'fuse', blurb: 'FUSE — transparent functional instant.' },
+      { productId: 'vitality', blurb: 'VITALITY — functional ground coffee.' },
+      { productId: 'harvest', blurb: 'HARVEST — coffee + hemp protein blend.' },
+      { productId: 'zen', blurb: 'ZEN — 100% ceremonial matcha.' },
+    ],
+  },
+  {
+    title: 'Hot vs Iced Instant Coffee (The Best Methods for Each)',
+    slug: 'hot-vs-iced-instant-coffee',
+    metaTitle: 'Hot vs Iced Instant Coffee: Best Methods + Ratios | Velure',
+    metaDescription: 'Make instant coffee taste premium hot or iced. The right dissolve method, ratio guidance, and a calm routine you can repeat daily.',
+    description: 'Better hot and iced instant methods with clean ratios and no gimmicks.',
+    publishedAt: '2026-02-23',
+    readTime: '5 min read',
+    tags: ['instant coffee', 'iced coffee', 'brew guide', 'ritual'],
+    featured: false,
+    heroImage: 'https://res.cloudinary.com/dfygdydcj/image/upload/v1767209703/1767205155638-generated-label-image-0_smjxbd.jpg',
+    supportingImages: [
+      {
+        src: 'https://res.cloudinary.com/dfygdydcj/image/upload/v1767209733/1767205155643-generated-label-image-3_rzvgzt.jpg',
+        alt: 'Velure instant coffee preparation styling for iced method',
+      },
+      {
+        src: 'https://res.cloudinary.com/dfygdydcj/image/upload/v1767209745/1767205155644-generated-label-image-4_nxdhu7.jpg',
+        alt: 'Velure ONYX instant coffee details on black background',
+      },
+    ],
+    content: `Instant coffee is one of the most versatile formats in modern coffee, especially when you do it intentionally.
+
+Here is how to make a hot cup that feels refined and an iced cup that does not taste watered down.
+
+## The universal rule: dissolve first
+Whether hot or iced, your cup improves when you dissolve coffee fully before dilution.
+
+Method:
+1. Coffee into mug
+2. Small splash of hot water
+3. Stir until smooth
+4. Build the cup
+
+## Hot: keep it clean and balanced
+For a premium hot cup:
+- start with a consistent ratio
+- use hot water that is not aggressively boiling
+- stir until fully smooth
+
+Then decide on one minimalist add-on:
+- small milk addition for softness
+- light spice accent for warmth
+
+## Iced: build concentrate, then chill
+Iced coffee fails when ice becomes the recipe.
+
+Better method:
+1. Dissolve coffee in a smaller amount of hot water
+2. Pour over ice
+3. Top with cold water or milk
+
+This keeps intensity and texture.
+
+## Taste should lead
+Functional blends are only premium if you want to drink them daily.
+
+FUSE is designed for smooth, medium-roast character, built for hot or iced ritual with clean ingredients and transparent proportions.
+
+## Your two simple rituals
+Hot ritual: dissolve, top, sip.
+Iced ritual: dissolve, ice, finish.
+
+Consistency becomes luxury.
+
+Note: General information and taste guidance only.`,
+    relatedProducts: [
+      { productId: 'onyx', blurb: 'ONYX — dark roast instant, single-origin.' },
+      { productId: 'fuse', blurb: 'FUSE — medium roast functional instant.' },
+    ],
+  },
+  {
+    title: 'A 5-Minute Morning Coffee Ritual (That You’ll Actually Keep)',
+    slug: '5-minute-morning-coffee-ritual',
+    metaTitle: 'A 5-Minute Morning Coffee Ritual (Simple + Calm) | Velure',
+    metaDescription: 'A calm 5-minute coffee ritual: setup, brew, breath, and repeat. Designed for consistency—premium simplicity, not performance.',
+    description: 'A practical five-minute ritual that keeps your mornings calm, premium, and repeatable.',
+    publishedAt: '2026-02-23',
+    readTime: '5 min read',
+    tags: ['ritual', 'morning routine', 'coffee', 'mindful habits'],
+    featured: true,
+    heroImage: 'https://res.cloudinary.com/dfygdydcj/image/upload/v1767209664/1767204402115-generated-label-image-0_j8n70v.jpg',
+    supportingImages: [
+      {
+        src: 'https://res.cloudinary.com/dfygdydcj/image/upload/v1767217072/6843a1f1-d7bc-41c5-97b3-990b7dd18a18.png',
+        alt: 'Velure AUREO coffee ritual scene',
+      },
+      {
+        src: 'https://res.cloudinary.com/dfygdydcj/image/upload/v1767209677/1767204402117-generated-label-image-2_mw4fsq.jpg',
+        alt: 'Ceremonial-style Velure matcha setup',
+      },
+    ],
+    content: `The best ritual is not dramatic. It is repeatable.
+
+This is a five-minute morning coffee ritual designed to feel premium without becoming complicated.
+
+## Minute 1: Prepare the space
+A ritual begins before the cup.
+- clear one small surface
+- choose one mug you love
+- remove visual clutter, even briefly
+
+Premium is often subtraction.
+
+## Minute 2: Brew with intention
+Make the cup the same way each day.
+
+If using instant coffee:
+- coffee into mug
+- dissolve smoothly
+- build hot or iced
+
+Consistency becomes comfort.
+
+## Minute 3: Pause quietly
+Before your first sip:
+- inhale slowly
+- exhale longer than you inhale
+- let the day wait for ten seconds
+
+A small pause shifts the whole morning.
+
+## Minute 4: Sip without multitasking
+Even one undistracted sip resets pace.
+
+No phone. No inbox. Just the cup.
+
+## Minute 5: Close the ritual
+End cleanly:
+- rinse the mug
+- reset the counter
+- leave the space ready for tomorrow
+
+That is how habits stick.
+
+## Make the ritual effortless
+FUSE is built for this kind of morning: premium instant coffee with clean, transparent ingredients designed to dissolve smoothly and repeat daily.
+
+Note: General lifestyle content only.`,
+    relatedProducts: [
+      { productId: 'zen', blurb: 'ZEN — ceremonial matcha ritual.' },
+      { productId: 'aureo', blurb: 'AUREO — single-origin whole bean ritual.' },
+      { productId: 'vitality', blurb: 'VITALITY — medium roast functional brew.' },
+    ],
   },
 ];
 
@@ -2675,7 +3113,7 @@ const BlogView = ({ openBlogPost }) => (
       <p className="text-xs uppercase tracking-[0.2em] text-[#0B0C0C]/70 mb-3">Velure Journal</p>
       <h1 className="text-4xl md:text-5xl font-serif text-[#0B0C0C] mb-4">Coffee Guides & Ritual Notes</h1>
       <p className="text-gray-700 max-w-3xl mb-10">
-        Two calm, factual posts each week for six weeks. No cure language, no hype, just practical guidance you can use and trust.
+        Calm, factual guides with clean-label standards and repeatable coffee rituals. No hype, just useful guidance.
       </p>
 
       <div className="space-y-6">
@@ -2692,6 +3130,18 @@ const BlogView = ({ openBlogPost }) => (
                 <p className="text-xs uppercase tracking-widest text-gray-500 mb-2">
                   {new Date(post.publishedAt).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })} • {post.readTime}
                 </p>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {post.featured && (
+                    <span className="text-[10px] font-bold uppercase tracking-widest bg-[#0B0C0C] text-[#D4AF37] px-2 py-1">
+                      Featured
+                    </span>
+                  )}
+                  {Array.isArray(post.tags) && post.tags.slice(0, 3).map((tag) => (
+                    <span key={`${post.slug}-${tag}`} className="text-[10px] uppercase tracking-wider text-gray-600 border border-gray-300 px-2 py-1">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
                 <h2 className="font-serif text-3xl text-[#0B0C0C] mb-3">{post.title}</h2>
                 <p className="text-gray-700 mb-6">{post.description}</p>
                 <button
@@ -2710,7 +3160,101 @@ const BlogView = ({ openBlogPost }) => (
   </div>
 );
 
-const BlogPostView = ({ post, onBackToBlog, onOpenFuse }) => (
+const renderBlogContent = (content) => {
+  if (typeof content !== 'string') return null;
+
+  const nodes = [];
+  const lines = content.split('\n');
+  let paragraphLines = [];
+  let unorderedItems = [];
+  let orderedItems = [];
+  let keyIndex = 0;
+
+  const flushParagraph = () => {
+    if (!paragraphLines.length) return;
+    nodes.push(
+      <p key={`blog-p-${keyIndex}`} className="text-gray-700 leading-8 mb-5">
+        {paragraphLines.join(' ')}
+      </p>,
+    );
+    keyIndex += 1;
+    paragraphLines = [];
+  };
+
+  const flushUnordered = () => {
+    if (!unorderedItems.length) return;
+    nodes.push(
+      <ul key={`blog-ul-${keyIndex}`} className="list-disc pl-6 mb-5 space-y-2 text-gray-700">
+        {unorderedItems.map((item, index) => (
+          <li key={`blog-ul-item-${keyIndex}-${index}`}>{item}</li>
+        ))}
+      </ul>,
+    );
+    keyIndex += 1;
+    unorderedItems = [];
+  };
+
+  const flushOrdered = () => {
+    if (!orderedItems.length) return;
+    nodes.push(
+      <ol key={`blog-ol-${keyIndex}`} className="list-decimal pl-6 mb-5 space-y-2 text-gray-700">
+        {orderedItems.map((item, index) => (
+          <li key={`blog-ol-item-${keyIndex}-${index}`}>{item}</li>
+        ))}
+      </ol>,
+    );
+    keyIndex += 1;
+    orderedItems = [];
+  };
+
+  lines.forEach((line) => {
+    const trimmed = line.trim();
+    if (!trimmed) {
+      flushParagraph();
+      flushUnordered();
+      flushOrdered();
+      return;
+    }
+
+    if (trimmed.startsWith('## ')) {
+      flushParagraph();
+      flushUnordered();
+      flushOrdered();
+      nodes.push(
+        <h2 key={`blog-h2-${keyIndex}`} className="font-serif text-3xl text-[#0B0C0C] mt-9 mb-4">
+          {trimmed.slice(3)}
+        </h2>,
+      );
+      keyIndex += 1;
+      return;
+    }
+
+    if (/^-\s+/.test(trimmed)) {
+      flushParagraph();
+      flushOrdered();
+      unorderedItems.push(trimmed.replace(/^-\s+/, ''));
+      return;
+    }
+
+    if (/^\d+\.\s+/.test(trimmed)) {
+      flushParagraph();
+      flushUnordered();
+      orderedItems.push(trimmed.replace(/^\d+\.\s+/, ''));
+      return;
+    }
+
+    flushUnordered();
+    flushOrdered();
+    paragraphLines.push(trimmed);
+  });
+
+  flushParagraph();
+  flushUnordered();
+  flushOrdered();
+  return nodes;
+};
+
+const BlogPostView = ({ post, onBackToBlog, onOpenProduct }) => (
   <div className="pt-32 pb-24 bg-[#F9F6F0] min-h-screen">
     <div className="max-w-3xl mx-auto px-6">
       <button
@@ -2732,20 +3276,45 @@ const BlogPostView = ({ post, onBackToBlog, onOpenFuse }) => (
       </p>
       <h1 className="text-4xl md:text-5xl font-serif text-[#0B0C0C] mb-6">{post.title}</h1>
 
-      <div className="prose prose-lg font-sans text-gray-700 whitespace-pre-line">
-        {post.content}
+      <div className="font-sans text-base">
+        {renderBlogContent(post.content)}
       </div>
 
+      {Array.isArray(post.supportingImages) && post.supportingImages.length > 0 && (
+        <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-4">
+          {post.supportingImages.slice(0, 2).map((image) => (
+            <img
+              key={`${post.slug}-${image.src}`}
+              src={image.src}
+              alt={image.alt || post.title}
+              loading="lazy"
+              className="w-full h-64 object-cover border border-gray-200"
+            />
+          ))}
+        </div>
+      )}
+
       <div className="mt-10 bg-[#0B0C0C] text-[#F9F6F0] p-6 border border-[#D4AF37]">
-        <p className="text-xs uppercase tracking-widest text-[#D4AF37] mb-2">Product Doorway</p>
-        <p className="text-sm text-gray-300 mb-4">{post.fuseCta}</p>
-        <button
-          type="button"
-          onClick={onOpenFuse}
-          className="bg-[#D4AF37] text-[#0B0C0C] px-5 py-3 text-xs font-bold uppercase tracking-wider hover:bg-[#b5952f]"
-        >
-          Explore FUSE
-        </button>
+        <p className="text-xs uppercase tracking-widest text-[#D4AF37] mb-4">Related Velure Picks</p>
+        <div className="space-y-3">
+          {(post.relatedProducts || []).map((item) => {
+            const product = PRODUCTS.find((entry) => entry.id === item.productId);
+            if (!product) return null;
+            return (
+              <div key={`${post.slug}-${item.productId}`} className="border border-gray-700 p-4">
+                <p className="font-serif text-xl text-[#F9F6F0]">{product.name}</p>
+                <p className="text-sm text-gray-300 mb-3">{item.blurb}</p>
+                <button
+                  type="button"
+                  onClick={() => onOpenProduct(product.id)}
+                  className="bg-[#D4AF37] text-[#0B0C0C] px-4 py-2 text-xs font-bold uppercase tracking-wider hover:bg-[#b5952f]"
+                >
+                  Explore {product.name}
+                </button>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   </div>
@@ -3886,93 +4455,218 @@ const RewardsView = ({ setView, rewardsProfile, onJoinRewards, onRedeemReward, o
   );
 };
 
-const SubscriptionView = ({ setView }) => {
-  const [subscriberEmail, setSubscriberEmail] = useState('');
-  const [subscribingTier, setSubscribingTier] = useState(null);
+const SubscriptionView = ({ setView, authUser }) => {
+  const [customerName, setCustomerName] = useState('');
+  const [subscriberEmail, setSubscriberEmail] = useState(authUser?.email || '');
+  const [selectedProductId, setSelectedProductId] = useState(PRODUCTS[0]?.id || 'fuse');
+  const [quantity, setQuantity] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [status, setStatus] = useState({ type: 'idle', message: '' });
+  const endpoint = import.meta.env.VITE_SUBSCRIPTION_ENDPOINT || '/api/create-subscription-session';
 
-  const handleSubscribe = async (tier) => {
-    if (!subscriberEmail.trim() || !isValidEmail(subscriberEmail)) {
-      setStatus({ type: 'error', message: 'Enter a valid email to subscribe.' });
+  useEffect(() => {
+    setSubscriberEmail(authUser?.email || '');
+  }, [authUser?.email]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const state = normalizeLower(params.get('subscription'));
+    if (state === 'success') {
+      setStatus({ type: 'success', message: 'Subscription confirmed. Your next shipment schedule is active.' });
+      window.history.replaceState({}, document.title, window.location.pathname);
+      return;
+    }
+    if (state === 'cancelled') {
+      setStatus({ type: 'error', message: 'Checkout was cancelled. You can restart anytime.' });
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
+
+  const selectedProduct = PRODUCTS.find((product) => product.id === selectedProductId) || PRODUCTS[0];
+  const basePrice = Number(selectedProduct?.price || 0);
+  const estimatedMonthly = Number((basePrice * quantity * 0.85).toFixed(2));
+  const regularMonthly = Number((basePrice * quantity).toFixed(2));
+
+  const handleStartSubscription = async () => {
+    const normalizedName = customerName.trim();
+    const normalizedEmail = subscriberEmail.trim().toLowerCase();
+
+    if (!normalizedName || normalizedName.length < 2) {
+      setStatus({ type: 'error', message: 'Enter your full name.' });
       return;
     }
 
-    setSubscribingTier(tier);
+    if (!normalizedEmail || !isValidEmail(normalizedEmail)) {
+      setStatus({ type: 'error', message: 'Enter a valid email address.' });
+      return;
+    }
+
+    setIsSubmitting(true);
     setStatus({ type: 'idle', message: '' });
 
     try {
-      await submitFormPayload('newsletter', {
-        email: subscriberEmail.trim(),
-        subscriptionTier: `${tier} bag${tier > 1 ? 's' : ''} / month`,
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          customerName: normalizedName,
+          customerEmail: normalizedEmail,
+          productId: selectedProductId,
+          quantity,
+        }),
       });
 
-      trackEvent('subscribe_plan', {
-        tier,
-        value: Number((20 * tier).toFixed(2)),
+      let payload = {};
+      try {
+        payload = await response.json();
+      } catch {
+        payload = {};
+      }
+
+      if (!response.ok || !payload?.checkoutUrl) {
+        const message = typeof payload?.error === 'string' && payload.error
+          ? payload.error
+          : 'Unable to start subscription checkout right now.';
+        throw new Error(message);
+      }
+
+      trackEvent('subscription_checkout_started', {
+        product_id: selectedProductId,
+        quantity,
       });
-      setStatus({ type: 'success', message: `Subscribed to ${tier} bag${tier > 1 ? 's' : ''} / month plan updates.` });
-      setSubscriberEmail('');
+
+      window.location.assign(payload.checkoutUrl);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unable to subscribe right now.';
+      const message = error instanceof Error ? error.message : 'Unable to start subscription.';
       setStatus({ type: 'error', message });
-    } finally {
-      setSubscribingTier(null);
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="pt-32 pb-24 bg-[#0B0C0C] min-h-screen text-[#F9F6F0]">
-      <div className="max-w-4xl mx-auto px-6 text-center">
-        <h1 className="text-5xl font-serif text-[#F9F6F0] mb-6">Never Run Out of <br /><span className="text-[#D4AF37] italic">The Ritual</span></h1>
-        <p className="text-gray-400 text-lg mb-8">Join the Velure Club. Save 15% on every order and get exclusive access to small-batch roasts.</p>
+    <div className="pt-28 pb-24 bg-[#0B0C0C] min-h-screen text-[#F9F6F0]">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        <h1 className="text-4xl sm:text-5xl font-serif text-[#F9F6F0] mb-4">
+          Build Your <span className="text-[#D4AF37] italic">Velure Subscription</span>
+        </h1>
+        <p className="text-gray-300 text-base sm:text-lg mb-8 max-w-3xl">
+          Choose your blend, choose your quantity, and lock in recurring deliveries with encrypted Stripe checkout.
+        </p>
 
-        <div className="max-w-md mx-auto mb-10">
-          <label htmlFor="subscription-email" className="sr-only">Subscription email</label>
-          <input
-            id="subscription-email"
-            type="email"
-            value={subscriberEmail}
-            onChange={(event) => setSubscriberEmail(event.target.value)}
-            placeholder="Enter email to subscribe"
-            className="w-full border border-gray-700 bg-[#151515] text-[#F9F6F0] p-3 outline-none focus:border-[#D4AF37]"
-          />
-          {status.message && (
-            <p className={`text-sm mt-3 ${status.type === 'error' ? 'text-red-400' : 'text-green-400'}`} role="status">
-              {status.message}
-            </p>
-          )}
-          <p className="text-xs text-gray-500 mt-3">
-            By subscribing, you agree to our{' '}
-            <button type="button" onClick={() => setView('subscription_terms')} className="text-[#D4AF37] hover:text-[#F9F6F0] underline underline-offset-2">
-              Subscription Terms
-            </button>{' '}
-            and{' '}
-            <button type="button" onClick={() => setView('privacy')} className="text-[#D4AF37] hover:text-[#F9F6F0] underline underline-offset-2">
-              Privacy Policy
-            </button>.
-          </p>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {[1, 2, 3].map((tier) => (
-            <div key={tier} className="border border-gray-800 p-8 hover:border-[#D4AF37] transition-all cursor-pointer bg-[#151515]">
-              <h3 className="font-serif text-2xl mb-2">{tier} Bag{tier > 1 ? 's' : ''} / Month</h3>
-              <p className="text-[#D4AF37] font-bold text-xl mb-4">${(20 * tier).toFixed(2)}</p>
-              <ul className="text-left text-sm text-gray-400 space-y-2 mb-8">
-                <li className="flex gap-2"><Check size={16} /> Free Shipping</li>
-                <li className="flex gap-2"><Check size={16} /> Cancel Anytime</li>
-                <li className="flex gap-2"><Check size={16} /> Exclusive Access</li>
-              </ul>
-              <button
-                type="button"
-                onClick={() => handleSubscribe(tier)}
-                disabled={subscribingTier === tier}
-                className={`w-full bg-[#F9F6F0] text-[#0B0C0C] py-3 font-bold uppercase tracking-wider hover:bg-[#D4AF37] transition-colors ${subscribingTier === tier ? 'opacity-60 cursor-not-allowed' : ''}`}
-              >
-                {subscribingTier === tier ? 'Subscribing...' : 'Subscribe'}
-              </button>
+        <div className="grid grid-cols-1 xl:grid-cols-[1.45fr_1fr] gap-6">
+          <div className="bg-[#151515] border border-gray-800 p-5 sm:p-6">
+            <h2 className="font-serif text-3xl mb-4">Choose Product</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {PRODUCTS.map((product) => {
+                const isSelected = product.id === selectedProductId;
+                return (
+                  <button
+                    key={product.id}
+                    type="button"
+                    onClick={() => setSelectedProductId(product.id)}
+                    className={`text-left border p-4 transition-colors ${isSelected ? 'border-[#D4AF37] bg-[#0B0C0C]' : 'border-gray-700 hover:border-[#D4AF37]'}`}
+                    aria-pressed={isSelected}
+                  >
+                    <p className="font-serif text-2xl text-[#F9F6F0]">{product.name}</p>
+                    <p className="text-xs text-gray-400 mt-1">{product.subtitle}</p>
+                    <p className="text-sm text-[#D4AF37] mt-3">${product.price.toFixed(2)} one-time retail</p>
+                  </button>
+                );
+              })}
             </div>
-          ))}
+
+            <div className="mt-6 border border-gray-700 p-4">
+              <label htmlFor="subscription-quantity" className="block text-xs uppercase tracking-widest text-gray-400 mb-3">
+                Quantity Per Delivery
+              </label>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setQuantity((prev) => Math.max(1, prev - 1))}
+                  className="h-10 w-10 border border-gray-600 text-xl hover:border-[#D4AF37]"
+                  aria-label="Decrease subscription quantity"
+                >
+                  -
+                </button>
+                <input
+                  id="subscription-quantity"
+                  type="number"
+                  min={1}
+                  max={6}
+                  value={quantity}
+                  onChange={(event) => {
+                    const next = Number(event.target.value);
+                    if (!Number.isFinite(next)) return;
+                    setQuantity(Math.min(6, Math.max(1, Math.round(next))));
+                  }}
+                  className="w-20 border border-gray-700 bg-[#0B0C0C] p-2 text-center outline-none focus:border-[#D4AF37]"
+                />
+                <span className="text-sm text-gray-400">bag{quantity > 1 ? 's' : ''} every month</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-[#151515] border border-gray-800 p-5 sm:p-6">
+            <h2 className="font-serif text-3xl mb-4">Account & Checkout</h2>
+            <div className="space-y-3">
+              <label className="block text-xs uppercase tracking-widest text-gray-400" htmlFor="subscription-name">Full name</label>
+              <input
+                id="subscription-name"
+                type="text"
+                value={customerName}
+                onChange={(event) => setCustomerName(event.target.value)}
+                placeholder="Your full name"
+                className="w-full border border-gray-700 bg-[#0B0C0C] p-3 outline-none focus:border-[#D4AF37]"
+              />
+
+              <label className="block text-xs uppercase tracking-widest text-gray-400 pt-1" htmlFor="subscription-email">Email</label>
+              <input
+                id="subscription-email"
+                type="email"
+                value={subscriberEmail}
+                onChange={(event) => setSubscriberEmail(event.target.value)}
+                placeholder="you@example.com"
+                className="w-full border border-gray-700 bg-[#0B0C0C] p-3 outline-none focus:border-[#D4AF37]"
+              />
+            </div>
+
+            <div className="mt-5 border border-gray-700 p-4 bg-[#0B0C0C]">
+              <p className="text-xs uppercase tracking-widest text-gray-500 mb-2">Estimated Monthly</p>
+              <p className="font-serif text-4xl text-[#D4AF37]">${estimatedMonthly.toFixed(2)}</p>
+              <p className="text-xs text-gray-400 mt-2">Regular ${regularMonthly.toFixed(2)} • Subscription savings applied at checkout</p>
+              <p className="text-xs text-gray-500 mt-2">
+                Secure payment by Stripe. Card details are encrypted and never stored on Velure servers.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleStartSubscription}
+              disabled={isSubmitting}
+              className={`mt-5 w-full bg-[#D4AF37] text-[#0B0C0C] py-3 font-bold uppercase tracking-wider ${isSubmitting ? 'opacity-60 cursor-not-allowed' : 'hover:bg-[#b5952f]'}`}
+            >
+              {isSubmitting ? 'Redirecting...' : `Start ${selectedProduct?.name || 'Product'} Subscription`}
+            </button>
+
+            {status.message && (
+              <p className={`text-sm mt-4 ${status.type === 'error' ? 'text-red-400' : 'text-green-400'}`} role="status">
+                {status.message}
+              </p>
+            )}
+
+            <p className="text-xs text-gray-500 mt-4">
+              By subscribing, you agree to our{' '}
+              <button type="button" onClick={() => setView('subscription_terms')} className="text-[#D4AF37] hover:text-[#F9F6F0] underline underline-offset-2">
+                Subscription Terms
+              </button>{' '}
+              and{' '}
+              <button type="button" onClick={() => setView('privacy')} className="text-[#D4AF37] hover:text-[#F9F6F0] underline underline-offset-2">
+                Privacy Policy
+              </button>.
+            </p>
+          </div>
         </div>
       </div>
     </div>
@@ -4943,8 +5637,8 @@ const App = () => {
     }
 
     if (currentView === 'blog_post' && selectedBlogPost) {
-      title = `${selectedBlogPost.title} | Velure Journal`;
-      description = selectedBlogPost.description || activeMeta.description;
+      title = selectedBlogPost.metaTitle || `${selectedBlogPost.title} | Velure Journal`;
+      description = selectedBlogPost.metaDescription || selectedBlogPost.description || activeMeta.description;
       image = selectedBlogPost.heroImage || defaultImage;
       structuredData = {
         '@context': 'https://schema.org',
@@ -4955,6 +5649,7 @@ const App = () => {
         mainEntityOfPage: canonical,
         datePublished: selectedBlogPost.publishedAt,
         dateModified: selectedBlogPost.publishedAt,
+        keywords: Array.isArray(selectedBlogPost.tags) ? selectedBlogPost.tags.join(', ') : undefined,
         author: {
           '@type': 'Organization',
           name: 'Velure Coffee',
@@ -5057,10 +5752,10 @@ const App = () => {
     });
   }, [navigateToView]);
 
-  const openFuseProduct = useCallback(() => {
-    const fuseProduct = PRODUCTS.find((product) => product.id === 'fuse');
-    if (!fuseProduct) return;
-    openProductDetail(fuseProduct);
+  const openBlogRelatedProduct = useCallback((productId) => {
+    const product = PRODUCTS.find((entry) => entry.id === productId);
+    if (!product) return;
+    openProductDetail(product);
   }, [openProductDetail]);
 
   const handleSignIn = useCallback(async (email, password) => {
@@ -5507,7 +6202,7 @@ const App = () => {
         <BlogPostView
           post={selectedBlogPost}
           onBackToBlog={() => setView('blog')}
-          onOpenFuse={openFuseProduct}
+          onOpenProduct={openBlogRelatedProduct}
         />
       );
     }
@@ -5559,7 +6254,7 @@ const App = () => {
           authUser={authState.user}
         />
       );
-      case 'subscription': return <SubscriptionView setView={setView} />;
+      case 'subscription': return <SubscriptionView setView={setView} authUser={authState.user} />;
       case 'product_detail': return <ShopView category="all" openProductDetail={openProductDetail} />;
       case 'blog_post': return <BlogView openBlogPost={openBlogPost} />;
       

@@ -9,6 +9,7 @@ import addressesHandler from './api/addresses.js'
 import reviewsHandler from './api/reviews.js'
 import stripeConfigHandler from './api/stripe-config.js'
 import createPaymentIntentHandler from './api/create-payment-intent.js'
+import createSubscriptionSessionHandler from './api/create-subscription-session.js'
 
 const formsApiPlugin = () => ({
   name: 'forms-api-dev-middleware',
@@ -80,6 +81,14 @@ const formsApiPlugin = () => ({
     server.middlewares.use('/api/create-payment-intent', async (req, res, next) => {
       try {
         await createPaymentIntentHandler(req, res)
+      } catch (error) {
+        next(error)
+      }
+    })
+
+    server.middlewares.use('/api/create-subscription-session', async (req, res, next) => {
+      try {
+        await createSubscriptionSessionHandler(req, res)
       } catch (error) {
         next(error)
       }

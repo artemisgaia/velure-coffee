@@ -26,25 +26,43 @@
   </url>
   <url>
     <loc>https://velure-coffee.vercel.app/blog</loc>
-    <lastmod>2026-02-22</lastmod>
+    <lastmod>2026-02-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://velure-coffee.vercel.app/blog/what-is-lions-mane-coffee</loc>
-    <lastmod>2026-02-22</lastmod>
+    <loc>https://velure-coffee.vercel.app/blog/make-instant-coffee-taste-premium</loc>
+    <lastmod>2026-02-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://velure-coffee.vercel.app/blog/how-to-make-instant-coffee-taste-premium</loc>
-    <lastmod>2026-02-22</lastmod>
+    <loc>https://velure-coffee.vercel.app/blog/lions-mane-coffee-explained</loc>
+    <lastmod>2026-02-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://velure-coffee.vercel.app/blog/guide-to-clean-label-functional-coffee</loc>
-    <lastmod>2026-02-22</lastmod>
+    <loc>https://velure-coffee.vercel.app/blog/chaga-coffee-explained</loc>
+    <lastmod>2026-02-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://velure-coffee.vercel.app/blog/clean-label-functional-coffee</loc>
+    <lastmod>2026-02-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://velure-coffee.vercel.app/blog/hot-vs-iced-instant-coffee</loc>
+    <lastmod>2026-02-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://velure-coffee.vercel.app/blog/5-minute-morning-coffee-ritual</loc>
+    <lastmod>2026-02-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
