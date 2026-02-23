@@ -35,6 +35,7 @@ This checkout uses Stripe Payment Element and Vercel serverless APIs:
 - `GET/POST /api/orders` (account order history + save completed orders)
 - `GET/PUT /api/profile` (account full name, phone, marketing preferences)
 - `GET/POST/PUT/DELETE /api/addresses` (saved addresses + default shipping address)
+- `GET/POST /api/reviews` (verified-purchase product reviews)
 
 ## Forms API
 
@@ -74,6 +75,8 @@ For the static checkout page, use these APIs instead:
 - `POST /api/orders`: verifies Stripe PaymentIntent + signed-in user and persists order history in Supabase.
 - `GET /api/profile`: returns signed-in user's profile details for checkout autofill.
 - `GET /api/addresses`: returns signed-in user's saved addresses for checkout autofill.
+- `GET /api/reviews`: public review list by product and authenticated review eligibility.
+- `POST /api/reviews`: saves/upserts review for signed-in users with verified purchase history.
 
 ## Rewards Sync API
 
@@ -90,6 +93,7 @@ Create the required table/policies in Supabase using:
 - `supabase/customer_orders.sql`
 - `supabase/customer_profiles.sql`
 - `supabase/customer_addresses.sql`
+- `supabase/product_reviews.sql`
 
 ## Environment Variables
 
@@ -119,6 +123,7 @@ Copy `.env.example` to `.env.local` for local overrides:
 - `ORDERS_ALLOWED_ORIGINS` (server): optional allowlist for `/api/orders`.
 - `PROFILE_ALLOWED_ORIGINS` (server): optional allowlist for `/api/profile`.
 - `ADDRESSES_ALLOWED_ORIGINS` (server): optional allowlist for `/api/addresses`.
+- `REVIEWS_ALLOWED_ORIGINS` (server): optional allowlist for `/api/reviews`.
 
 ## Webhook Signature
 

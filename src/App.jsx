@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { ShoppingBag, Menu, X, Star, Coffee, Leaf, Award, Check, Trash2, Mail, MapPin, Phone, ArrowLeft, User, LogOut, Share2, Link2 } from 'lucide-react';
+import { ShoppingBag, Menu, X, Coffee, Leaf, Award, Check, Trash2, Mail, MapPin, Phone, ArrowLeft, User, LogOut, Share2, Link2 } from 'lucide-react';
 
 // --- BRAND ASSETS & DATA ---
 const DEFAULT_SHARE_IMAGE_URL = 'https://res.cloudinary.com/dfygdydcj/image/upload/v1767217072/6843a1f1-d7bc-41c5-97b3-990b7dd18a18.png';
@@ -10,8 +10,6 @@ const PRODUCTS = [
     name: "FUSE",
     subtitle: "Mushroom Fuse Instant Coffee",
     price: 38.00,
-    rating: 5,
-    reviews: 124,
     category: "functional",
     tag: "Best Seller",
     images: [
@@ -44,8 +42,6 @@ const PRODUCTS = [
     name: "ZEN",
     subtitle: "Ceremonial Matcha Powder",
     price: 45.00,
-    rating: 5,
-    reviews: 89,
     category: "functional",
     tag: "Ceremonial Grade",
     images: [
@@ -76,8 +72,6 @@ const PRODUCTS = [
     name: "ONYX",
     subtitle: "Sweet Brew Instant Coffee",
     price: 28.00,
-    rating: 4,
-    reviews: 215,
     category: "single_origin",
     tag: "Dark Roast",
     images: [
@@ -109,8 +103,6 @@ const PRODUCTS = [
     name: "VITALITY",
     subtitle: "Vitality Mushroom Coffee",
     price: 36.00,
-    rating: 5,
-    reviews: 67,
     category: "functional",
     tag: "Adaptogenic",
     images: [
@@ -144,8 +136,6 @@ const PRODUCTS = [
     name: "HARVEST",
     subtitle: "Hemp Harvest Coffee",
     price: 34.00,
-    rating: 5,
-    reviews: 42,
     category: "functional",
     tag: "Superfood",
     images: [
@@ -179,8 +169,6 @@ const PRODUCTS = [
     name: "AUREO",
     subtitle: "Golden Nut Toffee Coffee",
     price: 26.00,
-    rating: 5,
-    reviews: 112,
     category: "single_origin",
     tag: "Single Origin",
     images: [
@@ -1291,6 +1279,46 @@ const deleteCustomerAddressInApi = async (accessToken, addressId) => {
   return response.json();
 };
 
+const loadProductReviewsFromApi = async (productId, accessToken = '') => {
+  const response = await fetch(`/api/reviews?productId=${encodeURIComponent(productId)}`, {
+    method: 'GET',
+    headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+    credentials: 'same-origin',
+  });
+
+  if (!response.ok) {
+    const errorPayload = await response.json().catch(() => ({}));
+    const message = typeof errorPayload?.error === 'string' && errorPayload.error
+      ? errorPayload.error
+      : 'Unable to load reviews right now.';
+    throw new Error(message);
+  }
+
+  return response.json();
+};
+
+const saveProductReviewToApi = async (accessToken, review) => {
+  const response = await fetch('/api/reviews', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    credentials: 'same-origin',
+    body: JSON.stringify({ review }),
+  });
+
+  if (!response.ok) {
+    const errorPayload = await response.json().catch(() => ({}));
+    const message = typeof errorPayload?.error === 'string' && errorPayload.error
+      ? errorPayload.error
+      : 'Unable to save your review right now.';
+    throw new Error(message);
+  }
+
+  return response.json();
+};
+
 // --- SUB-COMPONENTS ---
 
 const ProductCard = ({ product, openProductDetail }) => (
@@ -1318,17 +1346,22 @@ const ProductCard = ({ product, openProductDetail }) => (
     <div className="text-center">
       <h3 className="text-[#F9F6F0] font-serif text-2xl mb-1">{product.name}</h3>
       <p className="text-gray-400 font-sans text-sm mb-2">{product.subtitle}</p>
-      <div className="flex justify-center mb-2" aria-hidden="true">
-          {[...Array(5)].map((_, i) => (
-             <Star key={i} size={12} fill={i < product.rating ? "#D4AF37" : "none"} color={i < product.rating ? "#D4AF37" : "#4b5563"} />
-          ))}
-      </div>
       <p className="text-[#F9F6F0] font-sans font-medium">${product.price.toFixed(2)}</p>
     </div>
   </button>
 );
 
-const ProductDetailView = ({ product, addToCart, onBack, isCartOpen, onShareProduct, onCopyProductLink }) => {
+const ProductDetailView = ({
+  product,
+  addToCart,
+  onBack,
+  isCartOpen,
+  onShareProduct,
+  onCopyProductLink,
+  authUser,
+  authAccessToken,
+  onOpenAccount,
+}) => {
   const [mainImage, setMainImage] = useState(product.images[0]);
   const nutritionImage = getNutritionPanelImage(product);
   const nutritionSpecs = product.nutritionSpecs || null;
@@ -1361,10 +1394,119 @@ const ProductDetailView = ({ product, addToCart, onBack, isCartOpen, onShareProd
     product.details.grade ? { label: 'Grade', value: product.details.grade } : null,
     { label: 'Weight', value: product.details.weight },
   ].filter(Boolean);
+  const [reviewsState, setReviewsState] = useState({
+    isLoading: true,
+    error: '',
+    items: [],
+    stats: { count: 0, averageRating: 0 },
+    canReview: false,
+    reason: 'Sign in and complete a purchase to leave a review.',
+  });
+  const [reviewForm, setReviewForm] = useState({
+    rating: '5',
+    headline: '',
+    comment: '',
+  });
+  const [reviewSubmitState, setReviewSubmitState] = useState({ isSubmitting: false, message: '', type: 'idle' });
 
   useEffect(() => {
     window.scrollTo(0,0);
   }, [product]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadReviews = async () => {
+      setReviewsState((previous) => ({ ...previous, isLoading: true, error: '' }));
+      setReviewSubmitState({ isSubmitting: false, message: '', type: 'idle' });
+      try {
+        const payload = await loadProductReviewsFromApi(product.id, authAccessToken || '');
+        if (cancelled) return;
+        setReviewsState({
+          isLoading: false,
+          error: '',
+          items: Array.isArray(payload?.reviews) ? payload.reviews : [],
+          stats: payload?.stats && typeof payload.stats === 'object'
+            ? {
+                count: Number(payload.stats.count) || 0,
+                averageRating: Number(payload.stats.averageRating) || 0,
+              }
+            : { count: 0, averageRating: 0 },
+          canReview: Boolean(payload?.canReview),
+          reason: typeof payload?.reason === 'string' && payload.reason.trim()
+            ? payload.reason.trim()
+            : 'Only customers who purchased this product can leave a review.',
+        });
+        if (payload?.userReview && typeof payload.userReview === 'object') {
+          setReviewForm({
+            rating: String(Number(payload.userReview.rating) || 5),
+            headline: typeof payload.userReview.headline === 'string' ? payload.userReview.headline.trim() : '',
+            comment: typeof payload.userReview.comment === 'string' ? payload.userReview.comment.trim() : '',
+          });
+        } else {
+          setReviewForm({ rating: '5', headline: '', comment: '' });
+        }
+      } catch (error) {
+        if (cancelled) return;
+        const message = error instanceof Error ? error.message : 'Unable to load reviews right now.';
+        setReviewsState({
+          isLoading: false,
+          error: message,
+          items: [],
+          stats: { count: 0, averageRating: 0 },
+          canReview: false,
+          reason: 'Reviews are temporarily unavailable.',
+        });
+      }
+    };
+
+    loadReviews();
+    return () => {
+      cancelled = true;
+    };
+  }, [authAccessToken, product.id]);
+
+  const handleReviewSubmit = async (event) => {
+    event.preventDefault();
+    if (!authUser || !authAccessToken) {
+      setReviewSubmitState({ isSubmitting: false, type: 'error', message: 'Sign in first to leave a review.' });
+      return;
+    }
+    if (!reviewsState.canReview) {
+      setReviewSubmitState({ isSubmitting: false, type: 'error', message: reviewsState.reason || 'Only verified customers can review this product.' });
+      return;
+    }
+    if (!reviewForm.comment.trim() || reviewForm.comment.trim().length < 8) {
+      setReviewSubmitState({ isSubmitting: false, type: 'error', message: 'Please write at least 8 characters.' });
+      return;
+    }
+
+    setReviewSubmitState({ isSubmitting: true, message: '', type: 'idle' });
+    try {
+      const payload = await saveProductReviewToApi(authAccessToken, {
+        productId: product.id,
+        rating: Number(reviewForm.rating || 5),
+        headline: reviewForm.headline.trim(),
+        comment: reviewForm.comment.trim(),
+      });
+
+      setReviewsState((previous) => ({
+        ...previous,
+        items: Array.isArray(payload?.reviews) ? payload.reviews : previous.items,
+        stats: payload?.stats && typeof payload.stats === 'object'
+          ? {
+              count: Number(payload.stats.count) || 0,
+              averageRating: Number(payload.stats.averageRating) || 0,
+            }
+          : previous.stats,
+      }));
+      setReviewForm({ rating: '5', headline: '', comment: '' });
+      setReviewSubmitState({ isSubmitting: false, type: 'success', message: 'Review saved. Thank you for your feedback.' });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to save your review.';
+      setReviewSubmitState({ isSubmitting: false, type: 'error', message });
+    }
+  };
 
   return (
     <div className="bg-[#0B0C0C] min-h-screen pt-28 md:pt-32 pb-36 md:pb-24 text-[#F9F6F0]">
@@ -1401,12 +1543,6 @@ const ProductDetailView = ({ product, addToCart, onBack, isCartOpen, onShareProd
             <p className="text-lg md:text-xl text-gray-400 font-sans mb-6">{product.subtitle}</p>
             <div className="flex items-center gap-4 mb-6 border-b border-gray-800 pb-6">
               <span className="text-3xl font-serif text-[#D4AF37]">${product.price.toFixed(2)}</span>
-              <div className="flex items-center gap-1">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} size={16} fill={i < product.rating ? "#D4AF37" : "none"} color={i < product.rating ? "#D4AF37" : "#4b5563"} />
-                ))}
-                <span className="text-sm text-gray-500 ml-2">({product.reviews} Reviews)</span>
-              </div>
             </div>
 
             <button
@@ -1491,6 +1627,101 @@ const ProductDetailView = ({ product, addToCart, onBack, isCartOpen, onShareProd
               <p className="text-xs text-gray-500 mt-4">
                 Nutrition values are shown from verified product specifications and label data.
               </p>
+            </div>
+
+            <div className="bg-[#151515] p-6 mb-8 border border-gray-800">
+              <h3 className="font-serif text-[#D4AF37] mb-4">Verified Customer Reviews</h3>
+              {reviewsState.isLoading ? (
+                <p className="text-sm text-gray-400">Loading reviews...</p>
+              ) : reviewsState.error ? (
+                <p className="text-sm text-red-400">{reviewsState.error}</p>
+              ) : (
+                <>
+                  <p className="text-sm text-gray-300 mb-4">
+                    {reviewsState.stats.count > 0
+                      ? `${reviewsState.stats.averageRating.toFixed(1)} / 5 (${reviewsState.stats.count} review${reviewsState.stats.count > 1 ? 's' : ''})`
+                      : 'No verified reviews yet.'}
+                  </p>
+
+                  {reviewsState.items.length > 0 && (
+                    <div className="space-y-4 mb-6">
+                      {reviewsState.items.map((review) => (
+                        <article key={review.id} className="border border-gray-700 p-4">
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="text-sm text-[#F9F6F0]">{review.displayName || 'Verified Customer'}</p>
+                            <p className="text-xs text-gray-400">
+                              {new Date(review.createdAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <p className="text-xs text-[#D4AF37] mt-2">{'★'.repeat(Math.max(1, Math.min(5, Number(review.rating) || 0)))}</p>
+                          {review.headline ? <p className="text-sm text-[#F9F6F0] mt-2">{review.headline}</p> : null}
+                          <p className="text-sm text-gray-300 mt-2">{review.comment}</p>
+                        </article>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+
+              {!authUser ? (
+                <div className="mt-5">
+                  <p className="text-sm text-gray-400 mb-3">Sign in and complete a purchase to leave a review.</p>
+                  <button
+                    type="button"
+                    onClick={onOpenAccount}
+                    className="border border-[#D4AF37] text-[#D4AF37] px-4 py-2 text-xs font-bold uppercase tracking-wider hover:bg-[#D4AF37] hover:text-[#0B0C0C]"
+                  >
+                    Sign In
+                  </button>
+                </div>
+              ) : reviewsState.canReview ? (
+                <form onSubmit={handleReviewSubmit} className="mt-5 space-y-3" noValidate>
+                  <label className="block text-xs uppercase tracking-widest text-gray-400" htmlFor={`review-rating-${product.id}`}>
+                    Rating
+                  </label>
+                  <select
+                    id={`review-rating-${product.id}`}
+                    value={reviewForm.rating}
+                    onChange={(event) => setReviewForm((prev) => ({ ...prev, rating: event.target.value }))}
+                    className="w-full border border-gray-700 bg-[#0B0C0C] p-3 text-sm outline-none focus:border-[#D4AF37]"
+                  >
+                    <option value="5">5 - Excellent</option>
+                    <option value="4">4 - Great</option>
+                    <option value="3">3 - Good</option>
+                    <option value="2">2 - Fair</option>
+                    <option value="1">1 - Poor</option>
+                  </select>
+                  <input
+                    type="text"
+                    value={reviewForm.headline}
+                    onChange={(event) => setReviewForm((prev) => ({ ...prev, headline: event.target.value }))}
+                    placeholder="Headline (optional)"
+                    className="w-full border border-gray-700 bg-[#0B0C0C] p-3 text-sm outline-none focus:border-[#D4AF37]"
+                  />
+                  <textarea
+                    value={reviewForm.comment}
+                    onChange={(event) => setReviewForm((prev) => ({ ...prev, comment: event.target.value }))}
+                    placeholder="Share your experience (min 8 characters)"
+                    rows={4}
+                    className="w-full border border-gray-700 bg-[#0B0C0C] p-3 text-sm outline-none focus:border-[#D4AF37]"
+                    required
+                  />
+                  <button
+                    type="submit"
+                    disabled={reviewSubmitState.isSubmitting}
+                    className={`bg-[#D4AF37] text-[#0B0C0C] px-5 py-3 text-xs font-bold uppercase tracking-wider ${reviewSubmitState.isSubmitting ? 'opacity-60 cursor-not-allowed' : 'hover:bg-[#b5952f]'}`}
+                  >
+                    {reviewSubmitState.isSubmitting ? 'Saving...' : 'Submit Review'}
+                  </button>
+                  {reviewSubmitState.message && (
+                    <p className={`text-sm ${reviewSubmitState.type === 'error' ? 'text-red-400' : 'text-green-400'}`} role="status">
+                      {reviewSubmitState.message}
+                    </p>
+                  )}
+                </form>
+              ) : (
+                <p className="text-sm text-gray-400 mt-5">{reviewsState.reason || 'Only verified customers can leave a review.'}</p>
+              )}
             </div>
 
             <button 
@@ -4708,11 +4939,6 @@ const App = () => {
             name: 'Velure Coffee',
           },
         },
-        aggregateRating: {
-          '@type': 'AggregateRating',
-          ratingValue: String(selectedProduct.rating),
-          reviewCount: String(selectedProduct.reviews),
-        },
       };
     }
 
@@ -5262,12 +5488,16 @@ const App = () => {
     if (currentView === 'product_detail' && selectedProduct) {
       return (
         <ProductDetailView 
+          key={selectedProduct.id}
           product={selectedProduct} 
           addToCart={addToCart} 
           onBack={() => setView('shop_all')}
           isCartOpen={isCartOpen}
           onShareProduct={handleShareProduct}
           onCopyProductLink={handleCopyProductLink}
+          authUser={authState.user}
+          authAccessToken={authState.session?.accessToken || ''}
+          onOpenAccount={() => setView('account')}
         />
       );
     }

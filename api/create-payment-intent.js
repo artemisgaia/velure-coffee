@@ -324,6 +324,7 @@ const digestItems = (items) => {
 
 const createMetadata = ({ orderDraftId, customer, shipping, totals, items, itemPreview }) => {
   const zoneKey = SHIPPING_ZONES[shipping.country]?.zoneKey || '';
+  const itemIds = items.map((item) => normalizeLower(item.productId)).filter(Boolean).join('|').slice(0, 120);
   return {
     orderDraftId,
     customerName: customer.name,
@@ -344,6 +345,7 @@ const createMetadata = ({ orderDraftId, customer, shipping, totals, items, itemP
     shipping: toAmount(totals.shippingCents).toFixed(2),
     tax: toAmount(totals.taxCents).toFixed(2),
     total: toAmount(totals.totalCents).toFixed(2),
+    itemIds,
     itemDigest: digestItems(items),
     itemPreview,
   };
