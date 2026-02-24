@@ -230,15 +230,15 @@ const BLOG_POSTS = [
     readTime: '6 min read',
     tags: ['instant coffee', 'brew guide', 'ritual', 'taste'],
     featured: true,
-    heroImage: 'https://res.cloudinary.com/dfygdydcj/image/upload/v1767209738/1767205155639-generated-label-image-1_sd2wkb.jpg',
+    heroImage: '/images/blog/blog-instant-premium-hero.png',
     supportingImages: [
       {
-        src: 'https://res.cloudinary.com/dfygdydcj/image/upload/v1767209703/1767205155638-generated-label-image-0_smjxbd.jpg',
-        alt: 'Velure ONYX instant coffee setup on black background',
+        src: '/images/blog/blog-instant-premium-support-1.png',
+        alt: 'Step-by-step dissolve method for instant coffee in a matte black cup',
       },
       {
-        src: 'https://res.cloudinary.com/dfygdydcj/image/upload/v1767209605/1766845371047-generated-label-image-1_ym8z0w.jpg',
-        alt: 'Velure FUSE instant coffee product styling',
+        src: '/images/blog/blog-instant-premium-support-2.png',
+        alt: 'Editorial graphic that reads 5 upgrades for premium instant',
       },
     ],
     content: `Instant coffee can be fast and refined if you treat it like craft, not a shortcut.
@@ -320,15 +320,15 @@ Note: This article is for general information and taste guidance, not medical ad
     readTime: '5 min read',
     tags: ['lion’s mane', 'functional coffee', 'clean label', 'ingredients'],
     featured: false,
-    heroImage: 'https://res.cloudinary.com/dfygdydcj/image/upload/v1767209595/1766845371046-generated-label-image-0_omteke.jpg',
+    heroImage: '/images/blog/blog-lions-mane-hero.png',
     supportingImages: [
       {
-        src: 'https://res.cloudinary.com/dfygdydcj/image/upload/v1767209610/1766845371052-generated-label-image-4_k8bpjd.jpg',
-        alt: 'Close-up of Velure FUSE packaging details',
+        src: '/images/blog/blog-lions-mane-support-1.png',
+        alt: 'Macro shot of lion’s mane powder beside instant coffee granules',
       },
       {
-        src: 'https://res.cloudinary.com/dfygdydcj/image/upload/v1767209614/1766845371050-generated-label-image-3_ayngvz.jpg',
-        alt: 'Velure functional instant coffee product shot',
+        src: '/images/blog/blog-lions-mane-support-2.png',
+        alt: 'Minimal ingredient card concept on cream paper over black background',
       },
     ],
     content: `Lion’s Mane coffee has become a modern staple in functional blends, but the conversation around it is often louder than it needs to be.
@@ -390,15 +390,15 @@ Note: This article is for general information and label literacy, not medical ad
     readTime: '5 min read',
     tags: ['chaga', 'functional coffee', 'clean label', 'ingredients'],
     featured: false,
-    heroImage: 'https://res.cloudinary.com/dfygdydcj/image/upload/v1767212482/1767212331011-generated-label-image-0_etlsle.jpg',
+    heroImage: '/images/blog/blog-chaga-hero.png',
     supportingImages: [
       {
-        src: 'https://res.cloudinary.com/dfygdydcj/image/upload/v1767212504/1767212331099-generated-label-image-2_xwutse.jpg',
-        alt: 'Velure VITALITY blend texture and label focus',
+        src: '/images/blog/blog-chaga-support-1.png',
+        alt: 'Close-up texture shot of chaga powder in matte ceramic bowl',
       },
       {
-        src: 'https://res.cloudinary.com/dfygdydcj/image/upload/v1767209621/1766845371049-generated-label-image-2_f7zfnx.jpg',
-        alt: 'Functional instant coffee product in studio light',
+        src: '/images/blog/blog-chaga-support-2.png',
+        alt: 'What to look for on a label checklist graphic on black background',
       },
     ],
     content: `Chaga shows up in premium functional coffees for one main reason: it brings a deeper, darker note that can pair beautifully with coffee when it is done with restraint.
@@ -467,15 +467,15 @@ Note: This article is general information and label literacy, not medical advice
     readTime: '7 min read',
     tags: ['clean label', 'transparency', 'ingredients', 'functional coffee'],
     featured: true,
-    heroImage: 'https://res.cloudinary.com/dfygdydcj/image/upload/v1767216044/1767215853330-generated-label-image-0_dp2u51.jpg',
+    heroImage: '/images/blog/blog-clean-label-hero.png',
     supportingImages: [
       {
-        src: 'https://res.cloudinary.com/dfygdydcj/image/upload/v1767212491/1767212331012-generated-label-image-1_ufyz2v.jpg',
-        alt: 'Velure ingredient-forward coffee label composition',
+        src: '/images/blog/blog-clean-label-support-1.png',
+        alt: 'Flat lay of ingredient bowls and printed ingredient list card',
       },
       {
-        src: 'https://res.cloudinary.com/dfygdydcj/image/upload/v1767216063/1767215853334-generated-label-image-3_a9t87e.jpg',
-        alt: 'Premium coffee packaging on dark editorial background',
+        src: '/images/blog/blog-clean-label-support-2.png',
+        alt: 'Clean label checklist graphic with gold dividers',
       },
     ],
     content: `Clean label can mean many things online. For Velure, it means something specific:
@@ -553,15 +553,15 @@ Note: General information only. For personal health questions, consult a qualifi
     readTime: '5 min read',
     tags: ['instant coffee', 'iced coffee', 'brew guide', 'ritual'],
     featured: false,
-    heroImage: 'https://res.cloudinary.com/dfygdydcj/image/upload/v1767209703/1767205155638-generated-label-image-0_smjxbd.jpg',
+    heroImage: '/images/blog/blog-hot-vs-iced-hero.png',
     supportingImages: [
       {
-        src: 'https://res.cloudinary.com/dfygdydcj/image/upload/v1767209733/1767205155643-generated-label-image-3_rzvgzt.jpg',
-        alt: 'Velure instant coffee preparation styling for iced method',
+        src: '/images/blog/blog-hot-vs-iced-support-1.png',
+        alt: 'Close-up pour of concentrated coffee over ice',
       },
       {
-        src: 'https://res.cloudinary.com/dfygdydcj/image/upload/v1767209745/1767205155644-generated-label-image-4_nxdhu7.jpg',
-        alt: 'Velure ONYX instant coffee details on black background',
+        src: '/images/blog/blog-hot-vs-iced-support-2.png',
+        alt: 'Hot vs Iced method comparison graphic',
       },
     ],
     content: `Instant coffee is one of the most versatile formats in modern coffee, especially when you do it intentionally.
@@ -624,15 +624,15 @@ Note: General information and taste guidance only.`,
     readTime: '5 min read',
     tags: ['ritual', 'morning routine', 'coffee', 'mindful habits'],
     featured: true,
-    heroImage: 'https://res.cloudinary.com/dfygdydcj/image/upload/v1767209664/1767204402115-generated-label-image-0_j8n70v.jpg',
+    heroImage: '/images/blog/blog-morning-ritual-hero.png',
     supportingImages: [
       {
-        src: 'https://res.cloudinary.com/dfygdydcj/image/upload/v1767217072/6843a1f1-d7bc-41c5-97b3-990b7dd18a18.png',
-        alt: 'Velure AUREO coffee ritual scene',
+        src: '/images/blog/blog-morning-ritual-support-1.png',
+        alt: 'Hands holding a warm mug in soft morning window light',
       },
       {
-        src: 'https://res.cloudinary.com/dfygdydcj/image/upload/v1767209677/1767204402117-generated-label-image-2_mw4fsq.jpg',
-        alt: 'Ceremonial-style Velure matcha setup',
+        src: '/images/blog/blog-morning-ritual-support-2.png',
+        alt: 'Ritual checklist graphic showing 5-minute coffee routine',
       },
     ],
     content: `The best ritual is not dramatic. It is repeatable.
