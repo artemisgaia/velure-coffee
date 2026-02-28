@@ -681,6 +681,106 @@ A bold dark roast built around deep cocoa and toasted depth—full-bodied, smoot
       grossWeight: "13.5 oz / 383 g",
       suggestedUse: "Grind fresh. Brew via espresso, moka pot, or bold drip."
     }
+  },
+  {
+    id: "bundle-ritual-set",
+    name: "RITUAL SET",
+    subtitle: "Two-Bag Bundle",
+    price: 48.00,
+    category: "bundles",
+    tag: "Bundle",
+    subscriptionEligible: false,
+    images: [DEFAULT_SHARE_IMAGE_URL],
+    bundleContents: ["Choose any 2 coffee bags (12 oz)"],
+    description: "A calm entry into the Velure ritual, built for consistency and range. The Ritual Set includes two 12 oz coffee bags so you can keep one profile for weekdays and another for slower mornings, without compromising on quality or finish.",
+    details: {
+      origin: "Curated multi-origin",
+      roast: "Medium",
+      ingredients: "Assorted coffee selections chosen at checkout",
+      weight: "2 x 12 oz / 680g total"
+    },
+    nutritionSpecs: {
+      ingredients: "Varies by selected coffees",
+      region: "Varies by selection",
+      productAmount: "2 bags / 24 oz total",
+      grossWeight: "1.6 lbs shipping weight",
+      suggestedUse: "Select your coffees, grind/brew as preferred. For instant, add water and stir."
+    }
+  },
+  {
+    id: "bundle-starter",
+    name: "STARTER",
+    subtitle: "Beans + Instant",
+    price: 56.00,
+    category: "bundles",
+    tag: "Bundle",
+    subscriptionEligible: false,
+    images: [DEFAULT_SHARE_IMAGE_URL],
+    bundleContents: ["1 coffee bag (12 oz)", "1 instant coffee (54 g)"],
+    description: "A balanced starter format for flexible routines: one 12 oz coffee bag for brewed cups and one instant format for speed. STARTER is designed for mornings that alternate between deliberate brewing and efficient, polished preparation.",
+    details: {
+      origin: "Curated multi-origin",
+      roast: "Medium",
+      ingredients: "Assorted coffee selections chosen at checkout",
+      weight: "12 oz bag + 1.9 oz instant"
+    },
+    nutritionSpecs: {
+      ingredients: "Varies by selected coffees",
+      region: "Varies by selection",
+      productAmount: "1 bag + 1 instant",
+      grossWeight: "1.0 lbs shipping weight",
+      suggestedUse: "Select your coffees, grind/brew as preferred. For instant, add water and stir."
+    }
+  },
+  {
+    id: "bundle-dark-set",
+    name: "DARK SET",
+    subtitle: "Bold Roast Bundle",
+    price: 50.00,
+    category: "bundles",
+    tag: "Bundle",
+    subscriptionEligible: false,
+    images: [DEFAULT_SHARE_IMAGE_URL],
+    bundleContents: ["2 dark-roast coffees (format varies by inventory)"],
+    description: "A composed dark-roast bundle built for fuller body and deeper cup structure. DARK SET pairs two bold coffees selected for richness, making it a practical option for espresso-style brewing, press, or strong daily drip.",
+    details: {
+      origin: "Curated multi-origin",
+      roast: "Dark",
+      ingredients: "Assorted dark-roast coffee selections",
+      weight: "2 selections / approx. 24 oz total"
+    },
+    nutritionSpecs: {
+      ingredients: "Varies by selected coffees",
+      region: "Varies by selection",
+      productAmount: "2 coffee selections",
+      grossWeight: "1.6 lbs shipping weight",
+      suggestedUse: "Select your coffees, grind/brew as preferred. For instant, add water and stir."
+    }
+  },
+  {
+    id: "bundle-bright-set",
+    name: "BRIGHT SET",
+    subtitle: "Light Roast Bundle",
+    price: 50.00,
+    category: "bundles",
+    tag: "Bundle",
+    subscriptionEligible: false,
+    images: [DEFAULT_SHARE_IMAGE_URL],
+    bundleContents: ["2 light-roast coffees (format varies by inventory)"],
+    description: "A bright, clarity-forward bundle designed for clean finishes and lively cups. BRIGHT SET combines two light-roast profiles selected for citrus lift and definition across pour-over, drip, and iced preparations.",
+    details: {
+      origin: "Curated multi-origin",
+      roast: "Light",
+      ingredients: "Assorted light-roast coffee selections",
+      weight: "2 selections / approx. 24 oz total"
+    },
+    nutritionSpecs: {
+      ingredients: "Varies by selected coffees",
+      region: "Varies by selection",
+      productAmount: "2 coffee selections",
+      grossWeight: "1.6 lbs shipping weight",
+      suggestedUse: "Select your coffees, grind/brew as preferred. For instant, add water and stir."
+    }
   }
 ];
 
@@ -690,6 +790,7 @@ const ROUTE_PATHS = {
   shop_functional: '/collections/functional',
   shop_signature: '/collections/signature',
   shop_single_origin: '/collections/single-origin',
+  shop_bundles: '/collections/bundles',
   blog: '/blog',
   checkout: '/checkout',
   rewards: '/rewards',
@@ -711,6 +812,7 @@ const CATEGORY_LABELS = {
   functional: 'Functional Blends',
   signature: 'Signature Blends',
   single_origin: 'Single Origin Series',
+  bundles: 'Bundle Sets',
 };
 
 const SUBSCRIPTION_PRODUCTS = PRODUCTS.filter((product) => product.subscriptionEligible);
@@ -2290,6 +2392,7 @@ const ProductDetailView = ({
   addToCart,
   onBack,
   isCartOpen,
+  isInCart,
   onShareProduct,
   onCopyProductLink,
   authUser,
@@ -2297,6 +2400,8 @@ const ProductDetailView = ({
   onOpenAccount,
 }) => {
   const [mainImage, setMainImage] = useState(product.images[0]);
+  const [qty, setQty] = useState(1);
+  const [openAccordion, setOpenAccordion] = useState('details');
   const nutritionImage = getNutritionPanelImage(product);
   const nutritionSpecs = product.nutritionSpecs || null;
   const ingredientText = product.details.ingredients || '';
@@ -2313,15 +2418,17 @@ const ProductDetailView = ({
       ];
   const nutritionRows = nutritionSpecs
     ? [
-        nutritionSpecs.ingredients ? { label: 'Ingredients', value: nutritionSpecs.ingredients } : null,
         nutritionSpecs.varietals ? { label: 'Varietals', value: nutritionSpecs.varietals } : null,
         nutritionSpecs.manufacturerCountry ? { label: 'Produced In', value: nutritionSpecs.manufacturerCountry } : null,
         nutritionSpecs.region ? { label: 'Region', value: nutritionSpecs.region } : null,
         nutritionSpecs.productAmount ? { label: 'Net Amount', value: nutritionSpecs.productAmount } : null,
         nutritionSpecs.grossWeight ? { label: 'Package Weight', value: nutritionSpecs.grossWeight } : null,
-        nutritionSpecs.suggestedUse ? { label: 'Suggested Use', value: nutritionSpecs.suggestedUse } : null,
       ].filter(Boolean)
     : [];
+  const suggestedUseValue = nutritionSpecs?.suggestedUse
+    || (product.category === 'bundles'
+      ? 'Select your coffees, grind/brew as preferred. For instant, add water and stir.'
+      : '');
   const detailsRows = [
     { label: 'Origin', value: product.details.origin },
     product.details.roast ? { label: 'Roast', value: product.details.roast } : null,
@@ -2343,6 +2450,23 @@ const ProductDetailView = ({
     comment: '',
   });
   const [reviewSubmitState, setReviewSubmitState] = useState({ isSubmitting: false, message: '', type: 'idle' });
+  const detailsPanelId = `pdp-accordion-details-${product.id}`;
+  const shippingPanelId = `pdp-accordion-shipping-${product.id}`;
+  const reviewsPanelId = `pdp-accordion-reviews-${product.id}`;
+  const clampQty = useCallback((value) => Math.max(1, Math.min(10, Math.floor(Number(value) || 1))), []);
+  const setQuickQty = useCallback((nextQty) => {
+    setQty(clampQty(nextQty));
+  }, [clampQty]);
+  const incrementQty = useCallback((delta) => {
+    setQty((previous) => clampQty(previous + delta));
+  }, [clampQty]);
+  const handleAddToCart = useCallback((overrideQty) => {
+    const quantity = clampQty(overrideQty ?? qty);
+    addToCart(product, quantity);
+  }, [addToCart, clampQty, product, qty]);
+  const toggleAccordion = useCallback((sectionKey) => {
+    setOpenAccordion((previous) => (previous === sectionKey ? '' : sectionKey));
+  }, []);
 
   useEffect(() => {
     window.scrollTo(0,0);
@@ -2443,6 +2567,44 @@ const ProductDetailView = ({
     }
   };
 
+  const renderQuantitySelector = ({ compact = false, idPrefix = 'qty' } = {}) => (
+    <div className={`inline-flex items-center border border-gray-700 ${compact ? 'h-11' : 'h-12'}`}>
+      <button
+        type="button"
+        onClick={() => incrementQty(-1)}
+        className={`px-4 text-[#F9F6F0] hover:bg-[#1a1a1a] transition-colors ${compact ? 'text-base' : 'text-lg'}`}
+        aria-label="Decrease quantity"
+      >
+        −
+      </button>
+      <label htmlFor={`${idPrefix}-${product.id}`} className="sr-only">Quantity</label>
+      <input
+        id={`${idPrefix}-${product.id}`}
+        type="text"
+        inputMode="numeric"
+        value={qty}
+        onChange={(event) => {
+          const sanitized = event.target.value.replace(/[^\d]/g, '');
+          if (!sanitized) {
+            setQty(1);
+            return;
+          }
+          setQty(clampQty(Number(sanitized)));
+        }}
+        className={`w-12 bg-transparent text-center text-[#F9F6F0] outline-none ${compact ? 'text-sm' : 'text-base'}`}
+        aria-label="Quantity"
+      />
+      <button
+        type="button"
+        onClick={() => incrementQty(1)}
+        className={`px-4 text-[#F9F6F0] hover:bg-[#1a1a1a] transition-colors ${compact ? 'text-base' : 'text-lg'}`}
+        aria-label="Increase quantity"
+      >
+        +
+      </button>
+    </div>
+  );
+
   return (
     <div className="bg-[#0B0C0C] min-h-screen pt-28 md:pt-32 pb-36 md:pb-24 text-[#F9F6F0]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
@@ -2476,16 +2638,45 @@ const ProductDetailView = ({
             <span className="text-[#D4AF37] font-sans tracking-[0.2em] text-xs uppercase mb-2 block">{categoryLabel}</span>
             <h1 className="text-4xl md:text-6xl font-serif text-[#F9F6F0] mb-4">{product.name}</h1>
             <p className="text-lg md:text-xl text-gray-400 font-sans mb-6">{product.subtitle}</p>
-            <div className="flex items-center gap-4 mb-6 border-b border-gray-800 pb-6">
+            <div className="flex items-center gap-4 mb-4 border-b border-gray-800 pb-6">
               <span className="text-3xl font-serif text-[#D4AF37]">${product.price.toFixed(2)}</span>
             </div>
+            <p className="flex items-center gap-2 text-xs text-gray-400 mb-6">
+              <Check size={14} className="text-[#D4AF37]" />
+              Free shipping over $50
+            </p>
 
-            <button
-              onClick={() => addToCart(product)}
-              className="hidden md:block w-full bg-[#D4AF37] text-[#0B0C0C] py-4 font-sans font-bold tracking-widest uppercase hover:bg-[#b5952f] transition-colors mb-8"
-            >
-              Add to Cart — ${product.price.toFixed(2)}
-            </button>
+            <div className="hidden md:block mb-8">
+              <div className="flex items-center justify-between gap-4 mb-3">
+                <p className="text-xs uppercase tracking-widest text-gray-400">Quantity</p>
+                {renderQuantitySelector({ idPrefix: 'desktop-qty' })}
+              </div>
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <button
+                  type="button"
+                  onClick={() => setQuickQty(2)}
+                  className={`border py-3 px-4 font-sans text-xs font-bold uppercase tracking-wider transition-colors ${qty === 2 ? 'border-[#D4AF37] text-[#D4AF37]' : 'border-gray-700 text-[#F9F6F0] hover:border-[#D4AF37]'}`}
+                  aria-pressed={qty === 2}
+                >
+                  Buy 2
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setQuickQty(3)}
+                  className={`border py-3 px-4 font-sans text-xs font-bold uppercase tracking-wider transition-colors ${qty === 3 ? 'border-[#D4AF37] text-[#D4AF37]' : 'border-gray-700 text-[#F9F6F0] hover:border-[#D4AF37]'}`}
+                  aria-pressed={qty === 3}
+                >
+                  Buy 3
+                </button>
+              </div>
+              <button
+                onClick={() => handleAddToCart()}
+                className="w-full bg-[#D4AF37] text-[#0B0C0C] py-4 font-sans font-bold tracking-widest uppercase hover:bg-[#b5952f] transition-colors"
+              >
+                {isInCart ? 'Add Another' : 'Add to Cart'} — ${(product.price * qty).toFixed(2)}
+              </button>
+            </div>
+
             <div className="hidden md:grid grid-cols-2 gap-3 mb-8">
               <button
                 type="button"
@@ -2504,216 +2695,268 @@ const ProductDetailView = ({
                 Copy Link
               </button>
             </div>
-            <div className="hidden md:grid grid-cols-1 gap-2 mb-8 text-xs text-gray-400">
-              <p className="flex items-center gap-2"><Check size={14} className="text-[#D4AF37]" /> Free shipping on orders over $50</p>
-              <p className="flex items-center gap-2"><Check size={14} className="text-[#D4AF37]" /> 30-day return window on unopened products</p>
-              <p className="flex items-center gap-2"><Check size={14} className="text-[#D4AF37]" /> Secure checkout processing</p>
-            </div>
 
             <p className="text-gray-300 font-sans leading-relaxed mb-8 whitespace-pre-line">
               {product.description}
             </p>
 
-            <div className="bg-[#151515] p-6 mb-8 border border-gray-800">
-              <h3 className="font-serif text-[#D4AF37] mb-4">The Details</h3>
-              <ul className="space-y-3 text-sm text-gray-400 font-sans">
-                {detailsRows.map((row) => (
-                  <li key={row.label} className="flex justify-between border-b border-gray-800 pb-2">
-                    <span>{row.label}</span>
-                    <span className="text-[#F9F6F0] text-right">{row.value}</span>
-                  </li>
-                ))}
-                <li className="pt-2">
-                  <span className="block mb-1">Ingredients</span>
-                  <span className="text-[#F9F6F0] leading-snug">{product.details.ingredients}</span>
-                </li>
-              </ul>
-            </div>
-
-            <div className="bg-[#151515] p-6 mb-8 border border-gray-800">
-              <h3 className="font-serif text-[#D4AF37] mb-4">Nutrition & Clean Label</h3>
-              <div className="grid grid-cols-1 md:grid-cols-[160px,1fr] gap-5 items-start">
-                <img
-                  src={nutritionImage}
-                  alt={`${product.name} nutrition panel`}
-                  loading="lazy"
-                  decoding="async"
-                  className="w-40 h-40 object-cover border border-gray-700"
-                />
-                <ul className="space-y-2 text-sm text-gray-300 font-sans">
-                  {nutritionRows.map((row) => (
-                    <li key={row.label} className="flex justify-between border-b border-gray-800 pb-2 gap-3">
-                      <span>{row.label}</span>
-                      <span className="text-[#F9F6F0] text-right">{row.value}</span>
-                    </li>
+            {product.category === 'bundles' && Array.isArray(product.bundleContents) && product.bundleContents.length > 0 && (
+              <div className="bg-[#151515] p-6 mb-8 border border-gray-800">
+                <h3 className="font-serif text-[#D4AF37] mb-4">What&apos;s Inside</h3>
+                <ul className="space-y-2 text-sm text-gray-300 font-sans list-disc pl-5">
+                  {product.bundleContents.map((item) => (
+                    <li key={item}>{item}</li>
                   ))}
-                  <li className="pt-1">
-                    <span className="block mb-2 text-gray-400">Clean Label Claims</span>
-                    <div className="flex flex-wrap gap-2">
-                      {cleanLabelClaims.map((claim) => (
-                        <span key={claim} className="px-2 py-1 border border-gray-700 text-xs text-[#F9F6F0]">
-                          {claim}
-                        </span>
-                      ))}
-                    </div>
-                  </li>
                 </ul>
               </div>
-              <p className="text-xs text-gray-500 mt-4">
-                Nutrition values are shown from verified product specifications and label data.
-              </p>
-            </div>
+            )}
 
-            <div className="bg-[#151515] p-6 mb-8 border border-gray-800">
-              <h3 className="font-serif text-[#D4AF37] mb-4">Verified Customer Reviews</h3>
-              {reviewsState.isLoading ? (
-                <p className="text-sm text-gray-400">Loading reviews...</p>
-              ) : reviewsState.error ? (
-                <p className="text-sm text-red-400">{reviewsState.error}</p>
-              ) : (
-                <>
-                  <p className="text-sm text-gray-300 mb-4">
-                    {reviewsState.stats.count > 0
-                      ? `${reviewsState.stats.averageRating.toFixed(1)} / 5 (${reviewsState.stats.count} review${reviewsState.stats.count > 1 ? 's' : ''})`
-                      : 'No verified reviews yet.'}
-                  </p>
-
-                  {reviewsState.items.length > 0 && (
-                    <div className="space-y-4 mb-6">
-                      {reviewsState.items.map((review) => (
-                        <article key={review.id} className="border border-gray-700 p-4">
-                          <div className="flex items-center justify-between gap-3">
-                            <p className="text-sm text-[#F9F6F0]">{review.displayName || 'Verified Customer'}</p>
-                            <p className="text-xs text-gray-400">
-                              {new Date(review.createdAt).toLocaleDateString()}
-                            </p>
+            <div className="space-y-4 mb-8">
+              <section className="border border-gray-800 bg-[#151515]">
+                <button
+                  type="button"
+                  onClick={() => toggleAccordion('details')}
+                  className="w-full px-5 py-4 flex items-center justify-between text-left"
+                  aria-expanded={openAccordion === 'details'}
+                  aria-controls={detailsPanelId}
+                >
+                  <span className="font-serif text-[#D4AF37]">The Details</span>
+                  <span className="text-xs text-gray-400 uppercase tracking-widest">{openAccordion === 'details' ? 'Hide' : 'Show'}</span>
+                </button>
+                {openAccordion === 'details' && (
+                  <div id={detailsPanelId} className="px-5 pb-5">
+                    <div className="grid grid-cols-1 md:grid-cols-[1fr,220px] gap-5 items-start">
+                      <div>
+                        <ul className="space-y-3 text-sm text-gray-400 font-sans">
+                          {detailsRows.map((row) => (
+                            <li key={row.label} className="flex justify-between border-b border-gray-800 pb-2 gap-4">
+                              <span>{row.label}</span>
+                              <span className="text-[#F9F6F0] text-right">{row.value}</span>
+                            </li>
+                          ))}
+                          <li className="pt-2">
+                            <span className="block mb-1 text-gray-400">Ingredients</span>
+                            <span className="text-[#F9F6F0] leading-snug">{product.details.ingredients}</span>
+                          </li>
+                          {suggestedUseValue && (
+                            <li className="pt-2">
+                              <span className="block mb-1 text-gray-400">Suggested Use</span>
+                              <span className="text-[#F9F6F0] leading-snug">{suggestedUseValue}</span>
+                            </li>
+                          )}
+                        </ul>
+                        {nutritionRows.length > 0 && (
+                          <ul className="space-y-2 text-sm text-gray-300 font-sans mt-5">
+                            {nutritionRows.map((row) => (
+                              <li key={row.label} className="flex justify-between border-b border-gray-800 pb-2 gap-3">
+                                <span>{row.label}</span>
+                                <span className="text-[#F9F6F0] text-right">{row.value}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                      <div className="space-y-4">
+                        <img
+                          src={nutritionImage}
+                          alt={`${product.name} nutrition panel`}
+                          loading="lazy"
+                          decoding="async"
+                          className="w-40 h-40 object-cover border border-gray-700"
+                        />
+                        <div>
+                          <span className="block mb-2 text-xs uppercase tracking-widest text-gray-400">Clean Label Claims</span>
+                          <div className="flex flex-wrap gap-2">
+                            {cleanLabelClaims.map((claim) => (
+                              <span key={claim} className="px-2 py-1 border border-gray-700 text-xs text-[#F9F6F0]">
+                                {claim}
+                              </span>
+                            ))}
                           </div>
-                          <p className="text-xs text-[#D4AF37] mt-2">{'★'.repeat(Math.max(1, Math.min(5, Number(review.rating) || 0)))}</p>
-                          {review.headline ? <p className="text-sm text-[#F9F6F0] mt-2">{review.headline}</p> : null}
-                          <p className="text-sm text-gray-300 mt-2">{review.comment}</p>
-                        </article>
-                      ))}
+                        </div>
+                      </div>
                     </div>
-                  )}
-                </>
-              )}
-
-              {!authUser ? (
-                <div className="mt-5">
-                  <p className="text-sm text-gray-400 mb-3">Sign in and complete a purchase to leave a review.</p>
-                  <button
-                    type="button"
-                    onClick={onOpenAccount}
-                    className="border border-[#D4AF37] text-[#D4AF37] px-4 py-2 text-xs font-bold uppercase tracking-wider hover:bg-[#D4AF37] hover:text-[#0B0C0C]"
-                  >
-                    Sign In
-                  </button>
-                </div>
-              ) : reviewsState.canReview ? (
-                <form onSubmit={handleReviewSubmit} className="mt-5 space-y-3" noValidate>
-                  <label className="block text-xs uppercase tracking-widest text-gray-400" htmlFor={`review-rating-${product.id}`}>
-                    Rating
-                  </label>
-                  <select
-                    id={`review-rating-${product.id}`}
-                    value={reviewForm.rating}
-                    onChange={(event) => setReviewForm((prev) => ({ ...prev, rating: event.target.value }))}
-                    className="w-full border border-gray-700 bg-[#0B0C0C] p-3 text-sm outline-none focus:border-[#D4AF37]"
-                  >
-                    <option value="5">5 - Excellent</option>
-                    <option value="4">4 - Great</option>
-                    <option value="3">3 - Good</option>
-                    <option value="2">2 - Fair</option>
-                    <option value="1">1 - Poor</option>
-                  </select>
-                  <input
-                    type="text"
-                    value={reviewForm.headline}
-                    onChange={(event) => setReviewForm((prev) => ({ ...prev, headline: event.target.value }))}
-                    placeholder="Headline (optional)"
-                    className="w-full border border-gray-700 bg-[#0B0C0C] p-3 text-sm outline-none focus:border-[#D4AF37]"
-                  />
-                  <textarea
-                    value={reviewForm.comment}
-                    onChange={(event) => setReviewForm((prev) => ({ ...prev, comment: event.target.value }))}
-                    placeholder="Share your experience (min 8 characters)"
-                    rows={4}
-                    className="w-full border border-gray-700 bg-[#0B0C0C] p-3 text-sm outline-none focus:border-[#D4AF37]"
-                    required
-                  />
-                  <button
-                    type="submit"
-                    disabled={reviewSubmitState.isSubmitting}
-                    className={`bg-[#D4AF37] text-[#0B0C0C] px-5 py-3 text-xs font-bold uppercase tracking-wider ${reviewSubmitState.isSubmitting ? 'opacity-60 cursor-not-allowed' : 'hover:bg-[#b5952f]'}`}
-                  >
-                    {reviewSubmitState.isSubmitting ? 'Saving...' : 'Submit Review'}
-                  </button>
-                  {reviewSubmitState.message && (
-                    <p className={`text-sm ${reviewSubmitState.type === 'error' ? 'text-red-400' : 'text-green-400'}`} role="status">
-                      {reviewSubmitState.message}
+                    <p className="text-xs text-gray-500 mt-4">
+                      Nutrition values are shown from verified product specifications and label data.
                     </p>
-                  )}
-                </form>
-              ) : (
-                <p className="text-sm text-gray-400 mt-5">{reviewsState.reason || 'Only verified customers can leave a review.'}</p>
-              )}
-            </div>
+                  </div>
+                )}
+              </section>
 
-            <button 
-              onClick={() => addToCart(product)}
-              className="md:hidden w-full bg-[#D4AF37] text-[#0B0C0C] py-4 font-sans font-bold tracking-widest uppercase hover:bg-[#b5952f] transition-colors"
-            >
-              Add to Cart — ${product.price.toFixed(2)}
-            </button>
-            <div className="md:hidden mt-3 grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => onShareProduct(product)}
-                className="border border-[#D4AF37] text-[#D4AF37] py-3 px-3 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2"
-              >
-                <Share2 size={14} />
-                Share
-              </button>
-              <button
-                type="button"
-                onClick={() => onCopyProductLink(product)}
-                className="border border-gray-700 text-[#F9F6F0] py-3 px-3 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2"
-              >
-                <Link2 size={14} />
-                Copy
-              </button>
-            </div>
-            <div className="md:hidden mt-4 space-y-2">
-              <p className="text-center text-xs text-gray-500">Free shipping on orders over $50</p>
-              <p className="text-center text-xs text-gray-500">Secure checkout processing</p>
+              <section className="border border-gray-800 bg-[#151515]">
+                <button
+                  type="button"
+                  onClick={() => toggleAccordion('shipping')}
+                  className="w-full px-5 py-4 flex items-center justify-between text-left"
+                  aria-expanded={openAccordion === 'shipping'}
+                  aria-controls={shippingPanelId}
+                >
+                  <span className="font-serif text-[#D4AF37]">Shipping &amp; Returns</span>
+                  <span className="text-xs text-gray-400 uppercase tracking-widest">{openAccordion === 'shipping' ? 'Hide' : 'Show'}</span>
+                </button>
+                {openAccordion === 'shipping' && (
+                  <div id={shippingPanelId} className="px-5 pb-5">
+                    <ul className="space-y-2 text-sm text-gray-300 font-sans">
+                      <li className="flex items-center gap-2"><Check size={14} className="text-[#D4AF37]" /> Free shipping on orders over $50.</li>
+                      <li className="flex items-center gap-2"><Check size={14} className="text-[#D4AF37]" /> Standard domestic delivery is typically 2-5 business days.</li>
+                      <li className="flex items-center gap-2"><Check size={14} className="text-[#D4AF37]" /> 30-day return window on unopened products.</li>
+                      <li className="flex items-center gap-2"><Check size={14} className="text-[#D4AF37]" /> Secure checkout processing on all orders.</li>
+                    </ul>
+                  </div>
+                )}
+              </section>
+
+              <section className="border border-gray-800 bg-[#151515]">
+                <button
+                  type="button"
+                  onClick={() => toggleAccordion('reviews')}
+                  className="w-full px-5 py-4 flex items-center justify-between text-left"
+                  aria-expanded={openAccordion === 'reviews'}
+                  aria-controls={reviewsPanelId}
+                >
+                  <span className="font-serif text-[#D4AF37]">Reviews</span>
+                  <span className="text-xs text-gray-400 uppercase tracking-widest">{openAccordion === 'reviews' ? 'Hide' : 'Show'}</span>
+                </button>
+                {openAccordion === 'reviews' && (
+                  <div id={reviewsPanelId} className="px-5 pb-5">
+                    {reviewsState.isLoading ? (
+                      <p className="text-sm text-gray-400">Loading reviews...</p>
+                    ) : reviewsState.error ? (
+                      <p className="text-sm text-red-400">{reviewsState.error}</p>
+                    ) : (
+                      <>
+                        <p className="text-sm text-gray-300 mb-4">
+                          {reviewsState.stats.count > 0
+                            ? `${reviewsState.stats.averageRating.toFixed(1)} / 5 (${reviewsState.stats.count} review${reviewsState.stats.count > 1 ? 's' : ''})`
+                            : 'No verified reviews yet.'}
+                        </p>
+
+                        {reviewsState.items.length > 0 && (
+                          <div className="space-y-4 mb-6">
+                            {reviewsState.items.map((review) => (
+                              <article key={review.id} className="border border-gray-700 p-4">
+                                <div className="flex items-center justify-between gap-3">
+                                  <p className="text-sm text-[#F9F6F0]">{review.displayName || 'Verified Customer'}</p>
+                                  <p className="text-xs text-gray-400">
+                                    {new Date(review.createdAt).toLocaleDateString()}
+                                  </p>
+                                </div>
+                                <p className="text-xs text-[#D4AF37] mt-2">{'★'.repeat(Math.max(1, Math.min(5, Number(review.rating) || 0)))}</p>
+                                {review.headline ? <p className="text-sm text-[#F9F6F0] mt-2">{review.headline}</p> : null}
+                                <p className="text-sm text-gray-300 mt-2">{review.comment}</p>
+                              </article>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    )}
+
+                    {!authUser ? (
+                      <div className="mt-5">
+                        <p className="text-sm text-gray-400 mb-3">Sign in and complete a purchase to leave a review.</p>
+                        <button
+                          type="button"
+                          onClick={onOpenAccount}
+                          className="border border-[#D4AF37] text-[#D4AF37] px-4 py-2 text-xs font-bold uppercase tracking-wider hover:bg-[#D4AF37] hover:text-[#0B0C0C]"
+                        >
+                          Sign In
+                        </button>
+                      </div>
+                    ) : reviewsState.canReview ? (
+                      <form onSubmit={handleReviewSubmit} className="mt-5 space-y-3" noValidate>
+                        <label className="block text-xs uppercase tracking-widest text-gray-400" htmlFor={`review-rating-${product.id}`}>
+                          Rating
+                        </label>
+                        <select
+                          id={`review-rating-${product.id}`}
+                          value={reviewForm.rating}
+                          onChange={(event) => setReviewForm((prev) => ({ ...prev, rating: event.target.value }))}
+                          className="w-full border border-gray-700 bg-[#0B0C0C] p-3 text-sm outline-none focus:border-[#D4AF37]"
+                        >
+                          <option value="5">5 - Excellent</option>
+                          <option value="4">4 - Great</option>
+                          <option value="3">3 - Good</option>
+                          <option value="2">2 - Fair</option>
+                          <option value="1">1 - Poor</option>
+                        </select>
+                        <input
+                          type="text"
+                          value={reviewForm.headline}
+                          onChange={(event) => setReviewForm((prev) => ({ ...prev, headline: event.target.value }))}
+                          placeholder="Headline (optional)"
+                          className="w-full border border-gray-700 bg-[#0B0C0C] p-3 text-sm outline-none focus:border-[#D4AF37]"
+                        />
+                        <textarea
+                          value={reviewForm.comment}
+                          onChange={(event) => setReviewForm((prev) => ({ ...prev, comment: event.target.value }))}
+                          placeholder="Share your experience (min 8 characters)"
+                          rows={4}
+                          className="w-full border border-gray-700 bg-[#0B0C0C] p-3 text-sm outline-none focus:border-[#D4AF37]"
+                          required
+                        />
+                        <button
+                          type="submit"
+                          disabled={reviewSubmitState.isSubmitting}
+                          className={`bg-[#D4AF37] text-[#0B0C0C] px-5 py-3 text-xs font-bold uppercase tracking-wider ${reviewSubmitState.isSubmitting ? 'opacity-60 cursor-not-allowed' : 'hover:bg-[#b5952f]'}`}
+                        >
+                          {reviewSubmitState.isSubmitting ? 'Saving...' : 'Submit Review'}
+                        </button>
+                        {reviewSubmitState.message && (
+                          <p className={`text-sm ${reviewSubmitState.type === 'error' ? 'text-red-400' : 'text-green-400'}`} role="status">
+                            {reviewSubmitState.message}
+                          </p>
+                        )}
+                      </form>
+                    ) : (
+                      <p className="text-sm text-gray-400 mt-5">{reviewsState.reason || 'Only verified customers can leave a review.'}</p>
+                    )}
+                  </div>
+                )}
+              </section>
             </div>
           </div>
         </div>
       </div>
 
       {!isCartOpen && (
+      <>
       <div className="fixed md:hidden bottom-0 left-0 right-0 z-40 border-t border-gray-800 bg-[#0B0C0C]/95 backdrop-blur-sm px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-xs text-gray-400 uppercase tracking-wider truncate">{product.name}</p>
-            <p className="text-lg font-serif text-[#D4AF37]">${product.price.toFixed(2)}</p>
+        <div className="max-w-7xl mx-auto space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-xs text-gray-400 uppercase tracking-wider truncate">{product.name}</p>
+              <p className="text-lg font-serif text-[#D4AF37]">${product.price.toFixed(2)}</p>
+            </div>
+            <button
+              onClick={() => handleAddToCart()}
+              className="bg-[#D4AF37] text-[#0B0C0C] px-4 py-3 text-sm font-bold tracking-widest uppercase whitespace-nowrap hover:bg-[#b5952f] transition-colors"
+            >
+              {isInCart ? 'Add Another' : 'Add to Cart'}
+            </button>
           </div>
-          <button
-            onClick={() => addToCart(product)}
-            className="bg-[#D4AF37] text-[#0B0C0C] px-5 py-3 text-sm font-bold tracking-widest uppercase whitespace-nowrap hover:bg-[#b5952f] transition-colors"
-          >
-            Add to Cart
-          </button>
-          <button
-            type="button"
-            onClick={() => onShareProduct(product)}
-            className="border border-[#D4AF37] text-[#D4AF37] p-3 hover:bg-[#D4AF37] hover:text-[#0B0C0C] transition-colors"
-            aria-label={`Share ${product.name}`}
-          >
-            <Share2 size={18} />
-          </button>
+          <div className="flex items-center gap-2">
+            {renderQuantitySelector({ compact: true, idPrefix: 'mobile-qty' })}
+            <button
+              type="button"
+              onClick={() => setQuickQty(2)}
+              className={`h-11 px-3 border text-xs font-bold uppercase tracking-wider ${qty === 2 ? 'border-[#D4AF37] text-[#D4AF37]' : 'border-gray-700 text-[#F9F6F0]'}`}
+              aria-pressed={qty === 2}
+            >
+              Buy 2
+            </button>
+            <button
+              type="button"
+              onClick={() => setQuickQty(3)}
+              className={`h-11 px-3 border text-xs font-bold uppercase tracking-wider ${qty === 3 ? 'border-[#D4AF37] text-[#D4AF37]' : 'border-gray-700 text-[#F9F6F0]'}`}
+              aria-pressed={qty === 3}
+            >
+              Buy 3
+            </button>
+          </div>
         </div>
       </div>
+      <div className="md:hidden" style={{ height: 'calc(7.75rem + env(safe-area-inset-bottom))' }} aria-hidden="true" />
+      </>
       )}
     </div>
   );
@@ -2867,7 +3110,10 @@ const Navigation = ({ currentView, cartCount, setView, toggleCart, authUser, onS
 	      {mobileMenuOpen && (
 		        <div id="mobile-navigation" className="absolute top-full left-0 w-full bg-[#0B0C0C] border-t border-gray-800 p-6 md:hidden flex flex-col space-y-4 shadow-2xl z-50">
 		           <button onClick={() => handleNav('shop_all')} className="text-[#F9F6F0] text-left font-sans tracking-widest">SHOP</button>
+		           <button onClick={() => handleNav('shop_functional')} className="text-[#F9F6F0] text-left font-sans tracking-widest">FUNCTIONAL BLENDS</button>
 		           <button onClick={() => handleNav('shop_signature')} className="text-[#F9F6F0] text-left font-sans tracking-widest">SIGNATURE BLENDS</button>
+		           <button onClick={() => handleNav('shop_single_origin')} className="text-[#F9F6F0] text-left font-sans tracking-widest">SINGLE ORIGIN</button>
+		           <button onClick={() => handleNav('shop_bundles')} className="text-[#F9F6F0] text-left font-sans tracking-widest">BUNDLES</button>
 		           <button onClick={() => handleNav('blog')} className="text-[#F9F6F0] text-left font-sans tracking-widest">JOURNAL</button>
 		           <button onClick={() => handleNav('rewards')} className="text-[#F9F6F0] text-left font-sans tracking-widest">REWARDS</button>
 		           <button onClick={() => handleNav('about')} className="text-[#F9F6F0] text-left font-sans tracking-widest">OUR STORY</button>
@@ -3579,22 +3825,174 @@ const CheckoutView = ({
   );
 };
 
+const ROAST_SORT_ORDER = { light: 0, medium: 1, dark: 2 };
+const SERIES_FILTER_OPTIONS = [
+  { value: 'all', label: 'All' },
+  { value: 'functional', label: 'Functional' },
+  { value: 'single_origin', label: 'Single Origin' },
+  { value: 'signature', label: 'Signature' },
+  { value: 'bundles', label: 'Bundles' },
+];
+
+const deriveProductFormat = (product) => {
+  const subtitle = normalizeLower(product?.subtitle || '');
+  const productAmount = normalizeLower(product?.nutritionSpecs?.productAmount || '');
+  const nutritionIngredients = normalizeLower(product?.nutritionSpecs?.ingredients || '');
+  const detailsIngredients = normalizeLower(product?.details?.ingredients || '');
+
+  if (product?.id?.endsWith('-pods') || productAmount.includes('pods')) {
+    return 'pods';
+  }
+
+  if (subtitle.includes('matcha') || (product?.category === 'functional' && product?.name === 'ZEN')) {
+    return 'matcha';
+  }
+
+  if (subtitle.includes('instant') || productAmount.includes('1.9 oz')) {
+    return 'instant';
+  }
+
+  if (subtitle.includes('ground') || nutritionIngredients.includes('ground') || detailsIngredients.includes('ground')) {
+    return 'ground';
+  }
+
+  return 'beans';
+};
+
+const deriveProductSeries = (product) => {
+  if (product?.category === 'functional') return 'functional';
+  if (product?.category === 'single_origin') return 'single_origin';
+  if (product?.category === 'signature') return 'signature';
+  if (product?.category === 'bundles') return 'bundles';
+  return 'all';
+};
+
 const ShopView = ({ category, openProductDetail }) => {
-  const filteredProducts = category === 'all' 
-    ? PRODUCTS 
-    : PRODUCTS.filter(p => p.category === category);
+  const [sortBy, setSortBy] = useState('featured');
+  const [roastFilter, setRoastFilter] = useState('all');
+  const [formatFilter, setFormatFilter] = useState('all');
+  const [seriesFilter, setSeriesFilter] = useState('all');
   const collectionTitle = CATEGORY_LABELS[category] || CATEGORY_LABELS.all;
+
+  const scopedProducts = category === 'all'
+    ? PRODUCTS
+    : PRODUCTS.filter((product) => product.category === category);
+
+  const filteredProducts = scopedProducts.filter((product) => {
+    const roastValue = normalizeLower(product?.details?.roast || '');
+    const formatValue = deriveProductFormat(product);
+    const seriesValue = deriveProductSeries(product);
+
+    const roastMatch = roastFilter === 'all' || roastValue === roastFilter;
+    const formatMatch = formatFilter === 'all' || formatValue === formatFilter;
+    const seriesMatch = seriesFilter === 'all' || seriesValue === seriesFilter;
+
+    return roastMatch && formatMatch && seriesMatch;
+  });
+
+  const sortedProducts = (() => {
+    if (sortBy === 'featured') return filteredProducts;
+
+    const productsToSort = [...filteredProducts];
+    if (sortBy === 'price_low') {
+      return productsToSort.sort((a, b) => a.price - b.price || a.name.localeCompare(b.name));
+    }
+
+    if (sortBy === 'price_high') {
+      return productsToSort.sort((a, b) => b.price - a.price || a.name.localeCompare(b.name));
+    }
+
+    if (sortBy === 'roast') {
+      return productsToSort.sort((a, b) => {
+        const roastRankA = ROAST_SORT_ORDER[normalizeLower(a?.details?.roast || '')] ?? 99;
+        const roastRankB = ROAST_SORT_ORDER[normalizeLower(b?.details?.roast || '')] ?? 99;
+        if (roastRankA !== roastRankB) return roastRankA - roastRankB;
+        return a.name.localeCompare(b.name);
+      });
+    }
+
+    return productsToSort;
+  })();
 
   return (
     <div className="pt-32 pb-24 bg-[#0B0C0C] min-h-screen">
       <div className="max-w-7xl mx-auto px-6">
         <h1 className="text-4xl md:text-5xl font-serif text-[#F9F6F0] mb-4">{collectionTitle}</h1>
-        <p className="text-gray-400 font-sans mb-12 max-w-2xl">Explore our range of meticulously sourced and roasted coffees, designed to elevate your daily ritual.</p>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-16">
-          {filteredProducts.map((product) => (
-            <ProductCard key={product.id} product={product} openProductDetail={openProductDetail} />
-          ))}
+        <p className="text-gray-400 font-sans mb-8 max-w-2xl">Explore our range of meticulously sourced and roasted coffees, designed to elevate your daily ritual.</p>
+
+        <div className="border border-gray-800 bg-[#121212] p-4 md:p-5 mb-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <label className="block">
+              <span className="text-[11px] uppercase tracking-widest text-gray-400 mb-2 block">Sort</span>
+              <select
+                value={sortBy}
+                onChange={(event) => setSortBy(event.target.value)}
+                className="w-full border border-gray-700 bg-[#0B0C0C] text-[#F9F6F0] p-3 text-sm outline-none focus:border-[#D4AF37]"
+              >
+                <option value="featured">Featured</option>
+                <option value="price_low">Price: Low → High</option>
+                <option value="price_high">Price: High → Low</option>
+                <option value="roast">Roast: Light → Medium → Dark</option>
+              </select>
+            </label>
+
+            <label className="block">
+              <span className="text-[11px] uppercase tracking-widest text-gray-400 mb-2 block">Roast</span>
+              <select
+                value={roastFilter}
+                onChange={(event) => setRoastFilter(event.target.value)}
+                className="w-full border border-gray-700 bg-[#0B0C0C] text-[#F9F6F0] p-3 text-sm outline-none focus:border-[#D4AF37]"
+              >
+                <option value="all">All</option>
+                <option value="light">Light</option>
+                <option value="medium">Medium</option>
+                <option value="dark">Dark</option>
+              </select>
+            </label>
+
+            <label className="block">
+              <span className="text-[11px] uppercase tracking-widest text-gray-400 mb-2 block">Format</span>
+              <select
+                value={formatFilter}
+                onChange={(event) => setFormatFilter(event.target.value)}
+                className="w-full border border-gray-700 bg-[#0B0C0C] text-[#F9F6F0] p-3 text-sm outline-none focus:border-[#D4AF37]"
+              >
+                <option value="all">All</option>
+                <option value="beans">Beans</option>
+                <option value="pods">Pods</option>
+                <option value="instant">Instant</option>
+                <option value="matcha">Matcha</option>
+                <option value="ground">Ground</option>
+              </select>
+            </label>
+
+            <label className="block">
+              <span className="text-[11px] uppercase tracking-widest text-gray-400 mb-2 block">Series</span>
+              <select
+                value={seriesFilter}
+                onChange={(event) => setSeriesFilter(event.target.value)}
+                className="w-full border border-gray-700 bg-[#0B0C0C] text-[#F9F6F0] p-3 text-sm outline-none focus:border-[#D4AF37]"
+              >
+                {SERIES_FILTER_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <p className="text-xs text-gray-500 mt-4">{sortedProducts.length} product{sortedProducts.length === 1 ? '' : 's'} shown</p>
         </div>
+
+        {sortedProducts.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-16">
+            {sortedProducts.map((product) => (
+              <ProductCard key={product.id} product={product} openProductDetail={openProductDetail} />
+            ))}
+          </div>
+        ) : (
+          <div className="border border-gray-800 bg-[#121212] p-8 text-center">
+            <p className="text-gray-300 font-sans">No products match the current filters.</p>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -5222,6 +5620,7 @@ const Footer = ({ setView }) => {
             <li><button type="button" onClick={() => setView('shop_functional')} className="hover:text-[#F9F6F0]">Functional Blends</button></li>
             <li><button type="button" onClick={() => setView('shop_signature')} className="hover:text-[#F9F6F0]">Signature Blends</button></li>
             <li><button type="button" onClick={() => setView('shop_single_origin')} className="hover:text-[#F9F6F0]">Single Origin</button></li>
+            <li><button type="button" onClick={() => setView('shop_bundles')} className="hover:text-[#F9F6F0]">Bundles</button></li>
             <li><button type="button" onClick={() => setView('subscription')} className="hover:text-[#F9F6F0]">Subscriptions</button></li>
             <li><button type="button" onClick={() => setView('rewards')} className="hover:text-[#F9F6F0]">Rewards App</button></li>
           </ul>
@@ -6045,6 +6444,10 @@ const App = () => {
         title: 'Single Origin Series | Velure Coffee',
         description: 'Discover Velure single-origin coffee with distinct regional profiles and premium quality.',
       },
+      shop_bundles: {
+        title: 'Bundle Sets | Velure Coffee',
+        description: 'Shop curated Velure bundle sets for bright, dark, and starter coffee rituals.',
+      },
       blog: {
         title: 'Journal | Velure Coffee',
         description: 'Calm, factual coffee guides on Lion’s Mane blends, clean-label coffee, and brewing better cups.',
@@ -6187,14 +6590,19 @@ const App = () => {
     upsertStructuredData(structuredData);
   }, [currentView, selectedBlogPost, selectedProduct]);
 
-  const addToCart = (product) => {
-    setCart((previousCart) => [...previousCart, product]);
+  const addToCart = (product, quantity = 1) => {
+    const safeQuantity = Math.max(1, Math.min(10, Math.floor(Number(quantity) || 1)));
+    setCart((previousCart) => [
+      ...previousCart,
+      ...Array.from({ length: safeQuantity }, () => product),
+    ]);
     openCart();
     trackEvent('add_to_cart', {
       currency: 'USD',
-      value: Number(product.price.toFixed(2)),
+      value: Number((product.price * safeQuantity).toFixed(2)),
       item_id: product.id,
       item_name: product.name,
+      quantity: safeQuantity,
     });
   };
 
@@ -6693,6 +7101,7 @@ const App = () => {
           addToCart={addToCart} 
           onBack={() => setView('shop_all')}
           isCartOpen={isCartOpen}
+          isInCart={cart.some((item) => item.id === selectedProduct.id)}
           onShareProduct={handleShareProduct}
           onCopyProductLink={handleCopyProductLink}
           authUser={authState.user}
@@ -6714,10 +7123,11 @@ const App = () => {
 
     switch (currentView) {
       case 'home': return <HomeView openProductDetail={openProductDetail} setView={setView} />;
-      case 'shop_all': return <ShopView category="all" openProductDetail={openProductDetail} />;
-      case 'shop_functional': return <ShopView category="functional" openProductDetail={openProductDetail} />;
-      case 'shop_signature': return <ShopView category="signature" openProductDetail={openProductDetail} />;
-      case 'shop_single_origin': return <ShopView category="single_origin" openProductDetail={openProductDetail} />;
+      case 'shop_all': return <ShopView key="shop-all" category="all" openProductDetail={openProductDetail} />;
+      case 'shop_functional': return <ShopView key="shop-functional" category="functional" openProductDetail={openProductDetail} />;
+      case 'shop_signature': return <ShopView key="shop-signature" category="signature" openProductDetail={openProductDetail} />;
+      case 'shop_single_origin': return <ShopView key="shop-single-origin" category="single_origin" openProductDetail={openProductDetail} />;
+      case 'shop_bundles': return <ShopView key="shop-bundles" category="bundles" openProductDetail={openProductDetail} />;
       case 'blog': return <BlogView openBlogPost={openBlogPost} />;
       case 'checkout': return (
         <CheckoutView

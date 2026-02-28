@@ -22,6 +22,10 @@ const PRODUCT_CATALOG = {
   sable: { name: 'SABLE' },
   cerise: { name: 'CERISE' },
   cacao: { name: 'CACAO' },
+  'bundle-ritual-set': { name: 'RITUAL SET' },
+  'bundle-starter': { name: 'STARTER' },
+  'bundle-dark-set': { name: 'DARK SET' },
+  'bundle-bright-set': { name: 'BRIGHT SET' },
 };
 
 const normalize = (value) => (typeof value === 'string' ? value.trim() : '');

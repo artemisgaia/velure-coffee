@@ -23,6 +23,10 @@ const PRODUCT_CATALOG = {
   sable: { name: 'SABLE', priceCents: 2600 },
   cerise: { name: 'CERISE', priceCents: 2600 },
   cacao: { name: 'CACAO', priceCents: 2600 },
+  'bundle-ritual-set': { name: 'RITUAL SET', priceCents: 4800 },
+  'bundle-starter': { name: 'STARTER', priceCents: 5600 },
+  'bundle-dark-set': { name: 'DARK SET', priceCents: 5000 },
+  'bundle-bright-set': { name: 'BRIGHT SET', priceCents: 5000 },
 };
 
 const DISCOUNT_OFFERS = {

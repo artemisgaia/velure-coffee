@@ -109,6 +109,10 @@ const PRODUCT_SHIPPING_WEIGHT_LBS = {
   sable: 0.8,
   cerise: 0.8,
   cacao: 0.8,
+  'bundle-ritual-set': 1.6,
+  'bundle-starter': 1.0,
+  'bundle-dark-set': 1.6,
+  'bundle-bright-set': 1.6,
 };
 
 const PACKAGING_WEIGHT_LBS = 0.2;

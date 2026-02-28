@@ -20,6 +20,10 @@ const PRODUCT_CATALOG = {
   sable: { name: 'SABLE', price: 26.0 },
   cerise: { name: 'CERISE', price: 26.0 },
   cacao: { name: 'CACAO', price: 26.0 },
+  'bundle-ritual-set': { name: 'RITUAL SET', price: 48.0 },
+  'bundle-starter': { name: 'STARTER', price: 56.0 },
+  'bundle-dark-set': { name: 'DARK SET', price: 50.0 },
+  'bundle-bright-set': { name: 'BRIGHT SET', price: 50.0 },
 };
 
 const STANDARD_SHIPPING_FEE = 6.95;

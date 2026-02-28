@@ -31,6 +31,10 @@ const PRODUCT_CATALOG = {
   sable: { name: 'SABLE', subtitle: 'Velvet Cocoa Coffee Beans', price: 26 },
   cerise: { name: 'CERISE', subtitle: 'Cherry Zest Coffee Beans', price: 26 },
   cacao: { name: 'CACAO', subtitle: 'Chocolate Bold Coffee Beans', price: 26 },
+  'bundle-ritual-set': { name: 'RITUAL SET', subtitle: 'Two-Bag Bundle', price: 48 },
+  'bundle-starter': { name: 'STARTER', subtitle: 'Beans + Instant', price: 56 },
+  'bundle-dark-set': { name: 'DARK SET', subtitle: 'Bold Roast Bundle', price: 50 },
+  'bundle-bright-set': { name: 'BRIGHT SET', subtitle: 'Light Roast Bundle', price: 50 },
 };
 
 const DEFAULT_ZONES = { ...SHIPPING_ZONES };
