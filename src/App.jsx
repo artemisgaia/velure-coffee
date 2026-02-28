@@ -211,7 +211,13 @@ const PRODUCTS = [
     tag: "Light Roast Pods",
     subscriptionEligible: false,
     images: [DEFAULT_SHARE_IMAGE_URL],
-    description: "BLOOM Coffee Pods are a bright signature blend designed for a clean, fruit-forward cup with a soft finish. Beans from Ethiopia, Mexico, and Brazil create a lively light roast that stays smooth and balanced from first sip to last.",
+    description: `Bright, fruit-forward light roast pods designed for an effortless morning ritual.
+
+Notes: Citrus zest • dried fruit • floral lift
+Best For: Bright mornings • larger cup settings • iced over ice
+Pairing: Pairs beautifully with citrus pastry, yogurt, or a simple buttered toast.
+
+A bright, fruit-forward light roast in a single-serve format—clean, lively, and effortless. BLOOM opens with citrus clarity and soft dried-fruit sweetness, finishing light and crisp for an elevated daily cup. Crafted from a blend of Ethiopia, Mexico, and Brazil, in 12 Keurig-compatible pods.`,
     details: {
       origin: "Ethiopia, Mexico, Brazil",
       roast: "Light",
@@ -237,7 +243,13 @@ const PRODUCTS = [
     tag: "Medium Roast Pods",
     subscriptionEligible: false,
     images: [DEFAULT_SHARE_IMAGE_URL],
-    description: "HAZEL Coffee Pods deliver a rounded medium roast profile with warm hazelnut character and a rich, comforting body. This Brazil and Mexico blend is built for reliable flavor and an easy daily brew ritual.",
+    description: `Cozy medium roast pods with a warm, rounded cup and a smooth finish.
+
+Notes: Roasted hazelnut • gentle sweetness • smooth finish
+Best For: Cozy cups • smooth daily brews • medium cup settings
+Pairing: Pairs with almond biscotti, oat milk, or a warm cinnamon pastry.
+
+A cozy medium roast designed for ease without sacrificing finish. HAZEL leans warm and rounded—nutty, softly sweet, and smooth—built for mornings that want comfort and consistency. Sourced as a balanced blend from Brazil and Mexico, packed as 12 Keurig-compatible pods for a polished, repeatable ritual.`,
     details: {
       origin: "Brazil, Mexico",
       roast: "Medium",
@@ -263,7 +275,13 @@ const PRODUCTS = [
     tag: "Dark Roast Pods",
     subscriptionEligible: false,
     images: [DEFAULT_SHARE_IMAGE_URL],
-    description: "MOLTEN Coffee Pods are a dark signature blend with deep roast structure and caramel-toned sweetness. Brazil, Mexico, and Guatemala coffees combine for a bold profile that remains smooth and drinkable.",
+    description: `Dark roast pods with caramelized depth and a bold, composed finish.
+
+Notes: Baker’s chocolate • dark toffee • full body
+Best For: Bold mornings • smaller cup settings • latte-style cups
+Pairing: Pairs with dark chocolate, a salted caramel bite, or steamed milk.
+
+Dark roast pods with a deep, caramelized profile and a bold, satisfying finish. MOLTEN brings roasted intensity with a smooth, toffee-leaning sweetness that reads rich rather than sugary. Built from coffees sourced across Brazil, Mexico, and Guatemala, in 12 Keurig-compatible pods made for a fast, elevated cup.`,
     details: {
       origin: "Brazil, Mexico, Guatemala",
       roast: "Dark",
@@ -289,7 +307,13 @@ const PRODUCTS = [
     tag: "Signature Blend",
     subscriptionEligible: false,
     images: [DEFAULT_SHARE_IMAGE_URL],
-    description: "DRIFT Coffee Beans bring a layered medium roast with citrus lift and a polished finish. Sourced across Brazil, Colombia, Guatemala, and Ethiopia, this blend is crafted for clarity, sweetness, and daily versatility.",
+    description: `Balanced medium roast whole beans with cocoa depth and a clean citrus edge.
+
+Notes: Toffee sweetness • dark chocolate • citrus lift
+Best For: Pour-over • drip • cold brew
+Pairing: Pairs with orange zest pastries, dark chocolate, or a light honey drizzle.
+
+A medium roast with lift—balanced sweetness, cocoa depth, and a clean citrus edge that keeps the cup bright. DRIFT is designed to feel refined across brew methods: smooth in drip, vivid in pour-over, and composed over ice. A multi-origin blend from Brazil, Colombia, Guatemala, and Ethiopia, delivered as 12 oz whole beans.`,
     details: {
       origin: "Brazil, Colombia, Guatemala, Ethiopia",
       roast: "Medium",
@@ -315,7 +339,13 @@ const PRODUCTS = [
     tag: "Signature Blend",
     subscriptionEligible: false,
     images: [DEFAULT_SHARE_IMAGE_URL],
-    description: "NOUGAT Coffee Beans offer a smooth medium roast with praline-like sweetness and a gentle, rounded body. Brazil, Colombia, and Guatemala origins provide a balanced cup designed for repeatable everyday brewing.",
+    description: `Smooth medium roast whole beans with quiet sweetness and everyday elegance.
+
+Notes: Nutty praline • light toffee • balanced finish
+Best For: Drip • French press • everyday brewing
+Pairing: Pairs with toasted nuts, shortbread, or a soft splash of oat milk.
+
+A smooth, medium roast built around quiet sweetness—nutty praline character with a gentle toffee finish. NOUGAT is the kind of coffee that stays elegant even as it gets stronger: balanced, warm, and easy to return to. Crafted from Brazil, Colombia, and Guatemala, as 12 oz whole beans for daily brewing.`,
     details: {
       origin: "Brazil, Colombia, Guatemala",
       roast: "Medium",
@@ -341,7 +371,13 @@ const PRODUCTS = [
     tag: "Hazelnut Notes",
     subscriptionEligible: false,
     images: [DEFAULT_SHARE_IMAGE_URL],
-    description: "PRALINE Coffee Beans are a medium roast signature blend with rich hazelnut character and soft cocoa depth. Built from Brazil and Mexico lots, it delivers a warm profile that stays clean and balanced.",
+    description: `Medium roast whole beans with a warm, hazelnut-leaning profile and soft richness.
+
+Notes: Roasted nut • gentle sweetness • smooth cup
+Best For: Drip • French press • moka pot
+Pairing: Pairs with biscotti, cocoa granola, or a lightly sweetened latte.
+
+Medium roast whole beans with a warm, hazelnut-leaning profile—rounded, subtly sweet, and clean through the finish. PRALINE is comfort-forward but not heavy, with an easy richness that suits drip, press, or moka. Sourced from Brazil and Mexico, as 12 oz whole beans.`,
     details: {
       origin: "Brazil, Mexico",
       roast: "Medium",
@@ -367,7 +403,13 @@ const PRODUCTS = [
     tag: "Light Roast",
     subscriptionEligible: false,
     images: [DEFAULT_SHARE_IMAGE_URL],
-    description: "CITRA Coffee Beans are a light roast blend tuned for bright fruit notes, floral aromatics, and a clean finish. Ethiopia, Mexico, and Brazil origins create a vibrant cup that remains smooth and approachable.",
+    description: `Light roast whole beans that pour bright and clean, built for clarity.
+
+Notes: Citrus zest • dried fruit • crisp finish
+Best For: Pour-over • iced coffee • light, clean cups
+Pairing: Pairs with fresh fruit, lemon loaf, or a crisp, iced pour-over.
+
+A light roast designed for brightness with structure—citrus clarity, dried fruit sweetness, and a crisp finish that stays clean. CITRA shines in pour-over and iced preparations, where its lively character reads the most. Crafted from Ethiopia, Mexico, and Brazil, as 12 oz whole beans.`,
     details: {
       origin: "Ethiopia, Mexico, Brazil",
       roast: "Light",
@@ -393,7 +435,13 @@ const PRODUCTS = [
     tag: "Citrus Notes",
     subscriptionEligible: false,
     images: [DEFAULT_SHARE_IMAGE_URL],
-    description: "ZEST Coffee Beans are a light roast signature blend with crisp citrus character and delicate sweetness. Ethiopia, Guatemala, and Brazil beans shape a lively profile made for bright morning cups and clean iced brews.",
+    description: `Light roast whole beans with citrus clarity and a tea-like finish.
+
+Notes: Bright citrus • soft caramel • clean finish
+Best For: Pour-over • drip • iced coffee
+Pairing: Pairs with vanilla yogurt, citrus glaze pastry, or a clean iced cup.
+
+A light roast with a crisp, citrus-forward profile and a softly sweet backbone. ZEST finishes tea-like and clean, with just enough caramel warmth to keep it balanced—not sharp. Built from Ethiopia, Guatemala, and Brazil, as 12 oz whole beans for a bright, refined ritual.`,
     details: {
       origin: "Ethiopia, Guatemala, Brazil",
       roast: "Light",
@@ -419,7 +467,13 @@ const PRODUCTS = [
     tag: "Dark Roast",
     subscriptionEligible: false,
     images: [DEFAULT_SHARE_IMAGE_URL],
-    description: "EMBER Coffee Beans are a dark roast blend with strong structure, toasted depth, and a smooth finish. Brazil and Mexico origins create a full-bodied cup that stands up beautifully to milk or straight black brewing.",
+    description: `Dark roast whole beans with toasted warmth and a smooth, bold finish.
+
+Notes: Toasted nut • rich cocoa • deep roast
+Best For: Strong drip • French press • moka pot
+Pairing: Pairs with dark chocolate, toasted nuts, or a classic breakfast sandwich.
+
+A deep dark roast for those who like their cup bold, composed, and full-bodied. EMBER brings toasted-nut warmth and rich cocoa depth with a clean finish that doesn’t feel harsh. Sourced from Brazil and Mexico, as 12 oz whole beans built for drip, press, or moka.`,
     details: {
       origin: "Brazil, Mexico",
       roast: "Dark",
@@ -445,7 +499,13 @@ const PRODUCTS = [
     tag: "Dark Roast",
     subscriptionEligible: false,
     images: [DEFAULT_SHARE_IMAGE_URL],
-    description: "FORGE Coffee Beans are a dark signature blend with caramel-toned richness and a polished finish. Beans from Brazil, Mexico, and Guatemala deliver depth and sweetness in an espresso-ready profile.",
+    description: `Dark roast whole beans with molten chocolate-toffee depth, built for strong brews.
+
+Notes: Baker’s chocolate • dark toffee • structured finish
+Best For: Espresso-style brews • French press • bold drip
+Pairing: Pairs with a caramel dessert, steamed milk, or a rich chocolate pastry.
+
+Dark roast whole beans with a molten profile—baker’s chocolate depth, dark toffee sweetness, and a powerful, structured finish. FORGE is bold without feeling burnt, designed to hold up in espresso, press, or a strong drip. Crafted from Brazil, Mexico, and Guatemala, as 12 oz whole beans.`,
     details: {
       origin: "Brazil, Mexico, Guatemala",
       roast: "Dark",
@@ -471,7 +531,13 @@ const PRODUCTS = [
     tag: "Decaf",
     subscriptionEligible: false,
     images: [DEFAULT_SHARE_IMAGE_URL],
-    description: "FOREST Decaf Coffee Beans bring a medium roast profile with gentle sweetness, cocoa depth, and a clean finish. Grown in Indonesia's Sulawesi region, this Java Toraja lot is built for calm, anytime brewing.",
+    description: `Medium roast decaf whole beans with full flavor and a calm, evening-ready cup.
+
+Notes: Dark chocolate • earthy depth • smooth finish
+Best For: Evening cups • drip • French press
+Pairing: Pairs with evening dessert, shortbread, or a quiet post-dinner cup.
+
+A medium roast decaf that keeps the ritual intact—dark chocolate depth, earthy warmth, and a smooth, low-bitterness finish. FOREST is built for evenings, slower mornings, and anyone who wants a full cup without the rush. Single-origin character from Sulawesi, Indonesia, as 12 oz whole beans.`,
     details: {
       origin: "Indonesia, Sulawesi",
       roast: "Medium",
@@ -497,7 +563,13 @@ const PRODUCTS = [
     tag: "Single Origin",
     subscriptionEligible: false,
     images: [DEFAULT_SHARE_IMAGE_URL],
-    description: "GROVE Coffee Beans highlight Chiapas terroir with a balanced medium roast and maple-toned sweetness. Bourbon and Typica varietals create a clean, structured cup suited to daily brewing.",
+    description: `Single-origin medium roast whole beans with classic structure and gentle sweetness.
+
+Notes: Dark chocolate • roasted nut • maple-like finish
+Best For: Drip • pour-over • classic medium roast cups
+Pairing: Pairs with pancakes, maple-toned pastries, or a classic milk-and-coffee balance.
+
+A composed medium roast with classic structure—dark chocolate character, roasted-nut warmth, and a gentle, maple-like finish that reads naturally sweet. GROVE is single-origin in feel and steady across brew styles, designed for repeatable everyday cups. Sourced from Chiapas, Mexico, as 12 oz whole beans.`,
     details: {
       origin: "Mexico, Chiapas, La Concordia",
       roast: "Medium",
@@ -523,7 +595,13 @@ const PRODUCTS = [
     tag: "Single Origin",
     subscriptionEligible: false,
     images: [DEFAULT_SHARE_IMAGE_URL],
-    description: "SABLE Coffee Beans present a medium roast with velvet cocoa character and a smooth body. Huila and Cauca coffees provide balanced sweetness and a polished finish for a refined daily cup.",
+    description: `Single-origin Colombian medium roast whole beans with velvet cocoa richness and balance.
+
+Notes: Cocoa • cane sugar • soft fruit brightness
+Best For: Pour-over • drip • clean chocolate notes
+Pairing: Pairs with dark chocolate, flaky croissant, or a smooth cappuccino-style cup.
+
+A velvet-smooth medium roast with cocoa richness and a soft sweetness that lingers. SABLE balances chocolate depth with a light touch of fruit brightness—refined, clean, and quietly complex. Single-origin from Colombia (Huila & Cauca), as 12 oz whole beans.`,
     details: {
       origin: "Colombia, Huila/Cauca",
       roast: "Medium",
@@ -549,7 +627,13 @@ const PRODUCTS = [
     tag: "Single Origin",
     subscriptionEligible: false,
     images: [DEFAULT_SHARE_IMAGE_URL],
-    description: "CERISE Coffee Beans are a medium roast with bright cherry lift and a sweet, clean finish. Sourced from Huehuetenango and Antigua, this Guatemalan profile is vivid yet balanced in the cup.",
+    description: `Single-origin medium roast whole beans with bright clarity and a refined cherry finish.
+
+Notes: Citrus brightness • cocoa depth • black-cherry finish
+Best For: Pour-over • filter brewing • bright, refined cups
+Pairing: Pairs with berry pastry, dark chocolate, or a clean filter brew.
+
+A lively medium roast with a bright opening and a deep, elegant finish. CERISE pairs citrus clarity and cocoa depth with a black-cherry note that reads crisp—not candy-sweet. Single-origin from Guatemala (Huehuetenango / Antigua), as 12 oz whole beans.`,
     details: {
       origin: "Guatemala, Huehuetenango/Antigua",
       roast: "Medium",
@@ -575,7 +659,13 @@ const PRODUCTS = [
     tag: "Single Origin",
     subscriptionEligible: false,
     images: [DEFAULT_SHARE_IMAGE_URL],
-    description: "CACAO Coffee Beans are a dark single-origin roast with bold chocolate depth and a dense, satisfying finish. Brazilian Bourbon, Mundo Novo, and Catuaí-family varietals deliver a rich and consistent ritual cup.",
+    description: `Dark roast whole beans with deep cocoa intensity and a smooth, bold cup.
+
+Notes: Deep cocoa • toasted nut • bittersweet finish
+Best For: Espresso • moka pot • bold drip
+Pairing: Pairs with biscotti, a rich chocolate bite, or a bold espresso-style shot.
+
+A bold dark roast built around deep cocoa and toasted depth—full-bodied, smooth, and made for strong brews. CACAO is the cup you reach for when you want intensity with composure, whether it’s espresso, moka, or a rich drip. Crafted from Brazil, as 12 oz whole beans.`,
     details: {
       origin: "Brazil",
       roast: "Dark",
