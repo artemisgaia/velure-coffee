@@ -5,6 +5,21 @@ const PRODUCT_CATALOG = {
   vitality: { name: 'VITALITY', price: 36.0 },
   harvest: { name: 'HARVEST', price: 34.0 },
   aureo: { name: 'AUREO', price: 26.0 },
+  'bloom-pods': { name: 'BLOOM', price: 24.0 },
+  'hazel-pods': { name: 'HAZEL', price: 24.0 },
+  molten: { name: 'MOLTEN', price: 24.0 },
+  drift: { name: 'DRIFT', price: 26.0 },
+  nougat: { name: 'NOUGAT', price: 26.0 },
+  praline: { name: 'PRALINE', price: 26.0 },
+  citra: { name: 'CITRA', price: 26.0 },
+  zest: { name: 'ZEST', price: 26.0 },
+  ember: { name: 'EMBER', price: 26.0 },
+  forge: { name: 'FORGE', price: 26.0 },
+  forest: { name: 'FOREST', price: 26.0 },
+  grove: { name: 'GROVE', price: 26.0 },
+  sable: { name: 'SABLE', price: 26.0 },
+  cerise: { name: 'CERISE', price: 26.0 },
+  cacao: { name: 'CACAO', price: 26.0 },
 };
 
 const STANDARD_SHIPPING_FEE = 6.95;

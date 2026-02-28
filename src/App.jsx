@@ -12,6 +12,7 @@ const PRODUCTS = [
     price: 38.00,
     category: "functional",
     tag: "Best Seller",
+    subscriptionEligible: true,
     images: [
       "https://res.cloudinary.com/dfygdydcj/image/upload/v1767209595/1766845371046-generated-label-image-0_omteke.jpg",
       "https://res.cloudinary.com/dfygdydcj/image/upload/v1767209605/1766845371047-generated-label-image-1_ym8z0w.jpg",
@@ -44,6 +45,7 @@ const PRODUCTS = [
     price: 45.00,
     category: "functional",
     tag: "Ceremonial Grade",
+    subscriptionEligible: true,
     images: [
       "https://res.cloudinary.com/dfygdydcj/image/upload/v1767209664/1767204402115-generated-label-image-0_j8n70v.jpg",
       "https://res.cloudinary.com/dfygdydcj/image/upload/v1767209681/1767204402115-generated-label-image-1_qe6shk.jpg",
@@ -74,6 +76,7 @@ const PRODUCTS = [
     price: 28.00,
     category: "single_origin",
     tag: "Dark Roast",
+    subscriptionEligible: true,
     images: [
       "https://res.cloudinary.com/dfygdydcj/image/upload/v1767209703/1767205155638-generated-label-image-0_smjxbd.jpg",
       "https://res.cloudinary.com/dfygdydcj/image/upload/v1767209738/1767205155639-generated-label-image-1_sd2wkb.jpg",
@@ -105,6 +108,7 @@ const PRODUCTS = [
     price: 36.00,
     category: "functional",
     tag: "Adaptogenic",
+    subscriptionEligible: true,
     images: [
       "https://res.cloudinary.com/dfygdydcj/image/upload/v1767212482/1767212331011-generated-label-image-0_etlsle.jpg",
       "https://res.cloudinary.com/dfygdydcj/image/upload/v1767212491/1767212331012-generated-label-image-1_ufyz2v.jpg",
@@ -138,6 +142,7 @@ const PRODUCTS = [
     price: 34.00,
     category: "functional",
     tag: "Superfood",
+    subscriptionEligible: true,
     images: [
       "https://res.cloudinary.com/dfygdydcj/image/upload/v1767216044/1767215853330-generated-label-image-0_dp2u51.jpg",
       "https://res.cloudinary.com/dfygdydcj/image/upload/v1767216084/1767215853330-generated-label-image-1_gkoeg8.jpg",
@@ -171,6 +176,7 @@ const PRODUCTS = [
     price: 26.00,
     category: "single_origin",
     tag: "Single Origin",
+    subscriptionEligible: true,
     images: [
       "https://res.cloudinary.com/dfygdydcj/image/upload/v1767217072/6843a1f1-d7bc-41c5-97b3-990b7dd18a18.png",
       "https://res.cloudinary.com/dfygdydcj/image/upload/v1767217140/7f9a85e0-4293-4efe-814c-671abf11f59b.png",
@@ -195,6 +201,396 @@ const PRODUCTS = [
       suggestedUse: "Pour two tablespoons of medium ground coffee into 6 fl oz of hot water and brew.",
       cleanLabelClaims: ["Non-GMO", "Soy-Free", "Vegetarian", "Vegan", "Gluten-Free", "Dairy-Free"]
     }
+  },
+  {
+    id: "bloom-pods",
+    name: "BLOOM",
+    subtitle: "Fruity Bloom Coffee Pods",
+    price: 24.00,
+    category: "signature",
+    tag: "Light Roast Pods",
+    subscriptionEligible: false,
+    images: [DEFAULT_SHARE_IMAGE_URL],
+    description: "BLOOM Coffee Pods are a bright signature blend designed for a clean, fruit-forward cup with a soft finish. Beans from Ethiopia, Mexico, and Brazil create a lively light roast that stays smooth and balanced from first sip to last.",
+    details: {
+      origin: "Ethiopia, Mexico, Brazil",
+      roast: "Light",
+      ingredients: "100% Arabica",
+      weight: "12 pods / 4.7oz / 139g"
+    },
+    nutritionSpecs: {
+      ingredients: "100% Arabica",
+      varietals: "Ethiopian Heirloom Varietals, Bourbon, Typica, Catuaí, Catucaí, Mundo Novo",
+      manufacturerCountry: "USA",
+      region: "Ethiopia, Mexico, Brazil",
+      productAmount: "12 pods / 4.7oz / 139g",
+      grossWeight: "7.5oz / 212g",
+      suggestedUse: "Brew using a Keurig-compatible machine. Choose 8-10 oz. Adjust to taste."
+    }
+  },
+  {
+    id: "hazel-pods",
+    name: "HAZEL",
+    subtitle: "Rich Hazelnut Coffee Pods",
+    price: 24.00,
+    category: "signature",
+    tag: "Medium Roast Pods",
+    subscriptionEligible: false,
+    images: [DEFAULT_SHARE_IMAGE_URL],
+    description: "HAZEL Coffee Pods deliver a rounded medium roast profile with warm hazelnut character and a rich, comforting body. This Brazil and Mexico blend is built for reliable flavor and an easy daily brew ritual.",
+    details: {
+      origin: "Brazil, Mexico",
+      roast: "Medium",
+      ingredients: "100% Arabica",
+      weight: "12 pods / 4.7oz / 139g"
+    },
+    nutritionSpecs: {
+      ingredients: "100% Arabica",
+      varietals: "Bourbon, Typica, Catuaí, Catucaí, Mundo Novo",
+      manufacturerCountry: "USA",
+      region: "Brazil, Mexico",
+      productAmount: "12 pods / 4.7oz / 139g",
+      grossWeight: "7.5oz / 212g",
+      suggestedUse: "Brew using a Keurig-compatible machine. Choose 8-10 oz. Adjust to taste."
+    }
+  },
+  {
+    id: "molten",
+    name: "MOLTEN",
+    subtitle: "Molten Caramel Coffee Pods",
+    price: 24.00,
+    category: "signature",
+    tag: "Dark Roast Pods",
+    subscriptionEligible: false,
+    images: [DEFAULT_SHARE_IMAGE_URL],
+    description: "MOLTEN Coffee Pods are a dark signature blend with deep roast structure and caramel-toned sweetness. Brazil, Mexico, and Guatemala coffees combine for a bold profile that remains smooth and drinkable.",
+    details: {
+      origin: "Brazil, Mexico, Guatemala",
+      roast: "Dark",
+      ingredients: "100% Arabica",
+      weight: "12 pods / 4.7oz / 139g"
+    },
+    nutritionSpecs: {
+      ingredients: "100% Arabica",
+      varietals: "Bourbon, Typica, Caturra, Catuaí, Catucaí, Mundo Novo",
+      manufacturerCountry: "USA",
+      region: "Brazil, Mexico, Guatemala",
+      productAmount: "12 pods / 4.7oz / 139g",
+      grossWeight: "7.5oz / 212g",
+      suggestedUse: "Brew using a Keurig-compatible machine. Choose 8-10 oz. Adjust to taste."
+    }
+  },
+  {
+    id: "drift",
+    name: "DRIFT",
+    subtitle: "Citrus Drift Coffee Beans",
+    price: 26.00,
+    category: "signature",
+    tag: "Signature Blend",
+    subscriptionEligible: false,
+    images: [DEFAULT_SHARE_IMAGE_URL],
+    description: "DRIFT Coffee Beans bring a layered medium roast with citrus lift and a polished finish. Sourced across Brazil, Colombia, Guatemala, and Ethiopia, this blend is crafted for clarity, sweetness, and daily versatility.",
+    details: {
+      origin: "Brazil, Colombia, Guatemala, Ethiopia",
+      roast: "Medium",
+      ingredients: "100% Arabica whole beans",
+      weight: "12 oz / 340g"
+    },
+    nutritionSpecs: {
+      ingredients: "100% Arabica whole beans",
+      varietals: "Ethiopian Heirloom Varietals, Caturra, Colombia, Castillo, Typica, Bourbon, Catuaí, Mundo Novo",
+      manufacturerCountry: "USA",
+      region: "Brazil, Colombia, Guatemala, Ethiopia",
+      productAmount: "12 oz / 340g",
+      grossWeight: "13.5 oz / 383 g",
+      suggestedUse: "Grind fresh. Brew via drip, pour-over, French press, or cold brew."
+    }
+  },
+  {
+    id: "nougat",
+    name: "NOUGAT",
+    subtitle: "Praline Smooth Coffee Beans",
+    price: 26.00,
+    category: "signature",
+    tag: "Signature Blend",
+    subscriptionEligible: false,
+    images: [DEFAULT_SHARE_IMAGE_URL],
+    description: "NOUGAT Coffee Beans offer a smooth medium roast with praline-like sweetness and a gentle, rounded body. Brazil, Colombia, and Guatemala origins provide a balanced cup designed for repeatable everyday brewing.",
+    details: {
+      origin: "Brazil, Colombia, Guatemala",
+      roast: "Medium",
+      ingredients: "100% Arabica whole beans",
+      weight: "12 oz / 340g"
+    },
+    nutritionSpecs: {
+      ingredients: "100% Arabica whole beans",
+      varietals: "Caturra, Colombia, Castillo, Typica, Bourbon, Catuaí, Mundo Novo",
+      manufacturerCountry: "USA",
+      region: "Brazil, Colombia, Guatemala",
+      productAmount: "12 oz / 340g",
+      grossWeight: "13.5 oz / 383 g",
+      suggestedUse: "Grind fresh. Brew via drip, pour-over, or French press."
+    }
+  },
+  {
+    id: "praline",
+    name: "PRALINE",
+    subtitle: "Rich Hazelnut Coffee Beans",
+    price: 26.00,
+    category: "signature",
+    tag: "Hazelnut Notes",
+    subscriptionEligible: false,
+    images: [DEFAULT_SHARE_IMAGE_URL],
+    description: "PRALINE Coffee Beans are a medium roast signature blend with rich hazelnut character and soft cocoa depth. Built from Brazil and Mexico lots, it delivers a warm profile that stays clean and balanced.",
+    details: {
+      origin: "Brazil, Mexico",
+      roast: "Medium",
+      ingredients: "100% Arabica whole beans",
+      weight: "12 oz / 340g"
+    },
+    nutritionSpecs: {
+      ingredients: "100% Arabica whole beans",
+      varietals: "Bourbon, Typica, Catuaí, Catucaí, Mundo Novo",
+      manufacturerCountry: "USA",
+      region: "Brazil, Mexico",
+      productAmount: "12 oz / 340g",
+      grossWeight: "13.5 oz / 383 g",
+      suggestedUse: "Grind fresh. Brew via drip, French press, or moka."
+    }
+  },
+  {
+    id: "citra",
+    name: "CITRA",
+    subtitle: "Fruity Bloom Coffee Beans",
+    price: 26.00,
+    category: "signature",
+    tag: "Light Roast",
+    subscriptionEligible: false,
+    images: [DEFAULT_SHARE_IMAGE_URL],
+    description: "CITRA Coffee Beans are a light roast blend tuned for bright fruit notes, floral aromatics, and a clean finish. Ethiopia, Mexico, and Brazil origins create a vibrant cup that remains smooth and approachable.",
+    details: {
+      origin: "Ethiopia, Mexico, Brazil",
+      roast: "Light",
+      ingredients: "100% Arabica whole beans",
+      weight: "12 oz / 340g"
+    },
+    nutritionSpecs: {
+      ingredients: "100% Arabica whole beans",
+      varietals: "Ethiopian Heirloom Varietals, Bourbon, Typica, Catuaí, Catucaí, Mundo Novo",
+      manufacturerCountry: "USA",
+      region: "Ethiopia, Mexico, Brazil",
+      productAmount: "12 oz / 340g",
+      grossWeight: "13.5 oz / 383 g",
+      suggestedUse: "Grind fresh. Best for pour-over, drip, or iced coffee."
+    }
+  },
+  {
+    id: "zest",
+    name: "ZEST",
+    subtitle: "Lemon Glaze Coffee Beans",
+    price: 26.00,
+    category: "signature",
+    tag: "Citrus Notes",
+    subscriptionEligible: false,
+    images: [DEFAULT_SHARE_IMAGE_URL],
+    description: "ZEST Coffee Beans are a light roast signature blend with crisp citrus character and delicate sweetness. Ethiopia, Guatemala, and Brazil beans shape a lively profile made for bright morning cups and clean iced brews.",
+    details: {
+      origin: "Ethiopia, Guatemala, Brazil",
+      roast: "Light",
+      ingredients: "100% Arabica whole beans",
+      weight: "12 oz / 340g"
+    },
+    nutritionSpecs: {
+      ingredients: "100% Arabica whole beans",
+      varietals: "Ethiopian Heirloom Varietals, Bourbon, Typica, Caturra, Catuaí, Mundo Novo",
+      manufacturerCountry: "USA",
+      region: "Ethiopia, Guatemala, Brazil",
+      productAmount: "12 oz / 340g",
+      grossWeight: "13.5 oz / 383 g",
+      suggestedUse: "Grind fresh. Best for pour-over or iced coffee."
+    }
+  },
+  {
+    id: "ember",
+    name: "EMBER",
+    subtitle: "Deep Roast Coffee Beans",
+    price: 26.00,
+    category: "signature",
+    tag: "Dark Roast",
+    subscriptionEligible: false,
+    images: [DEFAULT_SHARE_IMAGE_URL],
+    description: "EMBER Coffee Beans are a dark roast blend with strong structure, toasted depth, and a smooth finish. Brazil and Mexico origins create a full-bodied cup that stands up beautifully to milk or straight black brewing.",
+    details: {
+      origin: "Brazil, Mexico",
+      roast: "Dark",
+      ingredients: "100% Arabica whole beans",
+      weight: "12 oz / 340g"
+    },
+    nutritionSpecs: {
+      ingredients: "100% Arabica whole beans",
+      varietals: "Bourbon, Typica, Catuaí, Catucaí, Mundo Novo",
+      manufacturerCountry: "USA",
+      region: "Brazil, Mexico",
+      productAmount: "12 oz / 340g",
+      grossWeight: "13.5 oz / 383 g",
+      suggestedUse: "Grind fresh. Brew via drip, French press, or moka pot."
+    }
+  },
+  {
+    id: "forge",
+    name: "FORGE",
+    subtitle: "Molten Caramel Coffee Beans",
+    price: 26.00,
+    category: "signature",
+    tag: "Dark Roast",
+    subscriptionEligible: false,
+    images: [DEFAULT_SHARE_IMAGE_URL],
+    description: "FORGE Coffee Beans are a dark signature blend with caramel-toned richness and a polished finish. Beans from Brazil, Mexico, and Guatemala deliver depth and sweetness in an espresso-ready profile.",
+    details: {
+      origin: "Brazil, Mexico, Guatemala",
+      roast: "Dark",
+      ingredients: "100% Arabica whole beans",
+      weight: "12 oz / 340g"
+    },
+    nutritionSpecs: {
+      ingredients: "100% Arabica whole beans",
+      varietals: "Bourbon, Typica, Caturra, Catuaí, Catucaí, Mundo Novo",
+      manufacturerCountry: "USA",
+      region: "Brazil, Mexico, Guatemala",
+      productAmount: "12 oz / 340g",
+      grossWeight: "13.5 oz / 383 g",
+      suggestedUse: "Grind fresh. Brew via drip, French press, or espresso."
+    }
+  },
+  {
+    id: "forest",
+    name: "FOREST",
+    subtitle: "Forest Decaf Coffee Beans",
+    price: 26.00,
+    category: "single_origin",
+    tag: "Decaf",
+    subscriptionEligible: false,
+    images: [DEFAULT_SHARE_IMAGE_URL],
+    description: "FOREST Decaf Coffee Beans bring a medium roast profile with gentle sweetness, cocoa depth, and a clean finish. Grown in Indonesia's Sulawesi region, this Java Toraja lot is built for calm, anytime brewing.",
+    details: {
+      origin: "Indonesia, Sulawesi",
+      roast: "Medium",
+      ingredients: "100% Arabica whole beans",
+      weight: "12 oz / 340g"
+    },
+    nutritionSpecs: {
+      ingredients: "100% Arabica whole beans",
+      varietals: "Java Toraja",
+      manufacturerCountry: "USA",
+      region: "Indonesia, Sulawesi",
+      productAmount: "12 oz / 340g",
+      grossWeight: "13.5 oz / 383 g",
+      suggestedUse: "Grind fresh. Brew via drip, French press, or pour-over."
+    }
+  },
+  {
+    id: "grove",
+    name: "GROVE",
+    subtitle: "Maple Grove Coffee Beans",
+    price: 26.00,
+    category: "single_origin",
+    tag: "Single Origin",
+    subscriptionEligible: false,
+    images: [DEFAULT_SHARE_IMAGE_URL],
+    description: "GROVE Coffee Beans highlight Chiapas terroir with a balanced medium roast and maple-toned sweetness. Bourbon and Typica varietals create a clean, structured cup suited to daily brewing.",
+    details: {
+      origin: "Mexico, Chiapas, La Concordia",
+      roast: "Medium",
+      ingredients: "100% Arabica whole beans",
+      weight: "12 oz / 340g"
+    },
+    nutritionSpecs: {
+      ingredients: "100% Arabica whole beans",
+      varietals: "Bourbon, Typica",
+      manufacturerCountry: "USA",
+      region: "Mexico, Chiapas, La Concordia",
+      productAmount: "12 oz / 340g",
+      grossWeight: "13.5 oz / 383 g",
+      suggestedUse: "Grind fresh. Brew via drip, French press, or pour-over."
+    }
+  },
+  {
+    id: "sable",
+    name: "SABLE",
+    subtitle: "Velvet Cocoa Coffee Beans",
+    price: 26.00,
+    category: "single_origin",
+    tag: "Single Origin",
+    subscriptionEligible: false,
+    images: [DEFAULT_SHARE_IMAGE_URL],
+    description: "SABLE Coffee Beans present a medium roast with velvet cocoa character and a smooth body. Huila and Cauca coffees provide balanced sweetness and a polished finish for a refined daily cup.",
+    details: {
+      origin: "Colombia, Huila/Cauca",
+      roast: "Medium",
+      ingredients: "100% Arabica whole beans",
+      weight: "12 oz / 340g"
+    },
+    nutritionSpecs: {
+      ingredients: "100% Arabica whole beans",
+      varietals: "Caturra, Colombia, Castillo, Typica, Bourbon",
+      manufacturerCountry: "USA",
+      region: "Colombia, Huila/Cauca",
+      productAmount: "12 oz / 340g",
+      grossWeight: "13.5 oz / 383 g",
+      suggestedUse: "Grind fresh. Brew via drip, French press, or pour-over."
+    }
+  },
+  {
+    id: "cerise",
+    name: "CERISE",
+    subtitle: "Cherry Zest Coffee Beans",
+    price: 26.00,
+    category: "single_origin",
+    tag: "Single Origin",
+    subscriptionEligible: false,
+    images: [DEFAULT_SHARE_IMAGE_URL],
+    description: "CERISE Coffee Beans are a medium roast with bright cherry lift and a sweet, clean finish. Sourced from Huehuetenango and Antigua, this Guatemalan profile is vivid yet balanced in the cup.",
+    details: {
+      origin: "Guatemala, Huehuetenango/Antigua",
+      roast: "Medium",
+      ingredients: "100% Arabica whole beans",
+      weight: "12 oz / 340g"
+    },
+    nutritionSpecs: {
+      ingredients: "100% Arabica whole beans",
+      varietals: "Bourbon, Typica, Caturra",
+      manufacturerCountry: "USA",
+      region: "Guatemala, Huehuetenango/Antigua",
+      productAmount: "12 oz / 340g",
+      grossWeight: "13.5 oz / 383 g",
+      suggestedUse: "Grind fresh. Brew via filter, pour-over, or French press."
+    }
+  },
+  {
+    id: "cacao",
+    name: "CACAO",
+    subtitle: "Chocolate Bold Coffee Beans",
+    price: 26.00,
+    category: "single_origin",
+    tag: "Single Origin",
+    subscriptionEligible: false,
+    images: [DEFAULT_SHARE_IMAGE_URL],
+    description: "CACAO Coffee Beans are a dark single-origin roast with bold chocolate depth and a dense, satisfying finish. Brazilian Bourbon, Mundo Novo, and Catuaí-family varietals deliver a rich and consistent ritual cup.",
+    details: {
+      origin: "Brazil",
+      roast: "Dark",
+      ingredients: "100% Arabica whole beans",
+      weight: "12 oz / 340g"
+    },
+    nutritionSpecs: {
+      ingredients: "100% Arabica whole beans",
+      varietals: "Bourbon, Mundo Novo, Catuaí, Catucaí, Catigua",
+      manufacturerCountry: "USA",
+      region: "Brazil",
+      productAmount: "12 oz / 340g",
+      grossWeight: "13.5 oz / 383 g",
+      suggestedUse: "Grind fresh. Brew via espresso, moka pot, or bold drip."
+    }
   }
 ];
 
@@ -202,6 +598,7 @@ const ROUTE_PATHS = {
   home: '/',
   shop_all: '/collections',
   shop_functional: '/collections/functional',
+  shop_signature: '/collections/signature',
   shop_single_origin: '/collections/single-origin',
   blog: '/blog',
   checkout: '/checkout',
@@ -218,6 +615,15 @@ const ROUTE_PATHS = {
   rewards_terms: '/rewards-terms',
   subscription_terms: '/subscription-terms',
 };
+
+const CATEGORY_LABELS = {
+  all: 'All Collections',
+  functional: 'Functional Blends',
+  signature: 'Signature Blends',
+  single_origin: 'Single Origin Series',
+};
+
+const SUBSCRIPTION_PRODUCTS = PRODUCTS.filter((product) => product.subscriptionEligible);
 
 const BLOG_POSTS = [
   {
@@ -1832,6 +2238,7 @@ const ProductDetailView = ({
     product.details.grade ? { label: 'Grade', value: product.details.grade } : null,
     { label: 'Weight', value: product.details.weight },
   ].filter(Boolean);
+  const categoryLabel = CATEGORY_LABELS[product.category] || product.category.replace('_', ' ');
   const [reviewsState, setReviewsState] = useState({
     isLoading: true,
     error: '',
@@ -1976,7 +2383,7 @@ const ProductDetailView = ({
 
           {/* Info Section */}
           <div className="lg:sticky lg:top-28 self-start">
-            <span className="text-[#D4AF37] font-sans tracking-[0.2em] text-xs uppercase mb-2 block">{product.category.replace('_', ' ')} Series</span>
+            <span className="text-[#D4AF37] font-sans tracking-[0.2em] text-xs uppercase mb-2 block">{categoryLabel}</span>
             <h1 className="text-4xl md:text-6xl font-serif text-[#F9F6F0] mb-4">{product.name}</h1>
             <p className="text-lg md:text-xl text-gray-400 font-sans mb-6">{product.subtitle}</p>
             <div className="flex items-center gap-4 mb-6 border-b border-gray-800 pb-6">
@@ -2368,11 +2775,12 @@ const Navigation = ({ currentView, cartCount, setView, toggleCart, authUser, onS
       </div>
 
 	      {mobileMenuOpen && (
-	        <div id="mobile-navigation" className="absolute top-full left-0 w-full bg-[#0B0C0C] border-t border-gray-800 p-6 md:hidden flex flex-col space-y-4 shadow-2xl z-50">
-	           <button onClick={() => handleNav('shop_all')} className="text-[#F9F6F0] text-left font-sans tracking-widest">SHOP</button>
-	           <button onClick={() => handleNav('blog')} className="text-[#F9F6F0] text-left font-sans tracking-widest">JOURNAL</button>
-	           <button onClick={() => handleNav('rewards')} className="text-[#F9F6F0] text-left font-sans tracking-widest">REWARDS</button>
-	           <button onClick={() => handleNav('about')} className="text-[#F9F6F0] text-left font-sans tracking-widest">OUR STORY</button>
+		        <div id="mobile-navigation" className="absolute top-full left-0 w-full bg-[#0B0C0C] border-t border-gray-800 p-6 md:hidden flex flex-col space-y-4 shadow-2xl z-50">
+		           <button onClick={() => handleNav('shop_all')} className="text-[#F9F6F0] text-left font-sans tracking-widest">SHOP</button>
+		           <button onClick={() => handleNav('shop_signature')} className="text-[#F9F6F0] text-left font-sans tracking-widest">SIGNATURE BLENDS</button>
+		           <button onClick={() => handleNav('blog')} className="text-[#F9F6F0] text-left font-sans tracking-widest">JOURNAL</button>
+		           <button onClick={() => handleNav('rewards')} className="text-[#F9F6F0] text-left font-sans tracking-widest">REWARDS</button>
+		           <button onClick={() => handleNav('about')} className="text-[#F9F6F0] text-left font-sans tracking-widest">OUR STORY</button>
            <button onClick={() => handleNav('subscription')} className="text-[#F9F6F0] text-left font-sans tracking-widest">SUBSCRIPTION</button>
            <button onClick={() => handleNav('contact')} className="text-[#F9F6F0] text-left font-sans tracking-widest">CONTACT</button>
            <button type="button" onClick={handleShare} className="text-[#F9F6F0] text-left font-sans tracking-widest">SHARE THIS PAGE</button>
@@ -3085,17 +3493,12 @@ const ShopView = ({ category, openProductDetail }) => {
   const filteredProducts = category === 'all' 
     ? PRODUCTS 
     : PRODUCTS.filter(p => p.category === category);
-
-  const titleMap = {
-    'all': 'All Collections',
-    'functional': 'Functional Blends',
-    'single_origin': 'Single Origin Series',
-  };
+  const collectionTitle = CATEGORY_LABELS[category] || CATEGORY_LABELS.all;
 
   return (
     <div className="pt-32 pb-24 bg-[#0B0C0C] min-h-screen">
       <div className="max-w-7xl mx-auto px-6">
-        <h1 className="text-4xl md:text-5xl font-serif text-[#F9F6F0] mb-4">{titleMap[category]}</h1>
+        <h1 className="text-4xl md:text-5xl font-serif text-[#F9F6F0] mb-4">{collectionTitle}</h1>
         <p className="text-gray-400 font-sans mb-12 max-w-2xl">Explore our range of meticulously sourced and roasted coffees, designed to elevate your daily ritual.</p>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-16">
           {filteredProducts.map((product) => (
@@ -4456,9 +4859,10 @@ const RewardsView = ({ setView, rewardsProfile, onJoinRewards, onRedeemReward, o
 };
 
 const SubscriptionView = ({ setView, authUser }) => {
+  const subscriptionProducts = SUBSCRIPTION_PRODUCTS;
   const [customerName, setCustomerName] = useState('');
   const [subscriberEmail, setSubscriberEmail] = useState(authUser?.email || '');
-  const [selectedProductId, setSelectedProductId] = useState(PRODUCTS[0]?.id || 'fuse');
+  const [selectedProductId, setSelectedProductId] = useState(subscriptionProducts[0]?.id || 'fuse');
   const [quantity, setQuantity] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [status, setStatus] = useState({ type: 'idle', message: '' });
@@ -4483,7 +4887,13 @@ const SubscriptionView = ({ setView, authUser }) => {
     }
   }, []);
 
-  const selectedProduct = PRODUCTS.find((product) => product.id === selectedProductId) || PRODUCTS[0];
+  const selectedProduct = subscriptionProducts.find((product) => product.id === selectedProductId) || subscriptionProducts[0];
+  useEffect(() => {
+    if (!subscriptionProducts.length) return;
+    if (!subscriptionProducts.some((product) => product.id === selectedProductId)) {
+      setSelectedProductId(subscriptionProducts[0].id);
+    }
+  }, [selectedProductId, subscriptionProducts]);
   const basePrice = Number(selectedProduct?.price || 0);
   const estimatedMonthly = Number((basePrice * quantity * 0.85).toFixed(2));
   const regularMonthly = Number((basePrice * quantity).toFixed(2));
@@ -4559,7 +4969,7 @@ const SubscriptionView = ({ setView, authUser }) => {
           <div className="bg-[#151515] border border-gray-800 p-5 sm:p-6">
             <h2 className="font-serif text-3xl mb-4">Choose Product</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {PRODUCTS.map((product) => {
+              {subscriptionProducts.map((product) => {
                 const isSelected = product.id === selectedProductId;
                 return (
                   <button
@@ -4720,6 +5130,7 @@ const Footer = ({ setView }) => {
           <ul className="space-y-4 text-sm text-gray-400">
             <li><button type="button" onClick={() => setView('shop_all')} className="hover:text-[#F9F6F0]">All Coffee</button></li>
             <li><button type="button" onClick={() => setView('shop_functional')} className="hover:text-[#F9F6F0]">Functional Blends</button></li>
+            <li><button type="button" onClick={() => setView('shop_signature')} className="hover:text-[#F9F6F0]">Signature Blends</button></li>
             <li><button type="button" onClick={() => setView('shop_single_origin')} className="hover:text-[#F9F6F0]">Single Origin</button></li>
             <li><button type="button" onClick={() => setView('subscription')} className="hover:text-[#F9F6F0]">Subscriptions</button></li>
             <li><button type="button" onClick={() => setView('rewards')} className="hover:text-[#F9F6F0]">Rewards App</button></li>
@@ -5530,11 +5941,15 @@ const App = () => {
       },
       shop_all: {
         title: 'All Collections | Velure Coffee',
-        description: 'Browse all Velure coffee collections, from functional blends to single-origin favorites.',
+        description: 'Browse all Velure coffee collections, including functional blends, signature blends, and single-origin favorites.',
       },
       shop_functional: {
         title: 'Functional Blends | Velure Coffee',
         description: 'Explore Velure functional coffee blends with purposeful ingredients for daily focus and energy.',
+      },
+      shop_signature: {
+        title: 'Signature Blends | Velure Coffee',
+        description: 'Explore Velure signature blends and pods crafted for balanced flavor and daily ritual consistency.',
       },
       shop_single_origin: {
         title: 'Single Origin Series | Velure Coffee',
@@ -5614,7 +6029,7 @@ const App = () => {
         '@type': 'Product',
         name: selectedProduct.name,
         sku: selectedProduct.id,
-        category: selectedProduct.category === 'single_origin' ? 'Single Origin Coffee' : 'Functional Coffee Blend',
+        category: CATEGORY_LABELS[selectedProduct.category] || 'Coffee',
         description,
         image: selectedProduct.images,
         brand: {
@@ -6211,6 +6626,7 @@ const App = () => {
       case 'home': return <HomeView openProductDetail={openProductDetail} setView={setView} />;
       case 'shop_all': return <ShopView category="all" openProductDetail={openProductDetail} />;
       case 'shop_functional': return <ShopView category="functional" openProductDetail={openProductDetail} />;
+      case 'shop_signature': return <ShopView category="signature" openProductDetail={openProductDetail} />;
       case 'shop_single_origin': return <ShopView category="single_origin" openProductDetail={openProductDetail} />;
       case 'blog': return <BlogView openBlogPost={openBlogPost} />;
       case 'checkout': return (

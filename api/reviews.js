@@ -7,6 +7,21 @@ const PRODUCT_CATALOG = {
   vitality: { name: 'VITALITY' },
   harvest: { name: 'HARVEST' },
   aureo: { name: 'AUREO' },
+  'bloom-pods': { name: 'BLOOM' },
+  'hazel-pods': { name: 'HAZEL' },
+  molten: { name: 'MOLTEN' },
+  drift: { name: 'DRIFT' },
+  nougat: { name: 'NOUGAT' },
+  praline: { name: 'PRALINE' },
+  citra: { name: 'CITRA' },
+  zest: { name: 'ZEST' },
+  ember: { name: 'EMBER' },
+  forge: { name: 'FORGE' },
+  forest: { name: 'FOREST' },
+  grove: { name: 'GROVE' },
+  sable: { name: 'SABLE' },
+  cerise: { name: 'CERISE' },
+  cacao: { name: 'CACAO' },
 };
 
 const normalize = (value) => (typeof value === 'string' ? value.trim() : '');

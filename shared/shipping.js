@@ -94,6 +94,21 @@ const PRODUCT_SHIPPING_WEIGHT_LBS = {
   vitality: 0.95,
   harvest: 0.95,
   aureo: 0.95,
+  'bloom-pods': 0.47,
+  'hazel-pods': 0.47,
+  molten: 0.47,
+  drift: 0.8,
+  nougat: 0.8,
+  praline: 0.8,
+  citra: 0.8,
+  zest: 0.8,
+  ember: 0.8,
+  forge: 0.8,
+  forest: 0.8,
+  grove: 0.8,
+  sable: 0.8,
+  cerise: 0.8,
+  cacao: 0.8,
 };
 
 const PACKAGING_WEIGHT_LBS = 0.2;

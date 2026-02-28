@@ -16,6 +16,21 @@ const PRODUCT_CATALOG = {
   vitality: { name: 'VITALITY', subtitle: 'Vitality Mushroom Ground Coffee', price: 36 },
   harvest: { name: 'HARVEST', subtitle: 'Hemp Harvest Ground Coffee', price: 34 },
   aureo: { name: 'AUREO', subtitle: 'Golden Nut Toffee Coffee Beans', price: 26 },
+  'bloom-pods': { name: 'BLOOM', subtitle: 'Fruity Bloom Coffee Pods', price: 24 },
+  'hazel-pods': { name: 'HAZEL', subtitle: 'Rich Hazelnut Coffee Pods', price: 24 },
+  molten: { name: 'MOLTEN', subtitle: 'Molten Caramel Coffee Pods', price: 24 },
+  drift: { name: 'DRIFT', subtitle: 'Citrus Drift Coffee Beans', price: 26 },
+  nougat: { name: 'NOUGAT', subtitle: 'Praline Smooth Coffee Beans', price: 26 },
+  praline: { name: 'PRALINE', subtitle: 'Rich Hazelnut Coffee Beans', price: 26 },
+  citra: { name: 'CITRA', subtitle: 'Fruity Bloom Coffee Beans', price: 26 },
+  zest: { name: 'ZEST', subtitle: 'Lemon Glaze Coffee Beans', price: 26 },
+  ember: { name: 'EMBER', subtitle: 'Deep Roast Coffee Beans', price: 26 },
+  forge: { name: 'FORGE', subtitle: 'Molten Caramel Coffee Beans', price: 26 },
+  forest: { name: 'FOREST', subtitle: 'Forest Decaf Coffee Beans', price: 26 },
+  grove: { name: 'GROVE', subtitle: 'Maple Grove Coffee Beans', price: 26 },
+  sable: { name: 'SABLE', subtitle: 'Velvet Cocoa Coffee Beans', price: 26 },
+  cerise: { name: 'CERISE', subtitle: 'Cherry Zest Coffee Beans', price: 26 },
+  cacao: { name: 'CACAO', subtitle: 'Chocolate Bold Coffee Beans', price: 26 },
 };
 
 const DEFAULT_ZONES = { ...SHIPPING_ZONES };

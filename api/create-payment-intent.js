@@ -8,6 +8,21 @@ const PRODUCT_CATALOG = {
   vitality: { name: 'VITALITY', priceCents: 3600 },
   harvest: { name: 'HARVEST', priceCents: 3400 },
   aureo: { name: 'AUREO', priceCents: 2600 },
+  'bloom-pods': { name: 'BLOOM', priceCents: 2400 },
+  'hazel-pods': { name: 'HAZEL', priceCents: 2400 },
+  molten: { name: 'MOLTEN', priceCents: 2400 },
+  drift: { name: 'DRIFT', priceCents: 2600 },
+  nougat: { name: 'NOUGAT', priceCents: 2600 },
+  praline: { name: 'PRALINE', priceCents: 2600 },
+  citra: { name: 'CITRA', priceCents: 2600 },
+  zest: { name: 'ZEST', priceCents: 2600 },
+  ember: { name: 'EMBER', priceCents: 2600 },
+  forge: { name: 'FORGE', priceCents: 2600 },
+  forest: { name: 'FOREST', priceCents: 2600 },
+  grove: { name: 'GROVE', priceCents: 2600 },
+  sable: { name: 'SABLE', priceCents: 2600 },
+  cerise: { name: 'CERISE', priceCents: 2600 },
+  cacao: { name: 'CACAO', priceCents: 2600 },
 };
 
 const DISCOUNT_OFFERS = {
