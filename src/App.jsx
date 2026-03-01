@@ -210,7 +210,14 @@ const PRODUCTS = [
     category: "signature",
     tag: "Light Roast Pods",
     subscriptionEligible: false,
-    images: [DEFAULT_SHARE_IMAGE_URL],
+    images: [
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321699/1771424462505-generated-label-image-0_ehrjie.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321704/1771424462521-generated-label-image-3_odhmjk.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321708/1771424462512-generated-label-image-2_iyujiw.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321713/1771424462506-generated-label-image-5_yirmjl.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321717/1771424462527-generated-label-image-1_hrbtfn.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321720/1771424462502-generated-label-image-4_fej8c3.jpg"
+    ],
     description: `Bright, fruit-forward light roast pods designed for an effortless morning ritual.
 
 Notes: Citrus zest • dried fruit • floral lift
@@ -242,7 +249,14 @@ A bright, fruit-forward light roast in a single-serve format—clean, lively, an
     category: "signature",
     tag: "Medium Roast Pods",
     subscriptionEligible: false,
-    images: [DEFAULT_SHARE_IMAGE_URL],
+    images: [
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321615/1771446944274-generated-label-image-0_nzoauh.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321628/1771446944253-generated-label-image-3_mlmmpc.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321633/1771446944256-generated-label-image-1_pxyvgb.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321636/1771446944279-generated-label-image-2_kd1lbb.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321625/1771446944262-generated-label-image-4_oucmz5.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321639/1771446944268-generated-label-image-5_mumnkl.jpg"
+    ],
     description: `Cozy medium roast pods with a warm, rounded cup and a smooth finish.
 
 Notes: Roasted hazelnut • gentle sweetness • smooth finish
@@ -274,7 +288,12 @@ A cozy medium roast designed for ease without sacrificing finish. HAZEL leans wa
     category: "signature",
     tag: "Dark Roast Pods",
     subscriptionEligible: false,
-    images: [DEFAULT_SHARE_IMAGE_URL],
+    images: [
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321748/1771115507142-generated-label-image-0_besrqh.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321753/1771115507143-generated-label-image-2_oelebd.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321760/1771115507148-generated-label-image-1_cgiq5i.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321756/1771115507148-generated-label-image-5_ntsrqx.jpg"
+    ],
     description: `Dark roast pods with caramelized depth and a bold, composed finish.
 
 Notes: Baker’s chocolate • dark toffee • full body
@@ -306,7 +325,13 @@ Dark roast pods with a deep, caramelized profile and a bold, satisfying finish. 
     category: "signature",
     tag: "Signature Blend",
     subscriptionEligible: false,
-    images: [DEFAULT_SHARE_IMAGE_URL],
+    images: [
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772320857/1772237170011-generated-label-image-0_zzj3ml.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772320862/1772237170028-generated-label-image-3_dmduxl.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772320865/1772237170023-generated-label-image-2_ejtd5p.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772320874/1772237170011-generated-label-image-1_xl0kml.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772320877/1772237170017-generated-label-image-4_pwdf7c.jpg"
+    ],
     description: `Balanced medium roast whole beans with cocoa depth and a clean citrus edge.
 
 Notes: Toffee sweetness • dark chocolate • citrus lift
@@ -338,7 +363,13 @@ A medium roast with lift—balanced sweetness, cocoa depth, and a clean citrus e
     category: "signature",
     tag: "Signature Blend",
     subscriptionEligible: false,
-    images: [DEFAULT_SHARE_IMAGE_URL],
+    images: [
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772320991/1772236038526-generated-label-image-0_mnguht.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772320996/1772236038523-generated-label-image-3_vgd8ld.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321000/1772236038532-generated-label-image-1_abumsi.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321004/1772236038526-generated-label-image-2_uqqil2.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321007/1772236038522-generated-label-image-4_bcbg2j.jpg"
+    ],
     description: `Smooth medium roast whole beans with quiet sweetness and everyday elegance.
 
 Notes: Nutty praline • light toffee • balanced finish
@@ -370,7 +401,13 @@ A smooth, medium roast built around quiet sweetness—nutty praline character wi
     category: "signature",
     tag: "Hazelnut Notes",
     subscriptionEligible: false,
-    images: [DEFAULT_SHARE_IMAGE_URL],
+    images: [
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321468/1772217325971-generated-label-image-0_dklujb.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321472/1772217325970-generated-label-image-1_ke1r4f.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321476/1772217325974-generated-label-image-2_d4zagh.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321479/1772217325967-generated-label-image-3_ehqofo.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321483/1772217325976-generated-label-image-4_zvarrv.jpg"
+    ],
     description: `Medium roast whole beans with a warm, hazelnut-leaning profile and soft richness.
 
 Notes: Roasted nut • gentle sweetness • smooth cup
@@ -402,7 +439,13 @@ Medium roast whole beans with a warm, hazelnut-leaning profile—rounded, subtly
     category: "signature",
     tag: "Light Roast",
     subscriptionEligible: false,
-    images: [DEFAULT_SHARE_IMAGE_URL],
+    images: [
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321505/1772216717247-generated-label-image-0_fcluhh.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321510/1772216717251-generated-label-image-1_leiowy.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321514/1772216717240-generated-label-image-2_c0tyyh.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321517/1772216717235-generated-label-image-3_cz1yhv.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321521/1772216717237-generated-label-image-4_cnsg8o.jpg"
+    ],
     description: `Light roast whole beans that pour bright and clean, built for clarity.
 
 Notes: Citrus zest • dried fruit • crisp finish
@@ -434,7 +477,13 @@ A light roast designed for brightness with structure—citrus clarity, dried fru
     category: "signature",
     tag: "Citrus Notes",
     subscriptionEligible: false,
-    images: [DEFAULT_SHARE_IMAGE_URL],
+    images: [
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772320941/1772236528415-generated-label-image-0_mdkpbo.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772320949/1772236528422-generated-label-image-2_dqqcoa.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772320953/1772236528429-generated-label-image-1_pnhcct.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772320962/1772236528413-generated-label-image-3_t1dqar.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772320958/1772236528418-generated-label-image-4_piqoww.jpg"
+    ],
     description: `Light roast whole beans with citrus clarity and a tea-like finish.
 
 Notes: Bright citrus • soft caramel • clean finish
@@ -466,7 +515,13 @@ A light roast with a crisp, citrus-forward profile and a softly sweet backbone. 
     category: "signature",
     tag: "Dark Roast",
     subscriptionEligible: false,
-    images: [DEFAULT_SHARE_IMAGE_URL],
+    images: [
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321542/1772215448439-generated-label-image-0_v2pyrs.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321546/1772215448435-generated-label-image-1_dobvpj.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321550/1772215448444-generated-label-image-2_eqtxjr.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321553/1772215448441-generated-label-image-3_mvahmv.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321557/1772215448442-generated-label-image-4_wnk7nt.jpg"
+    ],
     description: `Dark roast whole beans with toasted warmth and a smooth, bold finish.
 
 Notes: Toasted nut • rich cocoa • deep roast
@@ -498,7 +553,13 @@ A deep dark roast for those who like their cup bold, composed, and full-bodied. 
     category: "signature",
     tag: "Dark Roast",
     subscriptionEligible: false,
-    images: [DEFAULT_SHARE_IMAGE_URL],
+    images: [
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321392/1772234477868-generated-label-image-0_imdqxl.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321399/1772234477865-generated-label-image-1_eisgyp.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321404/1772234477872-generated-label-image-3_qaehbj.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321412/1772234477877-generated-label-image-2_php4fj.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321417/1772234477870-generated-label-image-4_eea9nb.jpg"
+    ],
     description: `Dark roast whole beans with molten chocolate-toffee depth, built for strong brews.
 
 Notes: Baker’s chocolate • dark toffee • structured finish
@@ -530,7 +591,13 @@ Dark roast whole beans with a molten profile—baker’s chocolate depth, dark t
     category: "single_origin",
     tag: "Decaf",
     subscriptionEligible: false,
-    images: [DEFAULT_SHARE_IMAGE_URL],
+    images: [
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321662/1771439409079-generated-label-image-0_lavvns.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321668/1771439409074-generated-label-image-1_jkrfbo.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321671/1771439409083-generated-label-image-2_tfw5mv.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321676/1771439409088-generated-label-image-3_p6iy9a.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321678/1771439409074-generated-label-image-4_kpy7us.jpg"
+    ],
     description: `Medium roast decaf whole beans with full flavor and a calm, evening-ready cup.
 
 Notes: Dark chocolate • earthy depth • smooth finish
@@ -562,7 +629,13 @@ A medium roast decaf that keeps the ritual intact—dark chocolate depth, earthy
     category: "single_origin",
     tag: "Single Origin",
     subscriptionEligible: false,
-    images: [DEFAULT_SHARE_IMAGE_URL],
+    images: [
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321341/1772234662485-generated-label-image-0_qmlg0i.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321347/1772234662491-generated-label-image-3_sq8m3g.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321357/1772234662482-generated-label-image-2_onye9d.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321363/1772234662477-generated-label-image-1_hgjklq.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321373/1772234662468-generated-label-image-4_dwkaui.jpg"
+    ],
     description: `Single-origin medium roast whole beans with classic structure and gentle sweetness.
 
 Notes: Dark chocolate • roasted nut • maple-like finish
@@ -594,7 +667,13 @@ A composed medium roast with classic structure—dark chocolate character, roast
     category: "single_origin",
     tag: "Single Origin",
     subscriptionEligible: false,
-    images: [DEFAULT_SHARE_IMAGE_URL],
+    images: [
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321172/1772235308237-generated-label-image-0_w4atkr.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321176/1772235308240-generated-label-image-2_chiesw.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321180/1772235308237-generated-label-image-1_gpxhbr.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321321/1772235308240-generated-label-image-3_voqywu.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321332/1772235308243-generated-label-image-4_wzutvv.jpg"
+    ],
     description: `Single-origin Colombian medium roast whole beans with velvet cocoa richness and balance.
 
 Notes: Cocoa • cane sugar • soft fruit brightness
@@ -626,7 +705,13 @@ A velvet-smooth medium roast with cocoa richness and a soft sweetness that linge
     category: "single_origin",
     tag: "Single Origin",
     subscriptionEligible: false,
-    images: [DEFAULT_SHARE_IMAGE_URL],
+    images: [
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772320709/1772237512483-generated-label-image-0_jvjx2p.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772320739/1772237512475-generated-label-image-2_qnzj3z.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772320774/1772237512480-generated-label-image-3_cyxhyc.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772320783/1772237512490-generated-label-image-1_jxcp8i.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772320808/1772237512476-generated-label-image-4_md80af.jpg"
+    ],
     description: `Single-origin medium roast whole beans with bright clarity and a refined cherry finish.
 
 Notes: Citrus brightness • cocoa depth • black-cherry finish
@@ -658,7 +743,13 @@ A lively medium roast with a bright opening and a deep, elegant finish. CERISE p
     category: "single_origin",
     tag: "Single Origin",
     subscriptionEligible: false,
-    images: [DEFAULT_SHARE_IMAGE_URL],
+    images: [
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321577/1771450675913-generated-label-image-0_aezqge.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321581/1771450675929-generated-label-image-2_x7xgci.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321584/1771450675919-generated-label-image-3_hkdasy.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321587/1771450675912-generated-label-image-1_qnor2n.jpg",
+      "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321591/1771450675925-generated-label-image-4_g1olhy.jpg"
+    ],
     description: `Dark roast whole beans with deep cocoa intensity and a smooth, bold cup.
 
 Notes: Deep cocoa • toasted nut • bittersweet finish
@@ -2399,6 +2490,8 @@ const ProductDetailView = ({
   authAccessToken,
   onOpenAccount,
 }) => {
+  const pdpRootRef = useRef(null);
+  const mobileStickyBarRef = useRef(null);
   const [mainImage, setMainImage] = useState(product.images[0]);
   const [qty, setQty] = useState(1);
   const [openAccordion, setOpenAccordion] = useState('details');
@@ -2471,6 +2564,44 @@ const ProductDetailView = ({
   useEffect(() => {
     window.scrollTo(0,0);
   }, [product]);
+
+  useEffect(() => {
+    const root = pdpRootRef.current;
+    if (!root) return undefined;
+
+    const applyBottomSpace = () => {
+      if (isCartOpen) {
+        root.style.setProperty('--pdp-mobile-bottom-space', '6rem');
+        return;
+      }
+
+      const stickyBar = mobileStickyBarRef.current;
+      const fallback = 'calc(8.5rem + env(safe-area-inset-bottom, 0px))';
+      const measured = stickyBar?.offsetHeight ? `${stickyBar.offsetHeight}px` : fallback;
+      root.style.setProperty('--pdp-mobile-bottom-space', measured);
+    };
+
+    applyBottomSpace();
+
+    let observer = null;
+    if (!isCartOpen && typeof ResizeObserver !== 'undefined' && mobileStickyBarRef.current) {
+      observer = new ResizeObserver(() => applyBottomSpace());
+      observer.observe(mobileStickyBarRef.current);
+    }
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('resize', applyBottomSpace);
+    }
+
+    return () => {
+      if (observer) {
+        observer.disconnect();
+      }
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('resize', applyBottomSpace);
+      }
+    };
+  }, [isCartOpen, product.id]);
 
   useEffect(() => {
     let cancelled = false;
@@ -2606,7 +2737,10 @@ const ProductDetailView = ({
   );
 
   return (
-    <div className="bg-[#0B0C0C] min-h-screen pt-28 md:pt-32 pb-36 md:pb-24 text-[#F9F6F0]">
+    <div
+      ref={pdpRootRef}
+      className="bg-[#0B0C0C] min-h-screen pt-28 md:pt-32 pb-[var(--pdp-mobile-bottom-space,6rem)] md:pb-24 text-[#F9F6F0]"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <button onClick={onBack} className="flex items-center text-[#D4AF37] mb-8 hover:text-[#F9F6F0] transition-colors font-sans text-sm tracking-widest uppercase">
           <ArrowLeft size={16} className="mr-2" /> Back to Collection
@@ -2920,7 +3054,11 @@ const ProductDetailView = ({
 
       {!isCartOpen && (
       <>
-      <div className="fixed md:hidden bottom-0 left-0 right-0 z-40 border-t border-gray-800 bg-[#0B0C0C]/95 backdrop-blur-sm px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
+      <div
+        ref={mobileStickyBarRef}
+        className="fixed md:hidden bottom-0 left-0 right-0 z-40 border-t border-gray-800 bg-[#0B0C0C]/95 backdrop-blur-sm px-4 pt-3 pb-3"
+        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 0.75rem)' }}
+      >
         <div className="max-w-7xl mx-auto space-y-3">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
@@ -2955,7 +3093,6 @@ const ProductDetailView = ({
           </div>
         </div>
       </div>
-      <div className="md:hidden" style={{ height: 'calc(7.75rem + env(safe-area-inset-bottom))' }} aria-hidden="true" />
       </>
       )}
     </div>
@@ -2991,7 +3128,7 @@ const Navigation = ({ currentView, cartCount, setView, toggleCart, authUser, onS
       <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
         <button
           type="button"
-          className="md:hidden text-[#F9F6F0]"
+          className="md:hidden text-[#F9F6F0] h-11 w-11 inline-flex items-center justify-center rounded-sm"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
           aria-expanded={mobileMenuOpen}
