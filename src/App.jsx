@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { ShoppingBag, Menu, X, Coffee, Leaf, Award, Check, Trash2, Mail, MapPin, Phone, ArrowLeft, User, LogOut, Share2, Link2 } from 'lucide-react';
 
 // --- BRAND ASSETS & DATA ---
@@ -206,7 +206,7 @@ const PRODUCTS = [
     id: "bloom-pods",
     name: "BLOOM",
     subtitle: "Fruity Bloom Coffee Pods",
-    price: 24.00,
+    price: 18.00,
     category: "signature",
     tag: "Light Roast Pods",
     subscriptionEligible: false,
@@ -245,7 +245,7 @@ A bright, fruit-forward light roast in a single-serve format—clean, lively, an
     id: "hazel-pods",
     name: "HAZEL",
     subtitle: "Rich Hazelnut Coffee Pods",
-    price: 24.00,
+    price: 18.00,
     category: "signature",
     tag: "Medium Roast Pods",
     subscriptionEligible: false,
@@ -284,7 +284,7 @@ A cozy medium roast designed for ease without sacrificing finish. HAZEL leans wa
     id: "molten",
     name: "MOLTEN",
     subtitle: "Molten Caramel Coffee Pods",
-    price: 24.00,
+    price: 19.00,
     category: "signature",
     tag: "Dark Roast Pods",
     subscriptionEligible: false,
@@ -321,7 +321,7 @@ Dark roast pods with a deep, caramelized profile and a bold, satisfying finish. 
     id: "drift",
     name: "DRIFT",
     subtitle: "Citrus Drift Coffee Beans",
-    price: 26.00,
+    price: 27.00,
     category: "signature",
     tag: "Signature Blend",
     subscriptionEligible: false,
@@ -359,7 +359,7 @@ A medium roast with lift—balanced sweetness, cocoa depth, and a clean citrus e
     id: "nougat",
     name: "NOUGAT",
     subtitle: "Praline Smooth Coffee Beans",
-    price: 26.00,
+    price: 27.00,
     category: "signature",
     tag: "Signature Blend",
     subscriptionEligible: false,
@@ -397,7 +397,7 @@ A smooth, medium roast built around quiet sweetness—nutty praline character wi
     id: "praline",
     name: "PRALINE",
     subtitle: "Rich Hazelnut Coffee Beans",
-    price: 26.00,
+    price: 27.00,
     category: "signature",
     tag: "Hazelnut Notes",
     subscriptionEligible: false,
@@ -435,7 +435,7 @@ Medium roast whole beans with a warm, hazelnut-leaning profile—rounded, subtly
     id: "citra",
     name: "CITRA",
     subtitle: "Fruity Bloom Coffee Beans",
-    price: 26.00,
+    price: 27.00,
     category: "signature",
     tag: "Light Roast",
     subscriptionEligible: false,
@@ -473,7 +473,7 @@ A light roast designed for brightness with structure—citrus clarity, dried fru
     id: "zest",
     name: "ZEST",
     subtitle: "Lemon Glaze Coffee Beans",
-    price: 26.00,
+    price: 27.00,
     category: "signature",
     tag: "Citrus Notes",
     subscriptionEligible: false,
@@ -511,7 +511,7 @@ A light roast with a crisp, citrus-forward profile and a softly sweet backbone. 
     id: "ember",
     name: "EMBER",
     subtitle: "Deep Roast Coffee Beans",
-    price: 26.00,
+    price: 28.00,
     category: "signature",
     tag: "Dark Roast",
     subscriptionEligible: false,
@@ -549,7 +549,7 @@ A deep dark roast for those who like their cup bold, composed, and full-bodied. 
     id: "forge",
     name: "FORGE",
     subtitle: "Molten Caramel Coffee Beans",
-    price: 26.00,
+    price: 28.00,
     category: "signature",
     tag: "Dark Roast",
     subscriptionEligible: false,
@@ -587,7 +587,7 @@ Dark roast whole beans with a molten profile—baker’s chocolate depth, dark t
     id: "forest",
     name: "FOREST",
     subtitle: "Forest Decaf Coffee Beans",
-    price: 26.00,
+    price: 29.00,
     category: "single_origin",
     tag: "Decaf",
     subscriptionEligible: false,
@@ -625,7 +625,7 @@ A medium roast decaf that keeps the ritual intact—dark chocolate depth, earthy
     id: "grove",
     name: "GROVE",
     subtitle: "Maple Grove Coffee Beans",
-    price: 26.00,
+    price: 29.00,
     category: "single_origin",
     tag: "Single Origin",
     subscriptionEligible: false,
@@ -663,7 +663,7 @@ A composed medium roast with classic structure—dark chocolate character, roast
     id: "sable",
     name: "SABLE",
     subtitle: "Velvet Cocoa Coffee Beans",
-    price: 26.00,
+    price: 30.00,
     category: "single_origin",
     tag: "Single Origin",
     subscriptionEligible: false,
@@ -701,7 +701,7 @@ A velvet-smooth medium roast with cocoa richness and a soft sweetness that linge
     id: "cerise",
     name: "CERISE",
     subtitle: "Cherry Zest Coffee Beans",
-    price: 26.00,
+    price: 30.00,
     category: "single_origin",
     tag: "Single Origin",
     subscriptionEligible: false,
@@ -739,7 +739,7 @@ A lively medium roast with a bright opening and a deep, elegant finish. CERISE p
     id: "cacao",
     name: "CACAO",
     subtitle: "Chocolate Bold Coffee Beans",
-    price: 26.00,
+    price: 29.00,
     category: "single_origin",
     tag: "Single Origin",
     subscriptionEligible: false,
@@ -1756,6 +1756,75 @@ const getCheckoutItemsFromCart = (cart) => {
   return Object.entries(itemCounts).map(([productId, quantity]) => ({ productId, quantity }));
 };
 
+const getProductAmountLabel = (product) => normalizeLower(product?.nutritionSpecs?.productAmount || product?.details?.weight || '');
+const isMatchaProduct = (product) => {
+  const subtitle = normalizeLower(product?.subtitle || '');
+  return subtitle.includes('matcha') || normalizeLower(product?.name || '') === 'zen';
+};
+const isPodProduct = (product) => product?.id?.endsWith('-pods') || getProductAmountLabel(product).includes('pods');
+const isInstantCoffeeProduct = (product) => {
+  const subtitle = normalizeLower(product?.subtitle || '');
+  const amount = getProductAmountLabel(product);
+  return (subtitle.includes('instant') || amount.includes('1.9 oz')) && !isMatchaProduct(product);
+};
+const isNonBundleCoffeeProduct = (product) => Boolean(product) && product.category !== 'bundles' && !isMatchaProduct(product);
+const isTwelveOzBagProduct = (product) => {
+  if (!isNonBundleCoffeeProduct(product)) return false;
+  if (isPodProduct(product) || isInstantCoffeeProduct(product)) return false;
+  const amount = getProductAmountLabel(product);
+  return amount.includes('12 oz') || amount.includes('12oz');
+};
+const isDarkRoastCoffeeProduct = (product) => isNonBundleCoffeeProduct(product) && normalizeLower(product?.details?.roast || '') === 'dark';
+const isLightRoastCoffeeProduct = (product) => isNonBundleCoffeeProduct(product) && normalizeLower(product?.details?.roast || '') === 'light';
+const getBundleSlotOptions = (bundleProductId) => {
+  const selectableProducts = PRODUCTS.filter((candidate) => candidate.category !== 'bundles');
+  const buildSlot = (key, label, helper, matcher) => ({
+    key,
+    label,
+    helper,
+    options: selectableProducts
+      .filter(matcher)
+      .sort((a, b) => a.name.localeCompare(b.name)),
+  });
+
+  if (bundleProductId === 'bundle-ritual-set') {
+    return [
+      buildSlot('bagOne', 'Coffee Bag 1', 'Choose your first 12 oz bag.', isTwelveOzBagProduct),
+      buildSlot('bagTwo', 'Coffee Bag 2', 'Choose your second 12 oz bag.', isTwelveOzBagProduct),
+    ];
+  }
+
+  if (bundleProductId === 'bundle-starter') {
+    return [
+      buildSlot('bag', 'Coffee Bag', 'Choose one 12 oz bag.', isTwelveOzBagProduct),
+      buildSlot('instant', 'Instant Coffee', 'Choose one instant coffee.', isInstantCoffeeProduct),
+    ];
+  }
+
+  if (bundleProductId === 'bundle-dark-set') {
+    return [
+      buildSlot('darkOne', 'Dark Pick 1', 'Choose your first dark-roast coffee.', isDarkRoastCoffeeProduct),
+      buildSlot('darkTwo', 'Dark Pick 2', 'Choose your second dark-roast coffee.', isDarkRoastCoffeeProduct),
+    ];
+  }
+
+  if (bundleProductId === 'bundle-bright-set') {
+    return [
+      buildSlot('brightOne', 'Bright Pick 1', 'Choose your first light-roast coffee.', isLightRoastCoffeeProduct),
+      buildSlot('brightTwo', 'Bright Pick 2', 'Choose your second light-roast coffee.', isLightRoastCoffeeProduct),
+    ];
+  }
+
+  return [];
+};
+const getDefaultBundleSelections = (bundleProductId) => getBundleSlotOptions(bundleProductId).reduce((accumulator, slot, index) => {
+  const fallbackOption = slot.options[Math.min(index, Math.max(0, slot.options.length - 1))] || slot.options[0];
+  if (fallbackOption) {
+    accumulator[slot.key] = fallbackOption.id;
+  }
+  return accumulator;
+}, {});
+
 const getBlogPostBySlug = (slug) => BLOG_POSTS.find((post) => post.slug === slug) || null;
 
 const getRouteFromPath = (pathname) => {
@@ -2492,9 +2561,11 @@ const ProductDetailView = ({
 }) => {
   const pdpRootRef = useRef(null);
   const mobileStickyBarRef = useRef(null);
-  const [mainImage, setMainImage] = useState(product.images[0]);
+  const galleryTouchStartXRef = useRef(null);
+  const [mainImageIndex, setMainImageIndex] = useState(0);
   const [qty, setQty] = useState(1);
   const [openAccordion, setOpenAccordion] = useState('details');
+  const [bundleSelections, setBundleSelections] = useState(() => getDefaultBundleSelections(product.id));
   const nutritionImage = getNutritionPanelImage(product);
   const nutritionSpecs = product.nutritionSpecs || null;
   const ingredientText = product.details.ingredients || '';
@@ -2529,6 +2600,20 @@ const ProductDetailView = ({
     { label: 'Weight', value: product.details.weight },
   ].filter(Boolean);
   const categoryLabel = CATEGORY_LABELS[product.category] || product.category.replace('_', ' ');
+  const mainImage = product.images[mainImageIndex] || product.images[0];
+  const isBundleProduct = product.category === 'bundles';
+  const bundleSlots = useMemo(
+    () => (isBundleProduct ? getBundleSlotOptions(product.id) : []),
+    [isBundleProduct, product.id],
+  );
+  const selectedBundleItems = useMemo(
+    () => bundleSlots
+      .map((slot) => slot.options.find((option) => option.id === bundleSelections[slot.key]) || null)
+      .filter(Boolean),
+    [bundleSelections, bundleSlots],
+  );
+  const isBundleSelectionComplete = !isBundleProduct
+    || (bundleSlots.length > 0 && bundleSlots.every((slot) => Boolean(bundleSelections[slot.key])));
   const [reviewsState, setReviewsState] = useState({
     isLoading: true,
     error: '',
@@ -2553,17 +2638,66 @@ const ProductDetailView = ({
   const incrementQty = useCallback((delta) => {
     setQty((previous) => clampQty(previous + delta));
   }, [clampQty]);
+  const cycleMainImage = useCallback((direction) => {
+    const imageCount = product.images.length;
+    if (imageCount <= 1) return;
+    setMainImageIndex((previousIndex) => {
+      const nextIndex = previousIndex + direction;
+      if (nextIndex < 0) return imageCount - 1;
+      if (nextIndex >= imageCount) return 0;
+      return nextIndex;
+    });
+  }, [product.images.length]);
+  const handleMainImageTouchStart = useCallback((event) => {
+    if (!event.touches?.length) return;
+    galleryTouchStartXRef.current = event.touches[0].clientX;
+  }, []);
+  const handleMainImageTouchEnd = useCallback((event) => {
+    if (!event.changedTouches?.length || galleryTouchStartXRef.current === null) return;
+    const deltaX = galleryTouchStartXRef.current - event.changedTouches[0].clientX;
+    galleryTouchStartXRef.current = null;
+    if (Math.abs(deltaX) < 40) return;
+    cycleMainImage(deltaX > 0 ? 1 : -1);
+  }, [cycleMainImage]);
+  const getBundleSelectionPayload = useCallback(() => {
+    if (!isBundleProduct) return null;
+    const slots = bundleSlots
+      .map((slot) => {
+        const selected = slot.options.find((option) => option.id === bundleSelections[slot.key]);
+        if (!selected) return null;
+        return {
+          slotKey: slot.key,
+          slotLabel: slot.label,
+          productId: selected.id,
+          name: selected.name,
+          subtitle: selected.subtitle,
+          image: selected.images?.[0] || DEFAULT_SHARE_IMAGE_URL,
+        };
+      })
+      .filter(Boolean);
+    return slots.length ? { slots } : null;
+  }, [bundleSelections, bundleSlots, isBundleProduct]);
   const handleAddToCart = useCallback((overrideQty) => {
+    if (isBundleProduct && !isBundleSelectionComplete) return;
     const quantity = clampQty(overrideQty ?? qty);
-    addToCart(product, quantity);
-  }, [addToCart, clampQty, product, qty]);
+    const bundleSelection = getBundleSelectionPayload();
+    addToCart(product, quantity, bundleSelection ? { bundleSelection } : undefined);
+  }, [
+    addToCart,
+    clampQty,
+    getBundleSelectionPayload,
+    isBundleProduct,
+    isBundleSelectionComplete,
+    product,
+    qty,
+  ]);
   const toggleAccordion = useCallback((sectionKey) => {
     setOpenAccordion((previous) => (previous === sectionKey ? '' : sectionKey));
   }, []);
 
   useEffect(() => {
     window.scrollTo(0,0);
-  }, [product]);
+  }, [product.id]);
 
   useEffect(() => {
     const root = pdpRootRef.current;
@@ -2749,8 +2883,17 @@ const ProductDetailView = ({
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16">
           {/* Image Section */}
           <div className="flex flex-col gap-6">
-            <div className="w-full aspect-[4/5] bg-[#1a1a1a] relative overflow-hidden">
+            <div
+              className="w-full aspect-[4/5] bg-[#1a1a1a] relative overflow-hidden touch-pan-y"
+              onTouchStart={handleMainImageTouchStart}
+              onTouchEnd={handleMainImageTouchEnd}
+            >
               <img src={mainImage} alt={`${product.name} detail image`} className="w-full h-full object-cover" decoding="async" />
+              {product.images.length > 1 && (
+                <div className="absolute bottom-3 right-3 bg-black/55 px-2.5 py-1 text-[10px] tracking-widest uppercase text-[#F9F6F0]">
+                  {mainImageIndex + 1}/{product.images.length}
+                </div>
+              )}
             </div>
             <div className="flex gap-4 overflow-x-auto pb-2">
               {product.images.map((img, idx) => (
@@ -2758,8 +2901,8 @@ const ProductDetailView = ({
                   type="button"
                   key={idx} 
                   aria-label={`View image ${idx + 1} of ${product.name}`}
-                  className={`w-20 h-20 flex-shrink-0 cursor-pointer border-2 ${mainImage === img ? 'border-[#D4AF37]' : 'border-transparent'} hover:border-[#D4AF37]`}
-                  onClick={() => setMainImage(img)}
+                  className={`w-20 h-20 flex-shrink-0 cursor-pointer border-2 ${mainImageIndex === idx ? 'border-[#D4AF37]' : 'border-transparent'} hover:border-[#D4AF37]`}
+                  onClick={() => setMainImageIndex(idx)}
                 >
                   <img src={img} alt={`${product.name} thumbnail ${idx + 1}`} className="w-full h-full object-cover" loading="lazy" decoding="async" />
                 </button>
@@ -2805,9 +2948,12 @@ const ProductDetailView = ({
               </div>
               <button
                 onClick={() => handleAddToCart()}
-                className="w-full bg-[#D4AF37] text-[#0B0C0C] py-4 font-sans font-bold tracking-widest uppercase hover:bg-[#b5952f] transition-colors"
+                disabled={isBundleProduct && !isBundleSelectionComplete}
+                className={`w-full bg-[#D4AF37] text-[#0B0C0C] py-4 font-sans font-bold tracking-widest uppercase transition-colors ${(isBundleProduct && !isBundleSelectionComplete) ? 'opacity-60 cursor-not-allowed' : 'hover:bg-[#b5952f]'}`}
               >
-                {isInCart ? 'Add Another' : 'Add to Cart'} — ${(product.price * qty).toFixed(2)}
+                {(isBundleProduct && !isBundleSelectionComplete)
+                  ? 'Select Bundle Items'
+                  : `${isInCart ? 'Add Another' : 'Add to Cart'} — $${(product.price * qty).toFixed(2)}`}
               </button>
             </div>
 
@@ -2834,14 +2980,85 @@ const ProductDetailView = ({
               {product.description}
             </p>
 
-            {product.category === 'bundles' && Array.isArray(product.bundleContents) && product.bundleContents.length > 0 && (
+            {isBundleProduct && (
               <div className="bg-[#151515] p-6 mb-8 border border-gray-800">
                 <h3 className="font-serif text-[#D4AF37] mb-4">What&apos;s Inside</h3>
-                <ul className="space-y-2 text-sm text-gray-300 font-sans list-disc pl-5">
-                  {product.bundleContents.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
+                {Array.isArray(product.bundleContents) && product.bundleContents.length > 0 && (
+                  <ul className="space-y-2 text-sm text-gray-300 font-sans list-disc pl-5 mb-5">
+                    {product.bundleContents.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                )}
+
+                {bundleSlots.length > 0 && (
+                  <div className="space-y-4">
+                    {bundleSlots.map((slot) => {
+                      const selectedProduct = slot.options.find((option) => option.id === bundleSelections[slot.key]);
+                      return (
+                        <div key={slot.key} className="grid grid-cols-[4.5rem,1fr] gap-4 items-center border border-gray-800 p-3">
+                          <div className="w-[4.5rem] h-[4.5rem] bg-[#0B0C0C] border border-gray-700 overflow-hidden">
+                            {selectedProduct ? (
+                              <img
+                                src={selectedProduct.images?.[0] || DEFAULT_SHARE_IMAGE_URL}
+                                alt={`${selectedProduct.name} bundle selection`}
+                                className="w-full h-full object-cover"
+                                loading="lazy"
+                                decoding="async"
+                              />
+                            ) : null}
+                          </div>
+                          <div>
+                            <label htmlFor={`${product.id}-${slot.key}`} className="block text-xs uppercase tracking-wider text-gray-400 mb-1">
+                              {slot.label}
+                            </label>
+                            <select
+                              id={`${product.id}-${slot.key}`}
+                              value={bundleSelections[slot.key] || ''}
+                              onChange={(event) => setBundleSelections((previous) => ({ ...previous, [slot.key]: event.target.value }))}
+                              className="w-full border border-gray-700 bg-[#0B0C0C] text-[#F9F6F0] p-3 text-sm outline-none focus:border-[#D4AF37]"
+                            >
+                              {slot.options.map((option) => (
+                                <option key={option.id} value={option.id}>
+                                  {option.name} — {option.subtitle}
+                                </option>
+                              ))}
+                            </select>
+                            {slot.helper && (
+                              <p className="mt-1 text-[11px] text-gray-500">{slot.helper}</p>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {selectedBundleItems.length > 0 && (
+                  <div className="mt-5 grid grid-cols-2 gap-3">
+                    {selectedBundleItems.map((selectedItem, index) => (
+                      <article key={`${selectedItem.id}-${index}`} className="border border-gray-800 p-3">
+                        <div className="aspect-square bg-[#0B0C0C] mb-3 overflow-hidden">
+                          <img
+                            src={selectedItem.images?.[0] || DEFAULT_SHARE_IMAGE_URL}
+                            alt={`${selectedItem.name} included in bundle`}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                            decoding="async"
+                          />
+                        </div>
+                        <p className="text-xs uppercase tracking-wider text-[#D4AF37]">{selectedItem.name}</p>
+                        <p className="text-[11px] text-gray-400 mt-1">{selectedItem.subtitle}</p>
+                      </article>
+                    ))}
+                  </div>
+                )}
+
+                {!isBundleSelectionComplete && (
+                  <p className="text-xs text-[#D4AF37] mt-4 uppercase tracking-wider">
+                    Select each slot to continue.
+                  </p>
+                )}
               </div>
             )}
 
@@ -3067,9 +3284,10 @@ const ProductDetailView = ({
             </div>
             <button
               onClick={() => handleAddToCart()}
-              className="bg-[#D4AF37] text-[#0B0C0C] px-4 py-3 text-sm font-bold tracking-widest uppercase whitespace-nowrap hover:bg-[#b5952f] transition-colors"
+              disabled={isBundleProduct && !isBundleSelectionComplete}
+              className={`bg-[#D4AF37] text-[#0B0C0C] px-4 py-3 text-sm font-bold tracking-widest uppercase whitespace-nowrap transition-colors ${(isBundleProduct && !isBundleSelectionComplete) ? 'opacity-60 cursor-not-allowed' : 'hover:bg-[#b5952f]'}`}
             >
-              {isInCart ? 'Add Another' : 'Add to Cart'}
+              {(isBundleProduct && !isBundleSelectionComplete) ? 'Select Items' : (isInCart ? 'Add Another' : 'Add to Cart')}
             </button>
           </div>
           <div className="flex items-center gap-2">
@@ -3383,23 +3601,50 @@ const CartDrawer = ({
             <p className="text-center text-gray-500 font-sans mt-10">Your cart is empty.</p>
           ) : (
             <div className="space-y-6">
-              {cart.map((item, index) => (
-                <div key={`${item.id}-${index}`} className="flex gap-4 border-b border-gray-200 pb-4">
-                  <div className="w-20 h-20 bg-gray-200 overflow-hidden">
-                    <img src={item.images[0]} alt={`${item.name} in cart`} className="w-full h-full object-cover" loading="lazy" decoding="async" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex justify-between items-start">
-                      <h3 className="font-serif text-[#0B0C0C] font-bold">{item.name}</h3>
-                      <button type="button" onClick={() => removeFromCart(index)} className="text-gray-400 hover:text-red-500" aria-label={`Remove ${item.name} from cart`}>
-                        <Trash2 size={16} />
-                      </button>
+              {cart.map((item, index) => {
+                const bundleSelectionSlots = Array.isArray(item.bundleSelection?.slots) ? item.bundleSelection.slots : [];
+                return (
+                  <div key={`${item.id}-${index}`} className="flex gap-4 border-b border-gray-200 pb-4">
+                    <div className="w-20 h-20 bg-gray-200 overflow-hidden">
+                      {bundleSelectionSlots.length >= 2 ? (
+                        <div className="grid grid-cols-2 gap-px h-full bg-gray-300">
+                          {bundleSelectionSlots.slice(0, 2).map((slot) => (
+                            <img
+                              key={`${slot.slotKey}-${slot.productId}`}
+                              src={slot.image || DEFAULT_SHARE_IMAGE_URL}
+                              alt={`${slot.name} in bundle`}
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                              decoding="async"
+                            />
+                          ))}
+                        </div>
+                      ) : (
+                        <img src={item.images[0]} alt={`${item.name} in cart`} className="w-full h-full object-cover" loading="lazy" decoding="async" />
+                      )}
                     </div>
-                    <p className="text-xs text-gray-500 font-sans">{item.subtitle}</p>
-                    <p className="text-sm font-bold text-[#0B0C0C] mt-2">${item.price.toFixed(2)}</p>
+                    <div className="flex-1">
+                      <div className="flex justify-between items-start">
+                        <h3 className="font-serif text-[#0B0C0C] font-bold">{item.name}</h3>
+                        <button type="button" onClick={() => removeFromCart(index)} className="text-gray-400 hover:text-red-500" aria-label={`Remove ${item.name} from cart`}>
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                      <p className="text-xs text-gray-500 font-sans">{item.subtitle}</p>
+                      {bundleSelectionSlots.length > 0 && (
+                        <ul className="mt-1 space-y-0.5">
+                          {bundleSelectionSlots.map((slot) => (
+                            <li key={`${slot.slotKey}-${slot.productId}`} className="text-[11px] text-gray-500 font-sans">
+                              {slot.slotLabel}: {slot.name}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                      <p className="text-sm font-bold text-[#0B0C0C] mt-2">${item.price.toFixed(2)}</p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -4009,7 +4254,10 @@ const ShopView = ({ category, openProductDetail }) => {
   const [roastFilter, setRoastFilter] = useState('all');
   const [formatFilter, setFormatFilter] = useState('all');
   const [seriesFilter, setSeriesFilter] = useState('all');
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
   const collectionTitle = CATEGORY_LABELS[category] || CATEGORY_LABELS.all;
+  const activeFilterCount = [roastFilter, formatFilter, seriesFilter].filter((value) => value !== 'all').length + (sortBy === 'featured' ? 0 : 1);
+  const filterPanelId = `collection-filters-${category}`;
 
   const scopedProducts = category === 'all'
     ? PRODUCTS
@@ -4057,65 +4305,85 @@ const ShopView = ({ category, openProductDetail }) => {
         <h1 className="text-4xl md:text-5xl font-serif text-[#F9F6F0] mb-4">{collectionTitle}</h1>
         <p className="text-gray-400 font-sans mb-8 max-w-2xl">Explore our range of meticulously sourced and roasted coffees, designed to elevate your daily ritual.</p>
 
-        <div className="border border-gray-800 bg-[#121212] p-4 md:p-5 mb-10">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <label className="block">
-              <span className="text-[11px] uppercase tracking-widest text-gray-400 mb-2 block">Sort</span>
-              <select
-                value={sortBy}
-                onChange={(event) => setSortBy(event.target.value)}
-                className="w-full border border-gray-700 bg-[#0B0C0C] text-[#F9F6F0] p-3 text-sm outline-none focus:border-[#D4AF37]"
-              >
-                <option value="featured">Featured</option>
-                <option value="price_low">Price: Low → High</option>
-                <option value="price_high">Price: High → Low</option>
-                <option value="roast">Roast: Light → Medium → Dark</option>
-              </select>
-            </label>
+        <div className="mb-10">
+          <button
+            type="button"
+            onClick={() => setIsFilterPanelOpen((previous) => !previous)}
+            className="w-full border border-gray-800 bg-[#121212] px-4 py-4 md:px-5 flex items-center justify-between gap-4 text-left"
+            aria-expanded={isFilterPanelOpen}
+            aria-controls={filterPanelId}
+          >
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.22em] text-[#D4AF37]">Refine Collection</p>
+              <p className="text-sm text-gray-300 font-sans mt-1">Roast • Format • Series</p>
+            </div>
+            <span className="text-xs uppercase tracking-widest text-gray-400">
+              {isFilterPanelOpen ? 'Hide' : 'Show'}{activeFilterCount > 0 ? ` • ${activeFilterCount} active` : ''}
+            </span>
+          </button>
 
-            <label className="block">
-              <span className="text-[11px] uppercase tracking-widest text-gray-400 mb-2 block">Roast</span>
-              <select
-                value={roastFilter}
-                onChange={(event) => setRoastFilter(event.target.value)}
-                className="w-full border border-gray-700 bg-[#0B0C0C] text-[#F9F6F0] p-3 text-sm outline-none focus:border-[#D4AF37]"
-              >
-                <option value="all">All</option>
-                <option value="light">Light</option>
-                <option value="medium">Medium</option>
-                <option value="dark">Dark</option>
-              </select>
-            </label>
+          {isFilterPanelOpen && (
+            <div id={filterPanelId} className="border border-t-0 border-gray-800 bg-[#121212] p-4 md:p-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <label className="block">
+                  <span className="text-[11px] uppercase tracking-widest text-gray-400 mb-2 block">Sort</span>
+                  <select
+                    value={sortBy}
+                    onChange={(event) => setSortBy(event.target.value)}
+                    className="w-full border border-gray-700 bg-[#0B0C0C] text-[#F9F6F0] p-3 text-sm outline-none focus:border-[#D4AF37]"
+                  >
+                    <option value="featured">Featured</option>
+                    <option value="price_low">Price: Low → High</option>
+                    <option value="price_high">Price: High → Low</option>
+                    <option value="roast">Roast: Light → Medium → Dark</option>
+                  </select>
+                </label>
 
-            <label className="block">
-              <span className="text-[11px] uppercase tracking-widest text-gray-400 mb-2 block">Format</span>
-              <select
-                value={formatFilter}
-                onChange={(event) => setFormatFilter(event.target.value)}
-                className="w-full border border-gray-700 bg-[#0B0C0C] text-[#F9F6F0] p-3 text-sm outline-none focus:border-[#D4AF37]"
-              >
-                <option value="all">All</option>
-                <option value="beans">Beans</option>
-                <option value="pods">Pods</option>
-                <option value="instant">Instant</option>
-                <option value="matcha">Matcha</option>
-                <option value="ground">Ground</option>
-              </select>
-            </label>
+                <label className="block">
+                  <span className="text-[11px] uppercase tracking-widest text-gray-400 mb-2 block">Roast</span>
+                  <select
+                    value={roastFilter}
+                    onChange={(event) => setRoastFilter(event.target.value)}
+                    className="w-full border border-gray-700 bg-[#0B0C0C] text-[#F9F6F0] p-3 text-sm outline-none focus:border-[#D4AF37]"
+                  >
+                    <option value="all">All</option>
+                    <option value="light">Light</option>
+                    <option value="medium">Medium</option>
+                    <option value="dark">Dark</option>
+                  </select>
+                </label>
 
-            <label className="block">
-              <span className="text-[11px] uppercase tracking-widest text-gray-400 mb-2 block">Series</span>
-              <select
-                value={seriesFilter}
-                onChange={(event) => setSeriesFilter(event.target.value)}
-                className="w-full border border-gray-700 bg-[#0B0C0C] text-[#F9F6F0] p-3 text-sm outline-none focus:border-[#D4AF37]"
-              >
-                {SERIES_FILTER_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
-                ))}
-              </select>
-            </label>
-          </div>
+                <label className="block">
+                  <span className="text-[11px] uppercase tracking-widest text-gray-400 mb-2 block">Format</span>
+                  <select
+                    value={formatFilter}
+                    onChange={(event) => setFormatFilter(event.target.value)}
+                    className="w-full border border-gray-700 bg-[#0B0C0C] text-[#F9F6F0] p-3 text-sm outline-none focus:border-[#D4AF37]"
+                  >
+                    <option value="all">All</option>
+                    <option value="beans">Beans</option>
+                    <option value="pods">Pods</option>
+                    <option value="instant">Instant</option>
+                    <option value="matcha">Matcha</option>
+                    <option value="ground">Ground</option>
+                  </select>
+                </label>
+
+                <label className="block">
+                  <span className="text-[11px] uppercase tracking-widest text-gray-400 mb-2 block">Series</span>
+                  <select
+                    value={seriesFilter}
+                    onChange={(event) => setSeriesFilter(event.target.value)}
+                    className="w-full border border-gray-700 bg-[#0B0C0C] text-[#F9F6F0] p-3 text-sm outline-none focus:border-[#D4AF37]"
+                  >
+                    {SERIES_FILTER_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            </div>
+          )}
           <p className="text-xs text-gray-500 mt-4">{sortedProducts.length} product{sortedProducts.length === 1 ? '' : 's'} shown</p>
         </div>
 
@@ -6727,11 +6995,36 @@ const App = () => {
     upsertStructuredData(structuredData);
   }, [currentView, selectedBlogPost, selectedProduct]);
 
-  const addToCart = (product, quantity = 1) => {
+  const addToCart = (product, quantity = 1, options = {}) => {
     const safeQuantity = Math.max(1, Math.min(10, Math.floor(Number(quantity) || 1)));
+    const sanitize = (value) => (typeof value === 'string' ? value.trim() : '');
+    const normalizedBundleSelection = Array.isArray(options?.bundleSelection?.slots)
+      ? {
+          slots: options.bundleSelection.slots
+            .map((slot) => ({
+              slotKey: sanitize(slot?.slotKey),
+              slotLabel: sanitize(slot?.slotLabel),
+              productId: sanitize(slot?.productId),
+              name: sanitize(slot?.name),
+              subtitle: sanitize(slot?.subtitle),
+              image: sanitize(slot?.image),
+            }))
+            .filter((slot) => slot.slotKey && slot.productId && slot.name),
+        }
+      : null;
+
     setCart((previousCart) => [
       ...previousCart,
-      ...Array.from({ length: safeQuantity }, () => product),
+      ...Array.from({ length: safeQuantity }, () => ({
+        ...product,
+        ...(normalizedBundleSelection?.slots?.length
+          ? {
+              bundleSelection: {
+                slots: normalizedBundleSelection.slots.map((slot) => ({ ...slot })),
+              },
+            }
+          : {}),
+      })),
     ]);
     openCart();
     trackEvent('add_to_cart', {
@@ -6740,6 +7033,7 @@ const App = () => {
       item_id: product.id,
       item_name: product.name,
       quantity: safeQuantity,
+      ...(normalizedBundleSelection?.slots?.length ? { bundle_slot_count: normalizedBundleSelection.slots.length } : {}),
     });
   };
 
