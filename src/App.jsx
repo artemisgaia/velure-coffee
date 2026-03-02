@@ -781,7 +781,7 @@ A bold dark roast built around deep cocoa and toasted depth—full-bodied, smoot
     category: "bundles",
     tag: "Bundle",
     subscriptionEligible: false,
-    images: ["https://res.cloudinary.com/dfygdydcj/image/upload/v1772413690/Ritual_nfmqwf.png"],
+    images: ["https://res.cloudinary.com/dfygdydcj/image/upload/v1772414548/Ritual_cxrq4f.png"],
     bundleContents: ["Choose any 2 coffee bags (12 oz)"],
     description: "A calm entry into the Velure ritual, built for consistency and range. The Ritual Set includes two 12 oz coffee bags so you can keep one profile for weekdays and another for slower mornings, without compromising on quality or finish.",
     details: {
@@ -806,7 +806,7 @@ A bold dark roast built around deep cocoa and toasted depth—full-bodied, smoot
     category: "bundles",
     tag: "Bundle",
     subscriptionEligible: false,
-    images: ["https://res.cloudinary.com/dfygdydcj/image/upload/v1772413687/Starter_rkw29h.png"],
+    images: ["https://res.cloudinary.com/dfygdydcj/image/upload/v1772414548/Starter_fnnhi2.png"],
     bundleContents: ["1 coffee bag (12 oz)", "1 instant coffee (54 g)"],
     description: "A balanced starter format for flexible routines: one 12 oz coffee bag for brewed cups and one instant format for speed. STARTER is designed for mornings that alternate between deliberate brewing and efficient, polished preparation.",
     details: {
@@ -831,7 +831,7 @@ A bold dark roast built around deep cocoa and toasted depth—full-bodied, smoot
     category: "bundles",
     tag: "Bundle",
     subscriptionEligible: false,
-    images: ["https://res.cloudinary.com/dfygdydcj/image/upload/v1772413687/Dark_bzktol.png"],
+    images: ["https://res.cloudinary.com/dfygdydcj/image/upload/v1772414548/Dark_rnx5i9.png"],
     bundleContents: ["2 dark-roast coffees (format varies by inventory)"],
     description: "A composed dark-roast bundle built for fuller body and deeper cup structure. DARK SET pairs two bold coffees selected for richness, making it a practical option for espresso-style brewing, press, or strong daily drip.",
     details: {
@@ -856,7 +856,7 @@ A bold dark roast built around deep cocoa and toasted depth—full-bodied, smoot
     category: "bundles",
     tag: "Bundle",
     subscriptionEligible: false,
-    images: ["https://res.cloudinary.com/dfygdydcj/image/upload/v1772413687/Light_txqxyv.png"],
+    images: ["https://res.cloudinary.com/dfygdydcj/image/upload/v1772414548/Light_mepzfs.png"],
     bundleContents: ["2 light-roast coffees (format varies by inventory)"],
     description: "A bright, clarity-forward bundle designed for clean finishes and lively cups. BRIGHT SET combines two light-roast profiles selected for citrus lift and definition across pour-over, drip, and iced preparations.",
     details: {
@@ -905,6 +905,21 @@ const CATEGORY_LABELS = {
   single_origin: 'Single Origin Series',
   bundles: 'Bundle Sets',
 };
+
+const VELURE_STANDARD_FACTS = [
+  'Gluten-Free',
+  'Vegetarian',
+  'Lactose-Free',
+  'Allergen-Free',
+  'Hormone-Free',
+  '100% Natural',
+  'Antibiotic-Free',
+  'Non-GMO',
+  'Corn-Free',
+  'Vegan',
+  'Halal Certified',
+  'Cruelty-Free',
+];
 
 const SUBSCRIPTION_PRODUCTS = PRODUCTS.filter((product) => product.subscriptionEligible);
 
@@ -2104,7 +2119,6 @@ const supabaseUpdatePassword = async (accessToken, nextPassword) => {
 };
 
 const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-const getNutritionPanelImage = (product) => product.nutritionImage || product.images[product.images.length - 1];
 const upsertMetaByName = (name, content) => {
   if (typeof document === 'undefined') return;
   let tag = document.querySelector(`meta[name="${name}"]`);
@@ -2566,7 +2580,7 @@ const ProductDetailView = ({
   const [qty, setQty] = useState(1);
   const [openAccordion, setOpenAccordion] = useState('details');
   const [bundleSelections, setBundleSelections] = useState(() => getDefaultBundleSelections(product.id));
-  const nutritionImage = getNutritionPanelImage(product);
+  const [bundlePreviewProduct, setBundlePreviewProduct] = useState(null);
   const nutritionSpecs = product.nutritionSpecs || null;
   const ingredientText = product.details.ingredients || '';
   const hasOrganicIngredients = /organic/i.test(ingredientText);
@@ -2606,12 +2620,7 @@ const ProductDetailView = ({
     () => (isBundleProduct ? getBundleSlotOptions(product.id) : []),
     [isBundleProduct, product.id],
   );
-  const selectedBundleItems = useMemo(
-    () => bundleSlots
-      .map((slot) => slot.options.find((option) => option.id === bundleSelections[slot.key]) || null)
-      .filter(Boolean),
-    [bundleSelections, bundleSlots],
-  );
+  const productClaims = [...new Set([...cleanLabelClaims, ...VELURE_STANDARD_FACTS])];
   const isBundleSelectionComplete = !isBundleProduct
     || (bundleSlots.length > 0 && bundleSlots.every((slot) => Boolean(bundleSelections[slot.key])));
   const [reviewsState, setReviewsState] = useState({
@@ -2997,7 +3006,13 @@ const ProductDetailView = ({
                       const selectedProduct = slot.options.find((option) => option.id === bundleSelections[slot.key]);
                       return (
                         <div key={slot.key} className="grid grid-cols-[4.5rem,1fr] gap-4 items-center border border-gray-800 p-3">
-                          <div className="w-[4.5rem] h-[4.5rem] bg-[#0B0C0C] border border-gray-700 overflow-hidden">
+                          <button
+                            type="button"
+                            onClick={() => selectedProduct && setBundlePreviewProduct(selectedProduct)}
+                            className="w-[4.5rem] h-[4.5rem] bg-[#0B0C0C] border border-gray-700 overflow-hidden disabled:cursor-default"
+                            disabled={!selectedProduct}
+                            aria-label={selectedProduct ? `Preview ${selectedProduct.name}` : `${slot.label} preview unavailable`}
+                          >
                             {selectedProduct ? (
                               <img
                                 src={selectedProduct.images?.[0] || DEFAULT_SHARE_IMAGE_URL}
@@ -3007,7 +3022,7 @@ const ProductDetailView = ({
                                 decoding="async"
                               />
                             ) : null}
-                          </div>
+                          </button>
                           <div>
                             <label htmlFor={`${product.id}-${slot.key}`} className="block text-xs uppercase tracking-wider text-gray-400 mb-1">
                               {slot.label}
@@ -3027,30 +3042,19 @@ const ProductDetailView = ({
                             {slot.helper && (
                               <p className="mt-1 text-[11px] text-gray-500">{slot.helper}</p>
                             )}
+                            {selectedProduct && (
+                              <button
+                                type="button"
+                                onClick={() => setBundlePreviewProduct(selectedProduct)}
+                                className="mt-2 text-[11px] uppercase tracking-wider text-[#D4AF37] hover:text-[#F9F6F0] transition-colors"
+                              >
+                                Preview {selectedProduct.name}
+                              </button>
+                            )}
                           </div>
                         </div>
                       );
                     })}
-                  </div>
-                )}
-
-                {selectedBundleItems.length > 0 && (
-                  <div className="mt-5 grid grid-cols-2 gap-3">
-                    {selectedBundleItems.map((selectedItem, index) => (
-                      <article key={`${selectedItem.id}-${index}`} className="border border-gray-800 p-3">
-                        <div className="aspect-square bg-[#0B0C0C] mb-3 overflow-hidden">
-                          <img
-                            src={selectedItem.images?.[0] || DEFAULT_SHARE_IMAGE_URL}
-                            alt={`${selectedItem.name} included in bundle`}
-                            className="w-full h-full object-cover"
-                            loading="lazy"
-                            decoding="async"
-                          />
-                        </div>
-                        <p className="text-xs uppercase tracking-wider text-[#D4AF37]">{selectedItem.name}</p>
-                        <p className="text-[11px] text-gray-400 mt-1">{selectedItem.subtitle}</p>
-                      </article>
-                    ))}
                   </div>
                 )}
 
@@ -3076,7 +3080,7 @@ const ProductDetailView = ({
                 </button>
                 {openAccordion === 'details' && (
                   <div id={detailsPanelId} className="px-5 pb-5">
-                    <div className="grid grid-cols-1 md:grid-cols-[1fr,220px] gap-5 items-start">
+                    <div className="grid grid-cols-1 md:grid-cols-[1fr,260px] gap-5 items-start">
                       <div>
                         <ul className="space-y-3 text-sm text-gray-400 font-sans">
                           {detailsRows.map((row) => (
@@ -3108,17 +3112,20 @@ const ProductDetailView = ({
                         )}
                       </div>
                       <div className="space-y-4">
-                        <img
-                          src={nutritionImage}
-                          alt={`${product.name} nutrition panel`}
-                          loading="lazy"
-                          decoding="async"
-                          className="w-40 h-40 object-cover border border-gray-700"
-                        />
                         <div>
-                          <span className="block mb-2 text-xs uppercase tracking-widest text-gray-400">Clean Label Claims</span>
+                          <span className="block mb-2 text-xs uppercase tracking-widest text-gray-400">Product Claims</span>
                           <div className="flex flex-wrap gap-2">
                             {cleanLabelClaims.map((claim) => (
+                              <span key={claim} className="px-2 py-1 border border-gray-700 text-xs text-[#F9F6F0]">
+                                {claim}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="border border-gray-800 p-3 bg-[#111111]">
+                          <span className="block mb-2 text-xs uppercase tracking-widest text-[#D4AF37]">Velure Standards</span>
+                          <div className="flex flex-wrap gap-2">
+                            {productClaims.map((claim) => (
                               <span key={claim} className="px-2 py-1 border border-gray-700 text-xs text-[#F9F6F0]">
                                 {claim}
                               </span>
@@ -3268,6 +3275,47 @@ const ProductDetailView = ({
           </div>
         </div>
       </div>
+
+      {bundlePreviewProduct && (
+        <div className="fixed inset-0 z-[70] bg-black/70 px-4 py-10 md:py-16 overflow-y-auto" role="dialog" aria-modal="true" aria-label={`${bundlePreviewProduct.name} preview`}>
+          <div className="max-w-2xl mx-auto border border-gray-700 bg-[#0B0C0C]">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800">
+              <p className="text-xs uppercase tracking-widest text-[#D4AF37]">Bundle Preview</p>
+              <button
+                type="button"
+                onClick={() => setBundlePreviewProduct(null)}
+                className="text-xs uppercase tracking-widest text-gray-400 hover:text-[#F9F6F0]"
+              >
+                Close
+              </button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-[220px,1fr] gap-5 p-5">
+              <div className="aspect-square bg-[#151515] border border-gray-800 overflow-hidden">
+                <img
+                  src={bundlePreviewProduct.images?.[0] || DEFAULT_SHARE_IMAGE_URL}
+                  alt={`${bundlePreviewProduct.name} preview`}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </div>
+              <div>
+                <h4 className="font-serif text-3xl text-[#F9F6F0]">{bundlePreviewProduct.name}</h4>
+                <p className="text-sm text-gray-400 mt-1">{bundlePreviewProduct.subtitle}</p>
+                <p className="text-lg text-[#D4AF37] mt-3">${bundlePreviewProduct.price.toFixed(2)}</p>
+                <ul className="mt-4 space-y-2 text-sm text-gray-300">
+                  <li><span className="text-gray-500">Origin:</span> {bundlePreviewProduct.details.origin}</li>
+                  {bundlePreviewProduct.details.roast && <li><span className="text-gray-500">Roast:</span> {bundlePreviewProduct.details.roast}</li>}
+                  <li><span className="text-gray-500">Weight:</span> {bundlePreviewProduct.details.weight}</li>
+                </ul>
+                <p className="text-sm text-gray-300 mt-4 leading-relaxed">
+                  {bundlePreviewProduct.description.split('\n')[0]}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {!isCartOpen && (
       <>
