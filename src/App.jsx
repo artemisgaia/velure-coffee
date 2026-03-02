@@ -4386,86 +4386,357 @@ const CheckoutView = ({
 };
 
 const ROAST_SORT_ORDER = { light: 0, medium: 1, dark: 2 };
-const SERIES_FILTER_OPTIONS = [
-  { value: 'all', label: 'All' },
-  { value: 'functional', label: 'Functional' },
-  { value: 'single_origin', label: 'Single Origin' },
-  { value: 'signature', label: 'Signature' },
-  { value: 'bundles', label: 'Bundles' },
+const COLLECTION_FILTER_DEFAULTS = {
+  sort: 'featured',
+  roast: 'all',
+  format: 'all',
+  decaf: 'all',
+  bundleType: 'all',
+};
+
+const SORT_FILTER_OPTIONS = [
+  { value: 'featured', label: 'Featured' },
+  { value: 'price-asc', label: 'Price: Low → High' },
+  { value: 'price-desc', label: 'Price: High → Low' },
+  { value: 'roast-asc', label: 'Roast: Light → Medium → Dark' },
 ];
 
-const deriveProductFormat = (product) => {
+const ROAST_FILTER_OPTIONS = [
+  { value: 'all', label: 'All' },
+  { value: 'light', label: 'Light' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'dark', label: 'Dark' },
+];
+
+const FORMAT_FILTER_OPTIONS = [
+  { value: 'all', label: 'All' },
+  { value: 'beans', label: 'Beans' },
+  { value: 'pods', label: 'Pods' },
+  { value: 'instant', label: 'Instant' },
+  { value: 'ground', label: 'Ground' },
+  { value: 'matcha', label: 'Matcha' },
+];
+
+const DECAF_FILTER_OPTIONS = [
+  { value: 'all', label: 'All' },
+  { value: 'decaf', label: 'Decaf Only' },
+];
+
+const BUNDLE_TYPE_FILTER_OPTIONS = [
+  { value: 'all', label: 'All' },
+  { value: 'ritual', label: 'Ritual' },
+  { value: 'starter', label: 'Starter' },
+  { value: 'dark', label: 'Dark' },
+  { value: 'bright', label: 'Bright' },
+];
+
+const isValidFilterValue = (options, value) => options.some((option) => option.value === value);
+
+const normalizeLegacySortValue = (value) => {
+  if (value === 'price_low') return 'price-asc';
+  if (value === 'price_high') return 'price-desc';
+  if (value === 'roast') return 'roast-asc';
+  return value;
+};
+
+const parseCollectionFiltersFromSearch = (search) => {
+  const params = new URLSearchParams(search || '');
+  const rawSort = normalizeLegacySortValue(normalizeLower(params.get('sort') || ''));
+  const sort = isValidFilterValue(SORT_FILTER_OPTIONS, rawSort) ? rawSort : COLLECTION_FILTER_DEFAULTS.sort;
+  const roast = isValidFilterValue(ROAST_FILTER_OPTIONS, normalizeLower(params.get('roast') || ''))
+    ? normalizeLower(params.get('roast') || '')
+    : COLLECTION_FILTER_DEFAULTS.roast;
+  const format = isValidFilterValue(FORMAT_FILTER_OPTIONS, normalizeLower(params.get('format') || ''))
+    ? normalizeLower(params.get('format') || '')
+    : COLLECTION_FILTER_DEFAULTS.format;
+  const decaf = isValidFilterValue(DECAF_FILTER_OPTIONS, normalizeLower(params.get('decaf') || ''))
+    ? normalizeLower(params.get('decaf') || '')
+    : COLLECTION_FILTER_DEFAULTS.decaf;
+  const bundleType = isValidFilterValue(BUNDLE_TYPE_FILTER_OPTIONS, normalizeLower(params.get('bundleType') || ''))
+    ? normalizeLower(params.get('bundleType') || '')
+    : COLLECTION_FILTER_DEFAULTS.bundleType;
+
+  return {
+    sort,
+    roast,
+    format,
+    decaf,
+    bundleType,
+  };
+};
+
+const getProductFormat = (product) => {
+  const productId = normalizeLower(product?.id || '');
   const subtitle = normalizeLower(product?.subtitle || '');
   const productAmount = normalizeLower(product?.nutritionSpecs?.productAmount || '');
-  const nutritionIngredients = normalizeLower(product?.nutritionSpecs?.ingredients || '');
-  const detailsIngredients = normalizeLower(product?.details?.ingredients || '');
+  const detailsWeight = normalizeLower(product?.details?.weight || '');
 
-  if (product?.id?.endsWith('-pods') || productAmount.includes('pods')) {
+  if (productId.endsWith('-pods') || productAmount.includes('pods')) {
     return 'pods';
   }
 
-  if (subtitle.includes('matcha') || (product?.category === 'functional' && product?.name === 'ZEN')) {
+  if (subtitle.includes('matcha') || normalizeLower(product?.name || '') === 'zen') {
     return 'matcha';
   }
 
-  if (subtitle.includes('instant') || productAmount.includes('1.9 oz')) {
+  if (subtitle.includes('instant') || productAmount.includes('1.9') || detailsWeight.includes('54 g')) {
     return 'instant';
   }
 
-  if (subtitle.includes('ground') || nutritionIngredients.includes('ground') || detailsIngredients.includes('ground')) {
+  if (subtitle.includes('ground')) {
     return 'ground';
   }
 
   return 'beans';
 };
 
-const deriveProductSeries = (product) => {
-  if (product?.category === 'functional') return 'functional';
-  if (product?.category === 'single_origin') return 'single_origin';
-  if (product?.category === 'signature') return 'signature';
-  if (product?.category === 'bundles') return 'bundles';
+const getBundleType = (product) => {
+  const productId = normalizeLower(product?.id || '');
+  if (productId === 'bundle-ritual-set') return 'ritual';
+  if (productId === 'bundle-starter') return 'starter';
+  if (productId === 'bundle-dark-set') return 'dark';
+  if (productId === 'bundle-bright-set') return 'bright';
   return 'all';
 };
 
-const ShopView = ({ category, openProductDetail }) => {
-  const [sortBy, setSortBy] = useState('featured');
-  const [roastFilter, setRoastFilter] = useState('all');
-  const [formatFilter, setFormatFilter] = useState('all');
-  const [seriesFilter, setSeriesFilter] = useState('all');
+const isDecafProduct = (product) => {
+  const productName = normalizeLower(product?.name || '');
+  const subtitle = normalizeLower(product?.subtitle || '');
+  const tag = normalizeLower(product?.tag || '');
+  const productId = normalizeLower(product?.id || '');
+  return productId === 'forest' || productName.includes('decaf') || subtitle.includes('decaf') || tag.includes('decaf');
+};
+
+const normalizeCollectionFilters = (filters, category) => {
+  const nextFilters = {
+    ...COLLECTION_FILTER_DEFAULTS,
+    ...(filters || {}),
+  };
+
+  const normalizedSort = normalizeLegacySortValue(normalizeLower(nextFilters.sort || ''));
+  nextFilters.sort = isValidFilterValue(SORT_FILTER_OPTIONS, normalizedSort) ? normalizedSort : COLLECTION_FILTER_DEFAULTS.sort;
+  nextFilters.roast = isValidFilterValue(ROAST_FILTER_OPTIONS, normalizeLower(nextFilters.roast || ''))
+    ? normalizeLower(nextFilters.roast || '')
+    : COLLECTION_FILTER_DEFAULTS.roast;
+  nextFilters.format = isValidFilterValue(FORMAT_FILTER_OPTIONS, normalizeLower(nextFilters.format || ''))
+    ? normalizeLower(nextFilters.format || '')
+    : COLLECTION_FILTER_DEFAULTS.format;
+  nextFilters.decaf = isValidFilterValue(DECAF_FILTER_OPTIONS, normalizeLower(nextFilters.decaf || ''))
+    ? normalizeLower(nextFilters.decaf || '')
+    : COLLECTION_FILTER_DEFAULTS.decaf;
+  nextFilters.bundleType = isValidFilterValue(BUNDLE_TYPE_FILTER_OPTIONS, normalizeLower(nextFilters.bundleType || ''))
+    ? normalizeLower(nextFilters.bundleType || '')
+    : COLLECTION_FILTER_DEFAULTS.bundleType;
+
+  if (category === 'bundles') {
+    nextFilters.roast = COLLECTION_FILTER_DEFAULTS.roast;
+    nextFilters.format = COLLECTION_FILTER_DEFAULTS.format;
+    nextFilters.decaf = COLLECTION_FILTER_DEFAULTS.decaf;
+  }
+
+  if (category !== 'all' && category !== 'single_origin') {
+    nextFilters.decaf = COLLECTION_FILTER_DEFAULTS.decaf;
+  }
+
+  if (category !== 'bundles') {
+    nextFilters.bundleType = COLLECTION_FILTER_DEFAULTS.bundleType;
+  }
+
+  return nextFilters;
+};
+
+const ShopView = ({ category, openProductDetail, setView }) => {
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const collectionTitle = CATEGORY_LABELS[category] || CATEGORY_LABELS.all;
-  const activeFilterCount = [roastFilter, formatFilter, seriesFilter].filter((value) => value !== 'all').length + (sortBy === 'featured' ? 0 : 1);
   const filterPanelId = `collection-filters-${category}`;
+  const mobileSheetTitleId = `${filterPanelId}-mobile-title`;
+  const currentCollectionView = category === 'all'
+    ? 'shop_all'
+    : category === 'functional'
+      ? 'shop_functional'
+      : category === 'single_origin'
+        ? 'shop_single_origin'
+        : category === 'signature'
+          ? 'shop_signature'
+          : 'shop_bundles';
+  const showRoastFilter = category !== 'bundles';
+  const showFormatFilter = category !== 'bundles';
+  const showDecafFilter = category === 'all' || category === 'single_origin';
+  const showBundleTypeFilter = category === 'bundles';
+  const hasSignatureCollection = PRODUCTS.some((product) => product.category === 'signature');
+  const hasBundlesCollection = PRODUCTS.some((product) => product.category === 'bundles');
+
+  const getFiltersFromLocation = useCallback(() => {
+    if (typeof window === 'undefined') {
+      return normalizeCollectionFilters(COLLECTION_FILTER_DEFAULTS, category);
+    }
+    return normalizeCollectionFilters(parseCollectionFiltersFromSearch(window.location.search), category);
+  }, [category]);
+
+  const [filters, setFilters] = useState(() => getFiltersFromLocation());
+  const [mobileDraftFilters, setMobileDraftFilters] = useState(() => getFiltersFromLocation());
+
+  const seriesChips = useMemo(() => ([
+    { view: 'shop_all', label: 'All', enabled: true },
+    { view: 'shop_functional', label: 'Functional', enabled: PRODUCTS.some((product) => product.category === 'functional') },
+    { view: 'shop_single_origin', label: 'Single Origin', enabled: PRODUCTS.some((product) => product.category === 'single_origin') },
+    { view: 'shop_signature', label: 'Signature', enabled: hasSignatureCollection },
+    { view: 'shop_bundles', label: 'Bundles', enabled: hasBundlesCollection },
+  ].filter((chip) => chip.enabled)), [hasBundlesCollection, hasSignatureCollection]);
+
+  const defaultFilters = useMemo(
+    () => normalizeCollectionFilters(COLLECTION_FILTER_DEFAULTS, category),
+    [category],
+  );
+
+  const applyFilters = useCallback((nextFilters) => {
+    setFilters(normalizeCollectionFilters(nextFilters, category));
+  }, [category]);
+
+  const handleDesktopFilterChange = useCallback((key, value) => {
+    applyFilters({ ...filters, [key]: value });
+  }, [applyFilters, filters]);
+
+  const handleMobileFilterChange = useCallback((key, value) => {
+    setMobileDraftFilters((previousFilters) => normalizeCollectionFilters({
+      ...previousFilters,
+      [key]: value,
+    }, category));
+  }, [category]);
+
+  const handleClearFilters = useCallback(() => {
+    setFilters(defaultFilters);
+    setMobileDraftFilters(defaultFilters);
+  }, [defaultFilters]);
+
+  const handleClearMobileFilters = useCallback(() => {
+    setMobileDraftFilters(defaultFilters);
+  }, [defaultFilters]);
+
+  const handleApplyMobileFilters = useCallback(() => {
+    applyFilters(mobileDraftFilters);
+    setIsMobileFilterOpen(false);
+  }, [applyFilters, mobileDraftFilters]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const handlePopState = () => {
+      const nextFilters = getFiltersFromLocation();
+      setFilters(nextFilters);
+      setMobileDraftFilters(nextFilters);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [getFiltersFromLocation]);
+
+  useEffect(() => {
+    if (!isMobileFilterOpen) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') {
+        setIsMobileFilterOpen(false);
+      }
+    };
+
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', handleEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleEscape);
+    };
+  }, [isMobileFilterOpen]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const nextFilters = normalizeCollectionFilters(filters, category);
+    const params = new URLSearchParams(window.location.search);
+    ['sort', 'roast', 'format', 'decaf', 'bundleType'].forEach((param) => params.delete(param));
+
+    if (nextFilters.sort !== COLLECTION_FILTER_DEFAULTS.sort) {
+      params.set('sort', nextFilters.sort);
+    }
+    if (showRoastFilter && nextFilters.roast !== COLLECTION_FILTER_DEFAULTS.roast) {
+      params.set('roast', nextFilters.roast);
+    }
+    if (showFormatFilter && nextFilters.format !== COLLECTION_FILTER_DEFAULTS.format) {
+      params.set('format', nextFilters.format);
+    }
+    if (showDecafFilter && nextFilters.decaf !== COLLECTION_FILTER_DEFAULTS.decaf) {
+      params.set('decaf', nextFilters.decaf);
+    }
+    if (showBundleTypeFilter && nextFilters.bundleType !== COLLECTION_FILTER_DEFAULTS.bundleType) {
+      params.set('bundleType', nextFilters.bundleType);
+    }
+
+    const queryString = params.toString();
+    const nextPath = `${window.location.pathname}${queryString ? `?${queryString}` : ''}`;
+    const currentPath = `${window.location.pathname}${window.location.search}`;
+    if (nextPath !== currentPath) {
+      window.history.replaceState(window.history.state, '', nextPath);
+    }
+  }, [category, filters, showBundleTypeFilter, showDecafFilter, showFormatFilter, showRoastFilter]);
+
+  const activeFilterCount = [
+    filters.sort !== COLLECTION_FILTER_DEFAULTS.sort,
+    showRoastFilter && filters.roast !== COLLECTION_FILTER_DEFAULTS.roast,
+    showFormatFilter && filters.format !== COLLECTION_FILTER_DEFAULTS.format,
+    showDecafFilter && filters.decaf !== COLLECTION_FILTER_DEFAULTS.decaf,
+    showBundleTypeFilter && filters.bundleType !== COLLECTION_FILTER_DEFAULTS.bundleType,
+  ].filter(Boolean).length;
+
+  const desktopFilterSummary = showBundleTypeFilter
+    ? 'Sort • Bundle Type'
+    : showDecafFilter
+      ? 'Sort • Roast • Format • Decaf'
+      : 'Sort • Roast • Format';
 
   const scopedProducts = category === 'all'
     ? PRODUCTS
     : PRODUCTS.filter((product) => product.category === category);
 
   const filteredProducts = scopedProducts.filter((product) => {
-    const roastValue = normalizeLower(product?.details?.roast || '');
-    const formatValue = deriveProductFormat(product);
-    const seriesValue = deriveProductSeries(product);
+    if (showDecafFilter && filters.decaf === 'decaf' && !isDecafProduct(product)) {
+      return false;
+    }
 
-    const roastMatch = roastFilter === 'all' || roastValue === roastFilter;
-    const formatMatch = formatFilter === 'all' || formatValue === formatFilter;
-    const seriesMatch = seriesFilter === 'all' || seriesValue === seriesFilter;
+    if (showRoastFilter && filters.roast !== 'all') {
+      const roastValue = normalizeLower(product?.details?.roast || '');
+      if (!roastValue || roastValue !== filters.roast) {
+        return false;
+      }
+    }
 
-    return roastMatch && formatMatch && seriesMatch;
+    if (showFormatFilter && filters.format !== 'all') {
+      if (getProductFormat(product) !== filters.format) {
+        return false;
+      }
+    }
+
+    if (showBundleTypeFilter && filters.bundleType !== 'all') {
+      if (getBundleType(product) !== filters.bundleType) {
+        return false;
+      }
+    }
+
+    return true;
   });
 
   const sortedProducts = (() => {
-    if (sortBy === 'featured') return filteredProducts;
+    if (filters.sort === 'featured') return filteredProducts;
 
     const productsToSort = [...filteredProducts];
-    if (sortBy === 'price_low') {
+    if (filters.sort === 'price-asc') {
       return productsToSort.sort((a, b) => a.price - b.price || a.name.localeCompare(b.name));
     }
 
-    if (sortBy === 'price_high') {
+    if (filters.sort === 'price-desc') {
       return productsToSort.sort((a, b) => b.price - a.price || a.name.localeCompare(b.name));
     }
 
-    if (sortBy === 'roast') {
+    if (filters.sort === 'roast-asc') {
       return productsToSort.sort((a, b) => {
         const roastRankA = ROAST_SORT_ORDER[normalizeLower(a?.details?.roast || '')] ?? 99;
         const roastRankB = ROAST_SORT_ORDER[normalizeLower(b?.details?.roast || '')] ?? 99;
@@ -4483,17 +4754,60 @@ const ShopView = ({ category, openProductDetail }) => {
         <h1 className="text-4xl md:text-5xl font-serif text-[#F9F6F0] mb-4 motion-enter">{collectionTitle}</h1>
         <p className="text-gray-400 font-sans mb-8 max-w-2xl motion-enter">Explore our range of meticulously sourced and roasted coffees, designed to elevate your daily ritual.</p>
 
+        <div className="flex flex-wrap gap-2 mb-6 motion-enter" aria-label="Collection switcher">
+          {seriesChips.map((chip) => {
+            const isActive = chip.view === currentCollectionView;
+            return (
+              <button
+                key={chip.view}
+                type="button"
+                onClick={() => setView(chip.view)}
+                className={`px-4 py-2 text-xs font-bold uppercase tracking-wider border ${
+                  isActive
+                    ? 'border-[#D4AF37] bg-[#D4AF37] text-[#0B0C0C]'
+                    : 'border-gray-700 text-[#F9F6F0] hover:border-[#D4AF37] hover:text-[#D4AF37]'
+                }`}
+                aria-pressed={isActive}
+              >
+                {chip.label}
+              </button>
+            );
+          })}
+        </div>
+
         <div className="mb-10 motion-enter">
+          <div className="md:hidden mb-3">
+            <button
+              type="button"
+              onClick={() => {
+                setMobileDraftFilters(filters);
+                setIsMobileFilterOpen(true);
+              }}
+              className="w-full border border-gray-800 bg-[#121212] px-4 py-4 flex items-center justify-between gap-4 text-left"
+              aria-haspopup="dialog"
+              aria-expanded={isMobileFilterOpen}
+              aria-controls={mobileSheetTitleId}
+            >
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.22em] text-[#D4AF37]">Refine Collection</p>
+                <p className="text-sm text-gray-300 font-sans mt-1">Filter &amp; Sort</p>
+              </div>
+              <span className="text-xs uppercase tracking-widest text-gray-400">
+                Open{activeFilterCount > 0 ? ` • ${activeFilterCount} active` : ''}
+              </span>
+            </button>
+          </div>
+
           <button
             type="button"
             onClick={() => setIsFilterPanelOpen((previous) => !previous)}
-            className="w-full border border-gray-800 bg-[#121212] px-4 py-4 md:px-5 flex items-center justify-between gap-4 text-left"
+            className="hidden md:flex w-full border border-gray-800 bg-[#121212] px-4 py-4 md:px-5 items-center justify-between gap-4 text-left"
             aria-expanded={isFilterPanelOpen}
             aria-controls={filterPanelId}
           >
             <div>
               <p className="text-[11px] uppercase tracking-[0.22em] text-[#D4AF37]">Refine Collection</p>
-              <p className="text-sm text-gray-300 font-sans mt-1">Roast • Format • Series</p>
+              <p className="text-sm text-gray-300 font-sans mt-1">{desktopFilterSummary}</p>
             </div>
             <span className="text-xs uppercase tracking-widest text-gray-400">
               {isFilterPanelOpen ? 'Hide' : 'Show'}{activeFilterCount > 0 ? ` • ${activeFilterCount} active` : ''}
@@ -4501,69 +4815,217 @@ const ShopView = ({ category, openProductDetail }) => {
           </button>
 
           {isFilterPanelOpen && (
-            <div id={filterPanelId} className="border border-t-0 border-gray-800 bg-[#121212] p-4 md:p-5">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div id={filterPanelId} className="hidden md:block border border-t-0 border-gray-800 bg-[#121212] p-4 md:p-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                 <label className="block">
                   <span className="text-[11px] uppercase tracking-widest text-gray-400 mb-2 block">Sort</span>
                   <select
-                    value={sortBy}
-                    onChange={(event) => setSortBy(event.target.value)}
+                    value={filters.sort}
+                    onChange={(event) => handleDesktopFilterChange('sort', event.target.value)}
                     className="w-full border border-gray-700 bg-[#0B0C0C] text-[#F9F6F0] p-3 text-sm outline-none focus:border-[#D4AF37]"
                   >
-                    <option value="featured">Featured</option>
-                    <option value="price_low">Price: Low → High</option>
-                    <option value="price_high">Price: High → Low</option>
-                    <option value="roast">Roast: Light → Medium → Dark</option>
-                  </select>
-                </label>
-
-                <label className="block">
-                  <span className="text-[11px] uppercase tracking-widest text-gray-400 mb-2 block">Roast</span>
-                  <select
-                    value={roastFilter}
-                    onChange={(event) => setRoastFilter(event.target.value)}
-                    className="w-full border border-gray-700 bg-[#0B0C0C] text-[#F9F6F0] p-3 text-sm outline-none focus:border-[#D4AF37]"
-                  >
-                    <option value="all">All</option>
-                    <option value="light">Light</option>
-                    <option value="medium">Medium</option>
-                    <option value="dark">Dark</option>
-                  </select>
-                </label>
-
-                <label className="block">
-                  <span className="text-[11px] uppercase tracking-widest text-gray-400 mb-2 block">Format</span>
-                  <select
-                    value={formatFilter}
-                    onChange={(event) => setFormatFilter(event.target.value)}
-                    className="w-full border border-gray-700 bg-[#0B0C0C] text-[#F9F6F0] p-3 text-sm outline-none focus:border-[#D4AF37]"
-                  >
-                    <option value="all">All</option>
-                    <option value="beans">Beans</option>
-                    <option value="pods">Pods</option>
-                    <option value="instant">Instant</option>
-                    <option value="matcha">Matcha</option>
-                    <option value="ground">Ground</option>
-                  </select>
-                </label>
-
-                <label className="block">
-                  <span className="text-[11px] uppercase tracking-widest text-gray-400 mb-2 block">Series</span>
-                  <select
-                    value={seriesFilter}
-                    onChange={(event) => setSeriesFilter(event.target.value)}
-                    className="w-full border border-gray-700 bg-[#0B0C0C] text-[#F9F6F0] p-3 text-sm outline-none focus:border-[#D4AF37]"
-                  >
-                    {SERIES_FILTER_OPTIONS.map((option) => (
+                    {SORT_FILTER_OPTIONS.map((option) => (
                       <option key={option.value} value={option.value}>{option.label}</option>
                     ))}
                   </select>
                 </label>
+
+                {showRoastFilter && (
+                  <label className="block">
+                    <span className="text-[11px] uppercase tracking-widest text-gray-400 mb-2 block">Roast</span>
+                    <select
+                      value={filters.roast}
+                      onChange={(event) => handleDesktopFilterChange('roast', event.target.value)}
+                      className="w-full border border-gray-700 bg-[#0B0C0C] text-[#F9F6F0] p-3 text-sm outline-none focus:border-[#D4AF37]"
+                    >
+                      {ROAST_FILTER_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+
+                {showFormatFilter && (
+                  <label className="block">
+                    <span className="text-[11px] uppercase tracking-widest text-gray-400 mb-2 block">Format</span>
+                    <select
+                      value={filters.format}
+                      onChange={(event) => handleDesktopFilterChange('format', event.target.value)}
+                      className="w-full border border-gray-700 bg-[#0B0C0C] text-[#F9F6F0] p-3 text-sm outline-none focus:border-[#D4AF37]"
+                    >
+                      {FORMAT_FILTER_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+
+                {showDecafFilter && (
+                  <label className="block">
+                    <span className="text-[11px] uppercase tracking-widest text-gray-400 mb-2 block">Decaf</span>
+                    <select
+                      value={filters.decaf}
+                      onChange={(event) => handleDesktopFilterChange('decaf', event.target.value)}
+                      className="w-full border border-gray-700 bg-[#0B0C0C] text-[#F9F6F0] p-3 text-sm outline-none focus:border-[#D4AF37]"
+                    >
+                      {DECAF_FILTER_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+
+                {showBundleTypeFilter && (
+                  <label className="block">
+                    <span className="text-[11px] uppercase tracking-widest text-gray-400 mb-2 block">Bundle Type</span>
+                    <select
+                      value={filters.bundleType}
+                      onChange={(event) => handleDesktopFilterChange('bundleType', event.target.value)}
+                      className="w-full border border-gray-700 bg-[#0B0C0C] text-[#F9F6F0] p-3 text-sm outline-none focus:border-[#D4AF37]"
+                    >
+                      {BUNDLE_TYPE_FILTER_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))}
+                    </select>
+                  </label>
+                )}
               </div>
             </div>
           )}
-          <p className="text-xs text-gray-500 mt-4">{sortedProducts.length} product{sortedProducts.length === 1 ? '' : 's'} shown</p>
+          <div className="flex items-center justify-between mt-4">
+            <p className="text-xs text-gray-500">{sortedProducts.length} product{sortedProducts.length === 1 ? '' : 's'} shown</p>
+            <button
+              type="button"
+              onClick={handleClearFilters}
+              className={`text-xs uppercase tracking-widest underline underline-offset-2 ${activeFilterCount > 0 ? 'text-[#D4AF37] hover:text-[#F9F6F0]' : 'text-gray-600 cursor-default'}`}
+              disabled={activeFilterCount === 0}
+            >
+              Clear
+            </button>
+          </div>
         </div>
+
+        {isMobileFilterOpen && (
+          <div
+            className="fixed inset-0 z-[75] bg-black/70 motion-modal-overlay md:hidden"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={mobileSheetTitleId}
+            onClick={() => setIsMobileFilterOpen(false)}
+          >
+            <div
+              className="absolute inset-x-0 bottom-0 rounded-t-2xl border-t border-gray-700 bg-[#121212] p-5 max-h-[85vh] overflow-y-auto motion-modal-panel"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="flex items-start justify-between gap-3 mb-4">
+                <div>
+                  <p className="text-[11px] uppercase tracking-[0.22em] text-[#D4AF37]">Refine Collection</p>
+                  <h2 id={mobileSheetTitleId} className="font-serif text-3xl text-[#F9F6F0] mt-1">Filter &amp; Sort</h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsMobileFilterOpen(false)}
+                  className="h-10 w-10 inline-flex items-center justify-center border border-gray-700 text-gray-300 hover:text-[#F9F6F0]"
+                  aria-label="Close filter sheet"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <label className="block">
+                  <span className="text-[11px] uppercase tracking-widest text-gray-400 mb-2 block">Sort</span>
+                  <select
+                    value={mobileDraftFilters.sort}
+                    onChange={(event) => handleMobileFilterChange('sort', event.target.value)}
+                    className="w-full border border-gray-700 bg-[#0B0C0C] text-[#F9F6F0] p-3 text-sm outline-none focus:border-[#D4AF37]"
+                  >
+                    {SORT_FILTER_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                </label>
+
+                {showRoastFilter && (
+                  <label className="block">
+                    <span className="text-[11px] uppercase tracking-widest text-gray-400 mb-2 block">Roast</span>
+                    <select
+                      value={mobileDraftFilters.roast}
+                      onChange={(event) => handleMobileFilterChange('roast', event.target.value)}
+                      className="w-full border border-gray-700 bg-[#0B0C0C] text-[#F9F6F0] p-3 text-sm outline-none focus:border-[#D4AF37]"
+                    >
+                      {ROAST_FILTER_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+
+                {showFormatFilter && (
+                  <label className="block">
+                    <span className="text-[11px] uppercase tracking-widest text-gray-400 mb-2 block">Format</span>
+                    <select
+                      value={mobileDraftFilters.format}
+                      onChange={(event) => handleMobileFilterChange('format', event.target.value)}
+                      className="w-full border border-gray-700 bg-[#0B0C0C] text-[#F9F6F0] p-3 text-sm outline-none focus:border-[#D4AF37]"
+                    >
+                      {FORMAT_FILTER_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+
+                {showDecafFilter && (
+                  <label className="block">
+                    <span className="text-[11px] uppercase tracking-widest text-gray-400 mb-2 block">Decaf</span>
+                    <select
+                      value={mobileDraftFilters.decaf}
+                      onChange={(event) => handleMobileFilterChange('decaf', event.target.value)}
+                      className="w-full border border-gray-700 bg-[#0B0C0C] text-[#F9F6F0] p-3 text-sm outline-none focus:border-[#D4AF37]"
+                    >
+                      {DECAF_FILTER_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+
+                {showBundleTypeFilter && (
+                  <label className="block">
+                    <span className="text-[11px] uppercase tracking-widest text-gray-400 mb-2 block">Bundle Type</span>
+                    <select
+                      value={mobileDraftFilters.bundleType}
+                      onChange={(event) => handleMobileFilterChange('bundleType', event.target.value)}
+                      className="w-full border border-gray-700 bg-[#0B0C0C] text-[#F9F6F0] p-3 text-sm outline-none focus:border-[#D4AF37]"
+                    >
+                      {BUNDLE_TYPE_FILTER_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 mt-6">
+                <button
+                  type="button"
+                  onClick={handleClearMobileFilters}
+                  className="border border-gray-700 text-gray-300 px-4 py-3 text-xs font-bold uppercase tracking-wider hover:border-gray-500"
+                >
+                  Clear
+                </button>
+                <button
+                  type="button"
+                  onClick={handleApplyMobileFilters}
+                  className="bg-[#D4AF37] text-[#0B0C0C] px-4 py-3 text-xs font-bold uppercase tracking-wider hover:bg-[#b5952f]"
+                >
+                  Apply
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {sortedProducts.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-16">
@@ -7710,11 +8172,11 @@ const App = () => {
 
     switch (currentView) {
       case 'home': return <HomeView openProductDetail={openProductDetail} setView={setView} />;
-      case 'shop_all': return <ShopView key="shop-all" category="all" openProductDetail={openProductDetail} />;
-      case 'shop_functional': return <ShopView key="shop-functional" category="functional" openProductDetail={openProductDetail} />;
-      case 'shop_signature': return <ShopView key="shop-signature" category="signature" openProductDetail={openProductDetail} />;
-      case 'shop_single_origin': return <ShopView key="shop-single-origin" category="single_origin" openProductDetail={openProductDetail} />;
-      case 'shop_bundles': return <ShopView key="shop-bundles" category="bundles" openProductDetail={openProductDetail} />;
+      case 'shop_all': return <ShopView key="shop-all" category="all" openProductDetail={openProductDetail} setView={setView} />;
+      case 'shop_functional': return <ShopView key="shop-functional" category="functional" openProductDetail={openProductDetail} setView={setView} />;
+      case 'shop_signature': return <ShopView key="shop-signature" category="signature" openProductDetail={openProductDetail} setView={setView} />;
+      case 'shop_single_origin': return <ShopView key="shop-single-origin" category="single_origin" openProductDetail={openProductDetail} setView={setView} />;
+      case 'shop_bundles': return <ShopView key="shop-bundles" category="bundles" openProductDetail={openProductDetail} setView={setView} />;
       case 'blog': return <BlogView openBlogPost={openBlogPost} />;
       case 'checkout': return (
         <CheckoutView
@@ -7758,7 +8220,7 @@ const App = () => {
         />
       );
       case 'subscription': return <SubscriptionView setView={setView} authUser={authState.user} />;
-      case 'product_detail': return <ShopView category="all" openProductDetail={openProductDetail} />;
+      case 'product_detail': return <ShopView category="all" openProductDetail={openProductDetail} setView={setView} />;
       case 'blog_post': return <BlogView openBlogPost={openBlogPost} />;
       
       case 'about': return (
