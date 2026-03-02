@@ -4035,14 +4035,14 @@ const CartDrawer = ({
           <div className="flex items-start justify-between gap-3">
             <div>
               <h2 id="cart-drawer-title" className="font-serif text-[1.45rem] leading-none tracking-wide">Your Ritual</h2>
-              <p className="text-[11px] text-gray-400 mt-1.5">{cartTotalQty} item{cartTotalQty === 1 ? '' : 's'}</p>
+              <p className="text-[11px] text-gray-400 mt-1.5">{cartTotalQty} unit{cartTotalQty === 1 ? '' : 's'}</p>
               {cartDisplayItems.length > 0 && (
                 <button
                   type="button"
                   onClick={clearCart}
-                  className="mt-1.5 text-[10px] uppercase tracking-widest text-gray-400 hover:text-[#D4AF37]"
+                  className="mt-1.5 text-[10px] tracking-wide text-gray-400 hover:text-[#D4AF37]"
                 >
-                  Clear
+                  Clear cart
                 </button>
               )}
             </div>
@@ -4168,7 +4168,8 @@ const CartDrawer = ({
           )}
         </div>
 
-        <div className="sticky bottom-0 shrink-0 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+12px)] bg-[#0B0C0C]/95 backdrop-blur border-t border-white/10">
+        <div className="sticky bottom-0 shrink-0 relative px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+12px)] bg-[#0B0C0C]/95 backdrop-blur border-t border-white/10">
+          <div aria-hidden="true" className="pointer-events-none absolute -top-5 left-0 right-0 h-5 bg-gradient-to-t from-[#0B0C0C]/45 to-transparent" />
           <div className="flex items-center justify-between gap-3">
             {!authUser ? (
               <button
