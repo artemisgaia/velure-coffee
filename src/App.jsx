@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { ShoppingBag, Menu, X, Coffee, Leaf, Award, Check, Trash2, Mail, MapPin, Phone, ArrowLeft, User, Share2, Link2 } from 'lucide-react';
+import { ShoppingBag, Menu, X, Coffee, Leaf, Award, Check, Mail, MapPin, Phone, ArrowLeft, User, Share2, Link2 } from 'lucide-react';
 import { supabase } from './lib/supabaseClient';
 
 // --- BRAND ASSETS & DATA ---
@@ -1777,13 +1777,112 @@ const getCheckoutPricing = (subtotal, rewardId) => {
   };
 };
 
-const getCheckoutItemsFromCart = (cart) => {
-  const itemCounts = cart.reduce((accumulator, item) => {
-    accumulator[item.id] = (accumulator[item.id] || 0) + 1;
-    return accumulator;
-  }, {});
+const clampCartQty = (value) => {
+  const parsedValue = Math.floor(Number(value) || 1);
+  return Math.max(1, Math.min(10, parsedValue));
+};
+const sanitizeBundleSelection = (value) => {
+  if (!Array.isArray(value?.slots)) return null;
+  const normalizeString = (input) => (typeof input === 'string' ? input.trim() : '');
+  const slots = value.slots
+    .map((slot) => ({
+      slotKey: normalizeString(slot?.slotKey),
+      slotLabel: normalizeString(slot?.slotLabel),
+      productId: normalizeString(slot?.productId),
+      name: normalizeString(slot?.name),
+      subtitle: normalizeString(slot?.subtitle),
+      image: normalizeString(slot?.image),
+    }))
+    .filter((slot) => slot.slotKey && slot.productId && slot.name);
+  return slots.length ? { slots } : null;
+};
+const getProductById = (productId) => {
+  const normalizedProductId = normalizeLower(productId);
+  return PRODUCTS.find((product) => product.id === normalizedProductId) || null;
+};
+const normalizeCartItems = (rawCart) => {
+  if (!Array.isArray(rawCart)) return [];
 
-  return Object.entries(itemCounts).map(([productId, quantity]) => ({ productId, quantity }));
+  const normalizedItems = [];
+  const productToIndex = new Map();
+  const upsertItem = (productIdInput, quantityInput = 1, bundleSelectionInput = null) => {
+    const productId = normalizeLower(productIdInput);
+    if (!productId || !getProductById(productId)) return;
+
+    const safeQuantity = clampCartQty(quantityInput);
+    const sanitizedBundleSelection = sanitizeBundleSelection(bundleSelectionInput);
+    const existingIndex = productToIndex.get(productId);
+
+    if (Number.isInteger(existingIndex)) {
+      const existingItem = normalizedItems[existingIndex];
+      normalizedItems[existingIndex] = {
+        ...existingItem,
+        quantity: clampCartQty(existingItem.quantity + safeQuantity),
+        ...(sanitizedBundleSelection ? { bundleSelection: sanitizedBundleSelection } : {}),
+      };
+      return;
+    }
+
+    productToIndex.set(productId, normalizedItems.length);
+    normalizedItems.push({
+      productId,
+      quantity: safeQuantity,
+      ...(sanitizedBundleSelection ? { bundleSelection: sanitizedBundleSelection } : {}),
+    });
+  };
+
+  rawCart.forEach((entry) => {
+    if (typeof entry === 'string') {
+      upsertItem(entry, 1, null);
+      return;
+    }
+
+    if (!entry || typeof entry !== 'object') {
+      return;
+    }
+
+    const productId = normalizeLower(entry.productId || entry.id);
+    if (!productId) return;
+
+    const hasQuantityValue = Number.isFinite(Number(entry.quantity ?? entry.qty));
+    const quantity = hasQuantityValue ? Number(entry.quantity ?? entry.qty) : 1;
+    const bundleSelection = sanitizeBundleSelection(entry.bundleSelection);
+    upsertItem(productId, quantity, bundleSelection);
+  });
+
+  return normalizedItems;
+};
+const getCheckoutItemsFromCart = (cartItems) => {
+  return normalizeCartItems(cartItems).map((item) => ({
+    productId: item.productId,
+    quantity: item.quantity,
+  }));
+};
+const getCartSubtotal = (cartItems) => {
+  return getCheckoutItemsFromCart(cartItems).reduce((sum, item) => {
+    const product = getProductById(item.productId);
+    if (!product) return sum;
+    return sum + (product.price * item.quantity);
+  }, 0);
+};
+const getCartTotalQuantity = (cartItems) => {
+  return getCheckoutItemsFromCart(cartItems).reduce((sum, item) => sum + item.quantity, 0);
+};
+const getCartDisplayItems = (cartItems) => {
+  const normalizedItems = normalizeCartItems(cartItems);
+  return normalizedItems
+    .map((item) => {
+      const product = getProductById(item.productId);
+      if (!product) return null;
+      return {
+        ...product,
+        productId: item.productId,
+        quantity: item.quantity,
+        lineTotal: Number((product.price * item.quantity).toFixed(2)),
+        bundleSelection: item.bundleSelection || null,
+      };
+    })
+    .filter(Boolean);
 };
 
 const getProductAmountLabel = (product) => normalizeLower(product?.nutritionSpecs?.productAmount || product?.details?.weight || '');
@@ -3826,6 +3925,10 @@ const CartDrawer = ({
   closeCart,
   cart,
   removeFromCart,
+  decrementCartItemQty,
+  incrementCartItemQty,
+  setCartItemQty,
+  clearCart,
   rewardsProfile,
   authUser,
   onRedeemReward,
@@ -3833,10 +3936,14 @@ const CartDrawer = ({
   onProceedToCheckout,
 }) => {
   const drawerRef = useRef(null);
-  const subtotal = cart.reduce((sum, item) => sum + item.price, 0);
+  const cartDisplayItems = useMemo(() => getCartDisplayItems(cart), [cart]);
+  const subtotal = useMemo(() => getCartSubtotal(cart), [cart]);
+  const cartTotalQty = useMemo(() => getCartTotalQuantity(cart), [cart]);
   const activeRewardId = authUser ? rewardsProfile.activeRewardId : null;
   const pricing = getCheckoutPricing(subtotal, activeRewardId);
   const activeReward = getRewardOffer(activeRewardId);
+  const amountToFreeShipping = Math.max(0, Number((FREE_SHIPPING_THRESHOLD - pricing.subtotal).toFixed(2)));
+  const freeShippingProgress = Math.max(0, Math.min(100, Number(((pricing.subtotal / FREE_SHIPPING_THRESHOLD) * 100).toFixed(1))));
   const [rewardStatus, setRewardStatus] = useState({ type: 'idle', message: '' });
 
   useEffect(() => {
@@ -3884,7 +3991,7 @@ const CartDrawer = ({
   }, [closeCart, isOpen]);
 
   const handleCheckout = () => {
-    if (cart.length === 0) return;
+    if (cartDisplayItems.length === 0) return;
     if (typeof onProceedToCheckout === 'function') {
       onProceedToCheckout();
     }
@@ -3914,91 +4021,161 @@ const CartDrawer = ({
         role="dialog"
         aria-modal="true"
         aria-labelledby="cart-drawer-title"
-        className={`relative w-full max-w-md bg-[#F9F6F0] h-full shadow-2xl flex flex-col motion-drawer-panel ${isOpen ? 'motion-drawer-panel-open' : 'motion-drawer-panel-closed'}`}
+        className={`relative w-full max-w-lg bg-[#0B0C0C] h-full shadow-2xl flex flex-col motion-drawer-panel ${isOpen ? 'motion-drawer-panel-open' : 'motion-drawer-panel-closed'}`}
       >
-        
-        <div className="p-6 bg-[#0B0C0C] text-[#F9F6F0] flex justify-between items-center">
-          <h2 id="cart-drawer-title" className="font-serif text-xl tracking-widest">YOUR RITUAL</h2>
-          <button type="button" onClick={closeCart} aria-label="Close cart">
-            <X size={24} />
-          </button>
+        <div className="p-5 md:p-6 border-b border-gray-800 text-[#F9F6F0]">
+          <div className="flex justify-between items-center">
+            <div>
+              <h2 id="cart-drawer-title" className="font-serif text-2xl tracking-wide">Your Ritual</h2>
+              <p className="text-xs text-gray-400 mt-1">{cartTotalQty} item{cartTotalQty === 1 ? '' : 's'} in cart</p>
+            </div>
+            <button type="button" onClick={closeCart} aria-label="Close cart" className="h-11 w-11 inline-flex items-center justify-center border border-gray-700 text-gray-300 hover:text-[#F9F6F0] hover:border-gray-500">
+              <X size={22} />
+            </button>
+          </div>
+          {cartDisplayItems.length > 0 && (
+            <button
+              type="button"
+              onClick={clearCart}
+              className="mt-4 text-xs uppercase tracking-wider text-gray-400 hover:text-[#D4AF37]"
+            >
+              Clear Cart
+            </button>
+          )}
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6">
-          {cart.length === 0 ? (
-            <p className="text-center text-gray-500 font-sans mt-10">Your cart is empty.</p>
+        <div className="flex-1 overflow-y-auto p-5 md:p-6">
+          {cartDisplayItems.length === 0 ? (
+            <div className="text-center border border-gray-800 bg-[#111212] p-8 mt-4">
+              <p className="text-[#F9F6F0] font-serif text-2xl">Cart is empty</p>
+              <p className="text-sm text-gray-400 mt-2">Add coffee products to begin your checkout.</p>
+            </div>
           ) : (
-            <div className="space-y-6">
-              {cart.map((item, index) => {
+            <div className="space-y-4">
+              {cartDisplayItems.map((item) => {
                 const bundleSelectionSlots = Array.isArray(item.bundleSelection?.slots) ? item.bundleSelection.slots : [];
                 return (
-                  <div key={`${item.id}-${index}`} className="flex gap-4 border-b border-gray-200 pb-4">
-                    <div className="w-20 h-20 bg-gray-200 overflow-hidden">
-                      {bundleSelectionSlots.length >= 2 ? (
-                        <div className="grid grid-cols-2 gap-px h-full bg-gray-300">
-                          {bundleSelectionSlots.slice(0, 2).map((slot) => (
-                            <img
-                              key={`${slot.slotKey}-${slot.productId}`}
-                              src={slot.image || DEFAULT_SHARE_IMAGE_URL}
-                              alt={`${slot.name} in bundle`}
-                              className="w-full h-full object-cover"
-                              loading="lazy"
-                              decoding="async"
-                            />
-                          ))}
-                        </div>
-                      ) : (
-                        <img src={item.images[0]} alt={`${item.name} in cart`} className="w-full h-full object-cover" loading="lazy" decoding="async" />
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex justify-between items-start">
-                        <h3 className="font-serif text-[#0B0C0C] font-bold">{item.name}</h3>
-                        <button type="button" onClick={() => removeFromCart(index)} className="text-gray-400 hover:text-red-500" aria-label={`Remove ${item.name} from cart`}>
-                          <Trash2 size={16} />
-                        </button>
+                  <article key={item.productId} className="border border-gray-800 bg-[#111212] p-4">
+                    <div className="flex gap-3">
+                      <div className="h-16 w-16 sm:h-[72px] sm:w-[72px] shrink-0 border border-gray-700 overflow-hidden bg-[#0B0C0C]">
+                        {bundleSelectionSlots.length >= 2 ? (
+                          <div className="grid grid-cols-2 gap-px h-full bg-gray-700">
+                            {bundleSelectionSlots.slice(0, 2).map((slot) => (
+                              <img
+                                key={`${item.productId}-${slot.slotKey}-${slot.productId}`}
+                                src={slot.image || DEFAULT_SHARE_IMAGE_URL}
+                                alt={`${slot.name} in ${item.name}`}
+                                className="w-full h-full object-cover"
+                                loading="lazy"
+                                decoding="async"
+                              />
+                            ))}
+                          </div>
+                        ) : (
+                          <img
+                            src={item.images?.[0] || DEFAULT_SHARE_IMAGE_URL}
+                            alt={item.name}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                            decoding="async"
+                          />
+                        )}
                       </div>
-                      <p className="text-xs text-gray-500 font-sans">{item.subtitle}</p>
-                      {bundleSelectionSlots.length > 0 && (
-                        <ul className="mt-1 space-y-0.5">
-                          {bundleSelectionSlots.map((slot) => (
-                            <li key={`${slot.slotKey}-${slot.productId}`} className="text-[11px] text-gray-500 font-sans">
-                              {slot.slotLabel}: {slot.name}
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                      <p className="text-sm font-bold text-[#0B0C0C] mt-2">${item.price.toFixed(2)}</p>
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="font-serif text-lg text-[#F9F6F0] truncate">{item.name}</p>
+                            <p className="text-[11px] uppercase tracking-wider text-gray-400 truncate">{item.subtitle}</p>
+                            <p className="text-[11px] text-gray-500 mt-1">
+                              {item.details?.roast ? `${item.details.roast} roast` : item.category === 'bundles' ? 'Bundle set' : 'Coffee'}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeFromCart(item.productId)}
+                            className="text-xs uppercase tracking-wider text-gray-500 hover:text-[#F9F6F0]"
+                          >
+                            Remove
+                          </button>
+                        </div>
+
+                        {bundleSelectionSlots.length > 0 && (
+                          <ul className="mt-2 space-y-0.5">
+                            {bundleSelectionSlots.map((slot) => (
+                              <li key={`${slot.slotKey}-${slot.productId}`} className="text-[11px] text-gray-500">
+                                {slot.slotLabel}: {slot.name}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+
+                        <div className="mt-3 flex items-center justify-between gap-3">
+                          <div className="inline-flex items-center border border-[#D4AF37]/50 bg-[#0B0C0C]">
+                            <button
+                              type="button"
+                              onClick={() => decrementCartItemQty(item.productId)}
+                              className="h-9 w-9 text-[#D4AF37] hover:bg-[#D4AF37]/10"
+                              aria-label={`Decrease quantity for ${item.name}`}
+                            >
+                              -
+                            </button>
+                            <input
+                              type="number"
+                              min={1}
+                              max={10}
+                              value={item.quantity}
+                              onChange={(event) => setCartItemQty(item.productId, Number(event.target.value))}
+                              className="h-9 w-12 bg-transparent text-center text-sm text-[#F9F6F0] border-x border-[#D4AF37]/30 outline-none"
+                              aria-label={`Set quantity for ${item.name}`}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => incrementCartItemQty(item.productId)}
+                              className="h-9 w-9 text-[#D4AF37] hover:bg-[#D4AF37]/10"
+                              aria-label={`Increase quantity for ${item.name}`}
+                            >
+                              +
+                            </button>
+                          </div>
+
+                          <div className="text-right">
+                            <p className="text-[11px] text-gray-400">${item.price.toFixed(2)} each</p>
+                            <p className="text-sm font-semibold text-[#F9F6F0]">${item.lineTotal.toFixed(2)}</p>
+                            <p className="text-[11px] text-[#D4AF37]">×{item.quantity}</p>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  </article>
                 );
               })}
             </div>
           )}
         </div>
 
-        <div className="p-6 bg-white border-t border-gray-200">
+        <div className="p-5 md:p-6 border-t border-gray-800 bg-[#0B0C0C]">
           {authUser ? (
-            <div className="mb-4 p-4 bg-[#F4F0E7] border border-[#e2d9c4]">
+            <div className="mb-4 p-4 border border-gray-800 bg-[#111212]">
               <div className="flex items-center justify-between mb-3">
-                <p className="text-xs uppercase tracking-widest text-gray-600">Rewards Wallet</p>
-                <p className="text-sm font-bold text-[#0B0C0C]">{rewardsProfile.points} pts</p>
+                <p className="text-xs uppercase tracking-widest text-gray-500">Rewards Wallet</p>
+                <p className="text-sm font-bold text-[#F9F6F0]">{rewardsProfile.points} pts</p>
               </div>
 
               {!rewardsProfile.enrolled && (
-                <p className="text-xs text-gray-600 mb-3">
-                  Join rewards from the Rewards page to unlock instant redemptions.
+                <p className="text-xs text-gray-500 mb-3">
+                  Join rewards from the Rewards page to unlock redemptions.
                 </p>
               )}
 
               {activeReward ? (
-                <div className="border border-[#D4AF37] bg-white p-3">
-                  <p className="text-xs text-gray-600 uppercase tracking-wide mb-1">Active Reward</p>
-                  <p className="text-sm font-bold text-[#0B0C0C]">{activeReward.name}</p>
+                <div className="border border-[#D4AF37]/60 bg-[#0B0C0C] p-3">
+                  <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Active Reward</p>
+                  <p className="text-sm font-bold text-[#F9F6F0]">{activeReward.name}</p>
                   <button
                     type="button"
                     onClick={handleRemoveReward}
-                    className="mt-2 text-xs font-bold uppercase tracking-wider text-[#0B0C0C] underline underline-offset-2"
+                    className="mt-2 text-xs font-bold uppercase tracking-wider text-[#D4AF37] hover:text-[#F9F6F0]"
                   >
                     Remove Reward
                   </button>
@@ -4010,8 +4187,8 @@ const CartDrawer = ({
                       key={offer.id}
                       type="button"
                       onClick={() => handleApplyReward(offer.id)}
-                      disabled={!rewardsProfile.enrolled || rewardsProfile.points < offer.pointsCost || cart.length === 0}
-                      className="text-left border border-gray-300 p-3 text-xs uppercase tracking-wide font-bold text-[#0B0C0C] enabled:hover:border-[#D4AF37] disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled={!rewardsProfile.enrolled || rewardsProfile.points < offer.pointsCost || cartDisplayItems.length === 0}
+                      className="text-left border border-gray-700 px-3 py-2 text-[11px] uppercase tracking-wide font-bold text-[#F9F6F0] enabled:hover:border-[#D4AF37] disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {offer.name} - {offer.pointsCost} pts
                     </button>
@@ -4020,53 +4197,78 @@ const CartDrawer = ({
               )}
 
               {rewardStatus.message && (
-                <p className={`mt-3 text-xs ${rewardStatus.type === 'error' ? 'text-red-600' : 'text-green-700'}`} role="status">
+                <p className={`mt-3 text-xs ${rewardStatus.type === 'error' ? 'text-red-400' : 'text-green-400'}`} role="status">
                   {rewardStatus.message}
                 </p>
               )}
             </div>
           ) : (
-            <div className="mb-4 p-4 bg-[#F4F0E7] border border-[#e2d9c4]">
-              <p className="text-xs uppercase tracking-widest text-gray-600 mb-1">Guest Checkout</p>
-              <p className="text-xs text-gray-700">
+            <div className="mb-4 p-4 border border-gray-800 bg-[#111212]">
+              <p className="text-xs uppercase tracking-widest text-gray-500 mb-1">Guest Checkout</p>
+              <p className="text-xs text-gray-400">
                 Rewards are account-linked. Sign in at checkout to save this order and unlock rewards.
               </p>
             </div>
           )}
 
-          <div className="flex justify-between items-center mb-4">
-            <span className="font-sans text-gray-600">Subtotal</span>
-            <span className="font-serif text-xl font-bold text-[#0B0C0C]">${pricing.subtotal.toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between items-center mb-2">
-            <span className="font-sans text-gray-600">Shipping</span>
-            <span className="font-sans font-semibold text-[#0B0C0C]">${pricing.shipping.toFixed(2)}</span>
-          </div>
-          {pricing.rewardDiscount > 0 && (
-            <div className="flex justify-between items-center mb-2">
-              <span className="font-sans text-gray-600">Rewards Discount</span>
-              <span className="font-sans font-semibold text-green-700">-${pricing.rewardDiscount.toFixed(2)}</span>
+          <div className="mb-4">
+            <div className="flex justify-between items-center text-xs text-gray-400">
+              <span>
+                {pricing.subtotal >= FREE_SHIPPING_THRESHOLD
+                  ? 'Free shipping unlocked'
+                  : `$${amountToFreeShipping.toFixed(2)} away from free shipping`}
+              </span>
+              <span>$50 goal</span>
             </div>
-          )}
-          <div className="flex justify-between items-center mb-4 border-t border-gray-200 pt-3">
-            <span className="font-sans text-gray-700 uppercase tracking-wide text-xs">Total</span>
-            <span className="font-serif text-2xl font-bold text-[#0B0C0C]">${pricing.total.toFixed(2)}</span>
+            <div className="mt-2 h-2 border border-gray-800 bg-[#111212]">
+              <div className="h-full bg-[#D4AF37] transition-all duration-200" style={{ width: `${freeShippingProgress}%` }}></div>
+            </div>
           </div>
-          <button 
+
+          <div className="space-y-2 mb-5">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-400">Subtotal</span>
+              <span className="text-base font-semibold text-[#F9F6F0]">${pricing.subtotal.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-400">Shipping</span>
+              <span className="text-sm font-semibold text-[#F9F6F0]">
+                {pricing.shipping === 0 ? 'Free shipping' : `$${pricing.shipping.toFixed(2)}`}
+              </span>
+            </div>
+            {pricing.rewardDiscount > 0 && (
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-400">Rewards Discount</span>
+                <span className="text-sm font-semibold text-green-400">-${pricing.rewardDiscount.toFixed(2)}</span>
+              </div>
+            )}
+            <div className="flex justify-between items-center border-t border-gray-800 pt-3">
+              <span className="text-xs uppercase tracking-widest text-gray-500">Total</span>
+              <span className="font-serif text-2xl text-[#F9F6F0]">${pricing.total.toFixed(2)}</span>
+            </div>
+          </div>
+
+          <button
             type="button"
             onClick={handleCheckout}
-            disabled={cart.length === 0}
-            className={`w-full bg-[#0B0C0C] text-[#D4AF37] py-4 font-sans font-bold tracking-widest transition-colors ${(cart.length === 0) ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#222]'}`}
+            disabled={cartDisplayItems.length === 0}
+            className={`w-full bg-[#D4AF37] text-[#0B0C0C] py-3 text-xs font-bold uppercase tracking-wider ${cartDisplayItems.length === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#b5952f]'}`}
           >
-            {`CONTINUE TO CHECKOUT — $${pricing.total.toFixed(2)}`}
+            Checkout
           </button>
-          <p className="text-xs text-center text-gray-400 mt-3">
+          <button
+            type="button"
+            onClick={closeCart}
+            className="mt-3 w-full border border-gray-700 text-gray-300 py-3 text-xs font-bold uppercase tracking-wider hover:border-[#D4AF37] hover:text-[#F9F6F0]"
+          >
+            Continue Shopping
+          </button>
+          <p className="text-xs text-center text-gray-500 mt-3">
             {authUser
-              ? `Processed securely by Stripe Checkout. Earn ${Math.floor((pricing.subtotal - pricing.rewardDiscount) * REWARDS_POINTS_PER_DOLLAR)} pts on this order.`
-              : 'Processed securely by Stripe Checkout.'}
+              ? `Secure Stripe checkout. Earn ${Math.floor((pricing.subtotal - pricing.rewardDiscount) * REWARDS_POINTS_PER_DOLLAR)} pts on this order.`
+              : 'Secure Stripe checkout.'}
           </p>
         </div>
-
       </div>
     </div>
   );
@@ -4080,7 +4282,8 @@ const CheckoutView = ({
   onOpenCart,
   onCheckoutSuccess,
 }) => {
-  const subtotal = cart.reduce((sum, item) => sum + item.price, 0);
+  const subtotal = getCartSubtotal(cart);
+  const totalCartQuantity = getCartTotalQuantity(cart);
   const activeRewardId = authUser ? rewardsProfile.activeRewardId : null;
   const pricing = getCheckoutPricing(subtotal, activeRewardId);
   const [customerEmail, setCustomerEmail] = useState(authUser?.email || rewardsProfile.email || '');
@@ -4094,7 +4297,7 @@ const CheckoutView = ({
   const embeddedContainerRef = useRef(null);
   const embeddedCheckoutRef = useRef(null);
   const pendingCheckoutPayloadRef = useRef(null);
-  const checkoutMetricsRef = useRef({ total: pricing.total, itemCount: cart.length });
+  const checkoutMetricsRef = useRef({ total: pricing.total, itemCount: totalCartQuantity });
   const hasProcessedCheckoutRef = useRef(false);
   const sessionRequestKeyRef = useRef('');
 
@@ -4118,9 +4321,9 @@ const CheckoutView = ({
   useEffect(() => {
     checkoutMetricsRef.current = {
       total: pricing.total,
-      itemCount: cart.length,
+      itemCount: totalCartQuantity,
     };
-  }, [cart.length, pricing.total]);
+  }, [pricing.total, totalCartQuantity]);
 
   useEffect(() => {
     if (cart.length !== 0) return;
@@ -4312,7 +4515,7 @@ const CheckoutView = ({
     trackEvent('checkout_submit', {
       currency: 'USD',
       value: Number(pricing.total.toFixed(2)),
-      item_count: cart.length,
+      item_count: totalCartQuantity,
       reward_id: activeRewardId || undefined,
     });
 
@@ -4367,6 +4570,7 @@ const CheckoutView = ({
     isEmbeddedBooting,
     isSubmitting,
     pricing.total,
+    totalCartQuantity,
     activeRewardId,
   ]);
 
@@ -7613,7 +7817,8 @@ const App = () => {
     skipNextCartSaveRef.current = true;
     try {
       const savedCart = localStorage.getItem(cartStorageKey);
-      setCart(savedCart ? JSON.parse(savedCart) : []);
+      const parsedCart = savedCart ? JSON.parse(savedCart) : [];
+      setCart(normalizeCartItems(parsedCart));
     } catch (error) {
       console.error('Failed to load cart', error);
       setCart([]);
@@ -7626,7 +7831,7 @@ const App = () => {
       return;
     }
     try {
-      localStorage.setItem(cartStorageKey, JSON.stringify(cart));
+      localStorage.setItem(cartStorageKey, JSON.stringify(normalizeCartItems(cart)));
     } catch (error) {
       console.error('Failed to save cart', error);
     }
@@ -8067,36 +8272,34 @@ const App = () => {
   }, [currentView, selectedBlogPost, selectedProduct]);
 
   const addToCart = (product, quantity = 1, options = {}) => {
-    const safeQuantity = Math.max(1, Math.min(10, Math.floor(Number(quantity) || 1)));
-    const sanitize = (value) => (typeof value === 'string' ? value.trim() : '');
-    const normalizedBundleSelection = Array.isArray(options?.bundleSelection?.slots)
-      ? {
-          slots: options.bundleSelection.slots
-            .map((slot) => ({
-              slotKey: sanitize(slot?.slotKey),
-              slotLabel: sanitize(slot?.slotLabel),
-              productId: sanitize(slot?.productId),
-              name: sanitize(slot?.name),
-              subtitle: sanitize(slot?.subtitle),
-              image: sanitize(slot?.image),
-            }))
-            .filter((slot) => slot.slotKey && slot.productId && slot.name),
-        }
-      : null;
+    const safeQuantity = clampCartQty(quantity);
+    const normalizedBundleSelection = sanitizeBundleSelection(options?.bundleSelection);
 
-    setCart((previousCart) => [
-      ...previousCart,
-      ...Array.from({ length: safeQuantity }, () => ({
-        ...product,
-        ...(normalizedBundleSelection?.slots?.length
-          ? {
-              bundleSelection: {
-                slots: normalizedBundleSelection.slots.map((slot) => ({ ...slot })),
-              },
-            }
-          : {}),
-      })),
-    ]);
+    setCart((previousCart) => {
+      const normalizedItems = normalizeCartItems(previousCart);
+      const existingIndex = normalizedItems.findIndex((item) => item.productId === product.id);
+
+      if (existingIndex === -1) {
+        return [
+          ...normalizedItems,
+          {
+            productId: product.id,
+            quantity: safeQuantity,
+            ...(normalizedBundleSelection ? { bundleSelection: normalizedBundleSelection } : {}),
+          },
+        ];
+      }
+
+      const updatedItems = [...normalizedItems];
+      const existingItem = updatedItems[existingIndex];
+      updatedItems[existingIndex] = {
+        ...existingItem,
+        quantity: clampCartQty(existingItem.quantity + safeQuantity),
+        ...(normalizedBundleSelection ? { bundleSelection: normalizedBundleSelection } : {}),
+      };
+      return updatedItems;
+    });
+
     openCart();
     trackEvent('add_to_cart', {
       currency: 'USD',
@@ -8108,35 +8311,85 @@ const App = () => {
     });
   };
 
-  const removeFromCart = (index) => {
+  const setCartItemQty = useCallback((productId, quantity) => {
+    const normalizedProductId = normalizeLower(productId);
     setCart((previousCart) => {
-      const newCart = [...previousCart];
-      const [removedItem] = newCart.splice(index, 1);
-
-      if (removedItem) {
-        trackEvent('remove_from_cart', {
-          currency: 'USD',
-          value: Number(removedItem.price.toFixed(2)),
-          item_id: removedItem.id,
-          item_name: removedItem.name,
-        });
-      }
-
-      return newCart;
+      const normalizedItems = normalizeCartItems(previousCart);
+      const nextQty = clampCartQty(quantity);
+      return normalizedItems.map((item) => {
+        if (item.productId !== normalizedProductId) {
+          return item;
+        }
+        return { ...item, quantity: nextQty };
+      });
     });
-  };
+  }, []);
+
+  const incrementCartItemQty = useCallback((productId) => {
+    setCart((previousCart) => {
+      const normalizedItems = normalizeCartItems(previousCart);
+      return normalizedItems.map((item) => {
+        if (item.productId !== normalizeLower(productId)) {
+          return item;
+        }
+        return { ...item, quantity: clampCartQty(item.quantity + 1) };
+      });
+    });
+  }, []);
+
+  const removeFromCart = useCallback((productId) => {
+    const normalizedProductId = normalizeLower(productId);
+    const removedProduct = getProductById(normalizedProductId);
+
+    setCart((previousCart) => {
+      return normalizeCartItems(previousCart).filter((item) => item.productId !== normalizedProductId);
+    });
+
+    if (removedProduct) {
+      trackEvent('remove_from_cart', {
+        currency: 'USD',
+        value: Number(removedProduct.price.toFixed(2)),
+        item_id: removedProduct.id,
+        item_name: removedProduct.name,
+      });
+    }
+  }, []);
+
+  const decrementCartItemQty = useCallback((productId) => {
+    const normalizedProductId = normalizeLower(productId);
+    setCart((previousCart) => {
+      const normalizedItems = normalizeCartItems(previousCart);
+      return normalizedItems.reduce((nextItems, item) => {
+        if (item.productId !== normalizedProductId) {
+          nextItems.push(item);
+          return nextItems;
+        }
+
+        const nextQty = item.quantity - 1;
+        if (nextQty > 0) {
+          nextItems.push({ ...item, quantity: nextQty });
+        }
+        return nextItems;
+      }, []);
+    });
+  }, []);
+
+  const clearCart = useCallback(() => {
+    setCart([]);
+  }, []);
 
   const proceedToCheckout = useCallback(() => {
     if (cart.length === 0) return;
 
-    const subtotal = cart.reduce((sum, item) => sum + item.price, 0);
+    const subtotal = getCartSubtotal(cart);
+    const totalQuantity = getCartTotalQuantity(cart);
     const activeRewardId = authState.user ? rewardsProfile.activeRewardId : null;
     const pricing = getCheckoutPricing(subtotal, activeRewardId);
 
     trackEvent('begin_checkout', {
       currency: 'USD',
       value: Number(pricing.total.toFixed(2)),
-      item_count: cart.length,
+      item_count: totalQuantity,
       reward_id: activeRewardId || undefined,
     });
 
@@ -8613,6 +8866,8 @@ const App = () => {
     });
   }, [authState.user?.id]);
 
+  const cartCount = getCartTotalQuantity(cart);
+
   // --- CONTENT MAPPING ---
   
   const renderView = () => {
@@ -8624,7 +8879,7 @@ const App = () => {
           addToCart={addToCart} 
           onBack={() => setView('shop_all')}
           isCartOpen={isCartOpen}
-          isInCart={cart.some((item) => item.id === selectedProduct.id)}
+          isInCart={cart.some((item) => item.productId === selectedProduct.id)}
           onShareProduct={handleShareProduct}
           onCopyProductLink={handleCopyProductLink}
           authUser={authState.user}
@@ -8748,7 +9003,7 @@ const App = () => {
 
       <Navigation
         currentView={currentView}
-        cartCount={cart.length}
+        cartCount={cartCount}
         setView={setView}
         toggleCart={openCart}
         authUser={authState.user}
@@ -8773,6 +9028,10 @@ const App = () => {
         closeCart={closeCart} 
         cart={cart} 
         removeFromCart={removeFromCart}
+        decrementCartItemQty={decrementCartItemQty}
+        incrementCartItemQty={incrementCartItemQty}
+        setCartItemQty={setCartItemQty}
+        clearCart={clearCart}
         rewardsProfile={rewardsProfile}
         authUser={authState.user}
         onRedeemReward={redeemReward}

@@ -707,9 +707,11 @@ const parseCartStorage = () => {
 const aggregateLineItems = (rawItems) => {
   const quantities = new Map();
   for (const item of rawItems) {
-    const productId = normalizeLower(item?.id);
+    const productId = normalizeLower(item?.productId || item?.id || item);
     if (!PRODUCT_CATALOG[productId]) continue;
-    quantities.set(productId, (quantities.get(productId) || 0) + 1);
+    const parsedQuantity = Number(item?.quantity ?? item?.qty ?? 1);
+    const quantity = Number.isFinite(parsedQuantity) ? Math.max(1, Math.min(20, Math.floor(parsedQuantity))) : 1;
+    quantities.set(productId, (quantities.get(productId) || 0) + quantity);
   }
 
   return Array.from(quantities.entries()).map(([productId, quantity]) => ({ productId, quantity }));
