@@ -3945,6 +3945,12 @@ const CartDrawer = ({
   const amountToFreeShipping = Math.max(0, Number((FREE_SHIPPING_THRESHOLD - pricing.subtotal).toFixed(2)));
   const freeShippingProgress = Math.max(0, Math.min(100, Number(((pricing.subtotal / FREE_SHIPPING_THRESHOLD) * 100).toFixed(1))));
   const [rewardStatus, setRewardStatus] = useState({ type: 'idle', message: '' });
+  const [isGuestInfoExpanded, setIsGuestInfoExpanded] = useState(false);
+  const [isRewardsExpanded, setIsRewardsExpanded] = useState(false);
+  const handleCloseCart = useCallback(() => {
+    setIsGuestInfoExpanded(false);
+    closeCart();
+  }, [closeCart]);
 
   useEffect(() => {
     if (!isOpen) return undefined;
@@ -3962,7 +3968,7 @@ const CartDrawer = ({
 
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') {
-        closeCart();
+        handleCloseCart();
         return;
       }
 
@@ -3988,10 +3994,11 @@ const CartDrawer = ({
         previousActiveElement.focus();
       }
     };
-  }, [closeCart, isOpen]);
+  }, [handleCloseCart, isOpen]);
 
   const handleCheckout = () => {
     if (cartDisplayItems.length === 0) return;
+    setIsGuestInfoExpanded(false);
     if (typeof onProceedToCheckout === 'function') {
       onProceedToCheckout();
     }
@@ -4015,21 +4022,21 @@ const CartDrawer = ({
 
   return (
     <div className={`fixed inset-0 z-[60] flex justify-end motion-overlay ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
-      <button type="button" className={`absolute inset-0 bg-black/50 motion-backdrop ${isOpen ? 'opacity-100' : 'opacity-0'}`} onClick={closeCart} aria-label="Close cart drawer" />
+      <button type="button" className={`absolute inset-0 bg-black/50 motion-backdrop ${isOpen ? 'opacity-100' : 'opacity-0'}`} onClick={handleCloseCart} aria-label="Close cart drawer" />
       <div
         ref={drawerRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="cart-drawer-title"
-        className={`relative w-full max-w-lg bg-[#0B0C0C] h-full shadow-2xl flex flex-col motion-drawer-panel ${isOpen ? 'motion-drawer-panel-open' : 'motion-drawer-panel-closed'}`}
+        className={`relative w-full max-w-lg bg-[#0B0C0C] h-[100svh] shadow-2xl flex flex-col motion-drawer-panel ${isOpen ? 'motion-drawer-panel-open' : 'motion-drawer-panel-closed'}`}
       >
-        <div className="p-5 md:p-6 border-b border-gray-800 text-[#F9F6F0]">
+        <div className="px-4 md:px-5 py-4 border-b border-white/10 text-[#F9F6F0]">
           <div className="flex justify-between items-center">
             <div>
               <h2 id="cart-drawer-title" className="font-serif text-2xl tracking-wide">Your Ritual</h2>
               <p className="text-xs text-gray-400 mt-1">{cartTotalQty} item{cartTotalQty === 1 ? '' : 's'} in cart</p>
             </div>
-            <button type="button" onClick={closeCart} aria-label="Close cart" className="h-11 w-11 inline-flex items-center justify-center border border-gray-700 text-gray-300 hover:text-[#F9F6F0] hover:border-gray-500">
+            <button type="button" onClick={handleCloseCart} aria-label="Close cart" className="h-11 w-11 inline-flex items-center justify-center border border-gray-700 text-gray-300 hover:text-[#F9F6F0] hover:border-gray-500">
               <X size={22} />
             </button>
           </div>
@@ -4044,20 +4051,20 @@ const CartDrawer = ({
           )}
         </div>
 
-        <div className="flex-1 overflow-y-auto p-5 md:p-6">
+        <div className="flex-1 overflow-y-auto px-4 pb-6">
           {cartDisplayItems.length === 0 ? (
-            <div className="text-center border border-gray-800 bg-[#111212] p-8 mt-4">
+            <div className="text-center border border-white/10 bg-[#111212] p-8 mt-4">
               <p className="text-[#F9F6F0] font-serif text-2xl">Cart is empty</p>
               <p className="text-sm text-gray-400 mt-2">Add coffee products to begin your checkout.</p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="divide-y divide-white/10">
               {cartDisplayItems.map((item) => {
                 const bundleSelectionSlots = Array.isArray(item.bundleSelection?.slots) ? item.bundleSelection.slots : [];
                 return (
-                  <article key={item.productId} className="border border-gray-800 bg-[#111212] p-4">
+                  <article key={item.productId} className="py-4">
                     <div className="flex gap-3">
-                      <div className="h-16 w-16 sm:h-[72px] sm:w-[72px] shrink-0 border border-gray-700 overflow-hidden bg-[#0B0C0C]">
+                      <div className="h-[72px] w-[72px] shrink-0 border border-white/10 overflow-hidden bg-[#101111]">
                         {bundleSelectionSlots.length >= 2 ? (
                           <div className="grid grid-cols-2 gap-px h-full bg-gray-700">
                             {bundleSelectionSlots.slice(0, 2).map((slot) => (
@@ -4154,64 +4161,88 @@ const CartDrawer = ({
           )}
         </div>
 
-        <div className="p-5 md:p-6 border-t border-gray-800 bg-[#0B0C0C]">
+        <div className="sticky bottom-0 px-4 pt-4 pb-[calc(16px+env(safe-area-inset-bottom))] bg-[#0B0C0C]/95 backdrop-blur border-t border-white/10">
           {authUser ? (
-            <div className="mb-4 p-4 border border-gray-800 bg-[#111212]">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-xs uppercase tracking-widest text-gray-500">Rewards Wallet</p>
-                <p className="text-sm font-bold text-[#F9F6F0]">{rewardsProfile.points} pts</p>
+            <div className="mb-3 border border-white/10 bg-white/[0.02] px-3 py-2.5">
+              <div className="flex items-center justify-between">
+                <p className="text-[11px] uppercase tracking-widest text-gray-500">Rewards Wallet</p>
+                <p className="text-xs font-bold text-[#F9F6F0]">{rewardsProfile.points} pts</p>
               </div>
 
-              {!rewardsProfile.enrolled && (
-                <p className="text-xs text-gray-500 mb-3">
-                  Join rewards from the Rewards page to unlock redemptions.
-                </p>
-              )}
-
               {activeReward ? (
-                <div className="border border-[#D4AF37]/60 bg-[#0B0C0C] p-3">
-                  <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Active Reward</p>
-                  <p className="text-sm font-bold text-[#F9F6F0]">{activeReward.name}</p>
+                <div className="mt-2 flex items-center justify-between gap-3">
+                  <p className="text-xs text-gray-300 truncate">Active: {activeReward.name}</p>
                   <button
                     type="button"
                     onClick={handleRemoveReward}
-                    className="mt-2 text-xs font-bold uppercase tracking-wider text-[#D4AF37] hover:text-[#F9F6F0]"
+                    className="shrink-0 text-[11px] font-bold uppercase tracking-wider text-[#D4AF37] hover:text-[#F9F6F0]"
                   >
                     Remove Reward
                   </button>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 gap-2">
-                  {REWARD_OFFERS.map((offer) => (
-                    <button
-                      key={offer.id}
-                      type="button"
-                      onClick={() => handleApplyReward(offer.id)}
-                      disabled={!rewardsProfile.enrolled || rewardsProfile.points < offer.pointsCost || cartDisplayItems.length === 0}
-                      className="text-left border border-gray-700 px-3 py-2 text-[11px] uppercase tracking-wide font-bold text-[#F9F6F0] enabled:hover:border-[#D4AF37] disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {offer.name} - {offer.pointsCost} pts
-                    </button>
-                  ))}
-                </div>
+                <>
+                  {!rewardsProfile.enrolled && (
+                    <p className="mt-1 text-[11px] text-gray-500">
+                      Join rewards from the Rewards page to unlock redemptions.
+                    </p>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setIsRewardsExpanded((previous) => !previous)}
+                    className="mt-2 text-[11px] uppercase tracking-wider text-gray-400 hover:text-[#D4AF37]"
+                    aria-expanded={isRewardsExpanded}
+                  >
+                    {isRewardsExpanded ? 'Hide Rewards' : 'Apply Rewards'}
+                  </button>
+                  {isRewardsExpanded && (
+                    <div className="mt-2 grid grid-cols-1 gap-2">
+                      {REWARD_OFFERS.map((offer) => (
+                        <button
+                          key={offer.id}
+                          type="button"
+                          onClick={() => handleApplyReward(offer.id)}
+                          disabled={!rewardsProfile.enrolled || rewardsProfile.points < offer.pointsCost || cartDisplayItems.length === 0}
+                          className="text-left border border-gray-700 px-3 py-2 text-[11px] uppercase tracking-wide font-bold text-[#F9F6F0] enabled:hover:border-[#D4AF37] disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {offer.name} - {offer.pointsCost} pts
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </>
               )}
 
               {rewardStatus.message && (
-                <p className={`mt-3 text-xs ${rewardStatus.type === 'error' ? 'text-red-400' : 'text-green-400'}`} role="status">
+                <p className={`mt-2 text-xs ${rewardStatus.type === 'error' ? 'text-red-400' : 'text-green-400'}`} role="status">
                   {rewardStatus.message}
                 </p>
               )}
             </div>
           ) : (
-            <div className="mb-4 p-4 border border-gray-800 bg-[#111212]">
-              <p className="text-xs uppercase tracking-widest text-gray-500 mb-1">Guest Checkout</p>
-              <p className="text-xs text-gray-400">
-                Rewards are account-linked. Sign in at checkout to save this order and unlock rewards.
+            <div className="mb-3">
+              <p className="text-[11px] text-[#F9F6F0]/70">
+                Prefer a saved ritual? Sign in for rewards and order history.
               </p>
+              <button
+                type="button"
+                onClick={() => setIsGuestInfoExpanded((previous) => !previous)}
+                className="mt-1 text-[11px] uppercase tracking-wider text-[#D4AF37] hover:text-[#F9F6F0]"
+                aria-expanded={isGuestInfoExpanded}
+              >
+                {isGuestInfoExpanded ? 'Less' : 'Learn more'}
+              </button>
+              {isGuestInfoExpanded && (
+                <p className="mt-1 text-[11px] text-[#F9F6F0]/60">
+                  Sign in to link rewards and keep your ritual on record.
+                  <br />
+                  You can still checkout as a guest.
+                </p>
+              )}
             </div>
           )}
 
-          <div className="mb-4">
+          <div className="mb-3">
             <div className="flex justify-between items-center text-xs text-gray-400">
               <span>
                 {pricing.subtotal >= FREE_SHIPPING_THRESHOLD
@@ -4225,7 +4256,7 @@ const CartDrawer = ({
             </div>
           </div>
 
-          <div className="space-y-2 mb-5">
+          <div className="space-y-2 mb-4">
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-400">Subtotal</span>
               <span className="text-base font-semibold text-[#F9F6F0]">${pricing.subtotal.toFixed(2)}</span>
@@ -4254,14 +4285,14 @@ const CartDrawer = ({
             disabled={cartDisplayItems.length === 0}
             className={`w-full bg-[#D4AF37] text-[#0B0C0C] py-3 text-xs font-bold uppercase tracking-wider ${cartDisplayItems.length === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#b5952f]'}`}
           >
-            Checkout
+            CHECKOUT
           </button>
           <button
             type="button"
-            onClick={closeCart}
+            onClick={handleCloseCart}
             className="mt-3 w-full border border-gray-700 text-gray-300 py-3 text-xs font-bold uppercase tracking-wider hover:border-[#D4AF37] hover:text-[#F9F6F0]"
           >
-            Continue Shopping
+            CONTINUE SHOPPING
           </button>
           <p className="text-xs text-center text-gray-500 mt-3">
             {authUser
