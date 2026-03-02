@@ -5108,25 +5108,29 @@ const ShopView = ({ category, openProductDetail, setView }) => {
         <h1 className="text-4xl md:text-5xl font-serif text-[#F9F6F0] mb-4 motion-enter">{collectionTitle}</h1>
         <p className="text-gray-400 font-sans mb-8 max-w-2xl motion-enter">Explore our range of meticulously sourced and roasted coffees, designed to elevate your daily ritual.</p>
 
-        <div className="flex flex-wrap gap-2 mb-6 motion-enter" aria-label="Collection switcher">
-          {seriesChips.map((chip) => {
-            const isActive = chip.view === currentCollectionView;
-            return (
-              <button
-                key={chip.view}
-                type="button"
-                onClick={() => setView(chip.view)}
-                className={`px-4 py-2 text-xs font-bold uppercase tracking-wider border ${
-                  isActive
-                    ? 'border-[#D4AF37] bg-[#D4AF37] text-[#0B0C0C]'
-                    : 'border-gray-700 text-[#F9F6F0] hover:border-[#D4AF37] hover:text-[#D4AF37]'
-                }`}
-                aria-pressed={isActive}
-              >
-                {chip.label}
-              </button>
-            );
-          })}
+        <div className="mb-6 motion-enter" aria-label="Collection switcher">
+          <div className="scroll-fade" style={{ '--scroll-fade-color': '#0B0C0C' }}>
+            <div className="flex gap-2 overflow-x-auto no-scrollbar whitespace-nowrap py-2 px-4 -mx-4 snap-row md:flex-wrap md:overflow-visible md:whitespace-normal md:px-0 md:mx-0 md:snap-none">
+              {seriesChips.map((chip) => {
+                const isActive = chip.view === currentCollectionView;
+                return (
+                  <button
+                    key={chip.view}
+                    type="button"
+                    onClick={() => setView(chip.view)}
+                    className={`snap-item inline-flex shrink-0 px-4 py-2 text-xs font-bold uppercase tracking-wider border ${
+                      isActive
+                        ? 'border-[#D4AF37] bg-[#D4AF37] text-[#0B0C0C]'
+                        : 'border-gray-700 text-[#F9F6F0] hover:border-[#D4AF37] hover:text-[#D4AF37]'
+                    }`}
+                    aria-pressed={isActive}
+                  >
+                    {chip.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
 
         <div className="mb-10 motion-enter">
@@ -5400,11 +5404,36 @@ const ShopView = ({ category, openProductDetail, setView }) => {
 const BlogView = ({ openBlogPost }) => {
   const [selectedTag, setSelectedTag] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isTagListExpanded, setIsTagListExpanded] = useState(false);
 
   const availableTags = useMemo(() => {
-    const tags = BLOG_POSTS.flatMap((post) => (Array.isArray(post.tags) ? post.tags : []));
-    return [...new Set(tags.filter(Boolean))];
+    const tagCounts = new Map();
+    BLOG_POSTS.forEach((post) => {
+      const postTags = Array.isArray(post.tags) ? post.tags : [];
+      postTags.forEach((tag) => {
+        if (!tag) return;
+        tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1);
+      });
+    });
+    return Array.from(tagCounts.entries())
+      .sort((tagA, tagB) => tagB[1] - tagA[1] || tagA[0].localeCompare(tagB[0]))
+      .map(([tag]) => tag);
   }, []);
+  const topTags = useMemo(() => {
+    const baseTopTags = availableTags.slice(0, 6);
+    if (
+      selectedTag !== 'all'
+      && availableTags.includes(selectedTag)
+      && !baseTopTags.includes(selectedTag)
+    ) {
+      return [...baseTopTags.slice(0, 5), selectedTag];
+    }
+    return baseTopTags;
+  }, [availableTags, selectedTag]);
+  const remainingTags = useMemo(
+    () => availableTags.filter((tag) => !topTags.includes(tag)),
+    [availableTags, topTags],
+  );
 
   const filteredPosts = useMemo(() => {
     const normalizedQuery = normalizeLower(searchQuery);
@@ -5437,26 +5466,55 @@ const BlogView = ({ openBlogPost }) => {
         </p>
 
         <div className="bg-white border border-gray-200 p-4 md:p-5 mb-8">
-          <div className="flex flex-wrap gap-2 mb-4">
-            <button
-              type="button"
-              onClick={() => setSelectedTag('all')}
-              className={`px-3 py-2 text-[11px] uppercase tracking-wider border ${selectedTag === 'all' ? 'border-[#D4AF37] bg-[#0B0C0C] text-[#D4AF37]' : 'border-gray-300 text-gray-600 hover:border-[#D4AF37] hover:text-[#0B0C0C]'}`}
-              aria-pressed={selectedTag === 'all'}
-            >
-              All
-            </button>
-            {availableTags.map((tag) => (
-              <button
-                key={tag}
-                type="button"
-                onClick={() => setSelectedTag(tag)}
-                className={`px-3 py-2 text-[11px] uppercase tracking-wider border ${selectedTag === tag ? 'border-[#D4AF37] bg-[#0B0C0C] text-[#D4AF37]' : 'border-gray-300 text-gray-600 hover:border-[#D4AF37] hover:text-[#0B0C0C]'}`}
-                aria-pressed={selectedTag === tag}
-              >
-                {tag}
-              </button>
-            ))}
+          <div className="mb-4">
+            <div className="scroll-fade" style={{ '--scroll-fade-color': '#FFFFFF' }}>
+              <div className="flex gap-2 overflow-x-auto no-scrollbar whitespace-nowrap py-2 px-4 -mx-4 snap-row" aria-label="Journal tag filters">
+                <button
+                  type="button"
+                  onClick={() => setSelectedTag('all')}
+                  className={`snap-item inline-flex shrink-0 px-3 py-2 text-[11px] uppercase tracking-wider border ${selectedTag === 'all' ? 'border-[#D4AF37] bg-[#0B0C0C] text-[#D4AF37]' : 'border-gray-300 text-gray-600 hover:border-[#D4AF37] hover:text-[#0B0C0C]'}`}
+                  aria-pressed={selectedTag === 'all'}
+                >
+                  All
+                </button>
+                {topTags.map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => setSelectedTag(tag)}
+                    className={`snap-item inline-flex shrink-0 px-3 py-2 text-[11px] uppercase tracking-wider border ${selectedTag === tag ? 'border-[#D4AF37] bg-[#0B0C0C] text-[#D4AF37]' : 'border-gray-300 text-gray-600 hover:border-[#D4AF37] hover:text-[#0B0C0C]'}`}
+                    aria-pressed={selectedTag === tag}
+                  >
+                    {tag}
+                  </button>
+                ))}
+                {remainingTags.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setIsTagListExpanded((previous) => !previous)}
+                    className="snap-item inline-flex shrink-0 px-3 py-2 text-[11px] uppercase tracking-wider border border-gray-300 text-gray-600 hover:border-[#D4AF37] hover:text-[#0B0C0C]"
+                    aria-expanded={isTagListExpanded}
+                  >
+                    {isTagListExpanded ? 'Less' : 'More'}
+                  </button>
+                )}
+              </div>
+            </div>
+            {isTagListExpanded && remainingTags.length > 0 && (
+              <div className="flex flex-wrap gap-2 pt-2">
+                {remainingTags.map((tag) => (
+                  <button
+                    key={`extra-${tag}`}
+                    type="button"
+                    onClick={() => setSelectedTag(tag)}
+                    className={`px-3 py-2 text-[11px] uppercase tracking-wider border ${selectedTag === tag ? 'border-[#D4AF37] bg-[#0B0C0C] text-[#D4AF37]' : 'border-gray-300 text-gray-600 hover:border-[#D4AF37] hover:text-[#0B0C0C]'}`}
+                    aria-pressed={selectedTag === tag}
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
             <input

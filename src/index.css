@@ -8,6 +8,7 @@
     --motion-base: 240ms;
     --motion-slow: 320ms;
     --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+    --scroll-fade-color: #0B0C0C;
 }
 
 html, body, #root {
@@ -39,6 +40,56 @@ button:not(:disabled):not([aria-disabled="true"]):active {
 button:focus-visible {
     outline: none;
     box-shadow: 0 0 0 1px rgba(11, 12, 12, 0.95), 0 0 0 2px #D4AF37;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.snap-row {
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+}
+
+.snap-item {
+    scroll-snap-align: start;
+}
+
+.scroll-fade {
+    position: relative;
+}
+
+.scroll-fade::before,
+.scroll-fade::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1.5rem;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.scroll-fade::before {
+    left: 0;
+    background: linear-gradient(to right, var(--scroll-fade-color), transparent);
+}
+
+.scroll-fade::after {
+    right: 0;
+    background: linear-gradient(to left, var(--scroll-fade-color), transparent);
+}
+
+@media (min-width: 768px) {
+    .scroll-fade::before,
+    .scroll-fade::after {
+        display: none;
+    }
 }
 
 .motion-card {
