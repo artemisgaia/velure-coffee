@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { ShoppingBag, Menu, X, ChevronDown, Coffee, Leaf, Award, Check, Mail, MapPin, Phone, ArrowLeft, User, Share2, Link2 } from 'lucide-react';
 import { supabase } from './lib/supabaseClient';
+import { SHIPPING_ZONES, SUPPORTED_COUNTRY_CODES } from '../shared/shipping.js';
 
 // --- BRAND ASSETS & DATA ---
 const DEFAULT_SHARE_IMAGE_URL = 'https://res.cloudinary.com/dfygdydcj/image/upload/v1767217072/6843a1f1-d7bc-41c5-97b3-990b7dd18a18.png';
@@ -1667,7 +1668,6 @@ These Subscription Terms supplement our Terms of Service and Privacy Policy.`,
 };
 
 const REWARDS_STORAGE_KEY = 'velure_rewards_profile';
-const PENDING_CHECKOUT_STORAGE_KEY = 'velure_pending_checkout_v1';
 const REWARDS_SIGNUP_BONUS = 150;
 const REWARDS_POINTS_PER_DOLLAR = 5;
 const STANDARD_SHIPPING_FEE = 6.95;
@@ -4310,34 +4310,33 @@ const CartDrawer = ({
   );
 };
 
+const createEmptyPaymentSession = () => ({
+  orderDraftId: '',
+  paymentIntentId: '',
+  clientSecret: '',
+  totals: null,
+  notices: [],
+  rewardIdUsed: null,
+});
+
 const CheckoutView = ({
   cart,
   rewardsProfile,
   authUser,
+  authAccessToken,
   setView,
   onOpenCart,
+  onOpenAuthModal,
+  onRemoveReward,
   onCheckoutSuccess,
 }) => {
   const subtotal = getCartSubtotal(cart);
   const totalCartQuantity = getCartTotalQuantity(cart);
   const activeRewardId = authUser ? rewardsProfile.activeRewardId : null;
   const pricing = getCheckoutPricing(subtotal, activeRewardId);
-  const [customerEmail, setCustomerEmail] = useState(authUser?.email || rewardsProfile.email || '');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isEmbeddedBooting, setIsEmbeddedBooting] = useState(false);
-  const [isEmbeddedMounted, setIsEmbeddedMounted] = useState(false);
-  const [checkoutError, setCheckoutError] = useState('');
-  const [checkoutNotice, setCheckoutNotice] = useState('');
-  const [embeddedClientSecret, setEmbeddedClientSecret] = useState('');
-  const [embeddedSessionId, setEmbeddedSessionId] = useState('');
-  const embeddedContainerRef = useRef(null);
-  const embeddedCheckoutRef = useRef(null);
-  const pendingCheckoutPayloadRef = useRef(null);
-  const checkoutMetricsRef = useRef({ total: pricing.total, itemCount: totalCartQuantity });
-  const hasProcessedCheckoutRef = useRef(false);
-  const sessionRequestKeyRef = useRef('');
+  const defaultCountry = SUPPORTED_COUNTRY_CODES.includes('US') ? 'US' : (SUPPORTED_COUNTRY_CODES[0] || '');
 
-  const checkoutItems = getCheckoutItemsFromCart(cart)
+  const checkoutItems = useMemo(() => getCheckoutItemsFromCart(cart)
     .map((entry) => {
       const product = PRODUCTS.find((item) => item.id === entry.productId);
       if (!product) return null;
@@ -4348,95 +4347,289 @@ const CheckoutView = ({
         price: product.price,
       };
     })
-    .filter(Boolean);
+    .filter(Boolean), [cart]);
 
-  const checkoutRequestKey = checkoutItems.length
-    ? `${checkoutItems.map((item) => `${item.productId}:${item.quantity}`).join('|')}|reward:${activeRewardId || 'none'}`
-    : '';
+  const [step, setStep] = useState(1);
+  const [showPhone, setShowPhone] = useState(false);
+  const [isMobileSummaryOpen, setIsMobileSummaryOpen] = useState(false);
+  const [isSubmittingStep, setIsSubmittingStep] = useState(false);
+  const [isPaying, setIsPaying] = useState(false);
+  const [isPaymentElementReady, setIsPaymentElementReady] = useState(false);
+  const [stepNotice, setStepNotice] = useState('');
+  const [checkoutNotice, setCheckoutNotice] = useState('');
+  const [paymentError, setPaymentError] = useState('');
+  const [rewardAuthPrompt, setRewardAuthPrompt] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [paymentSession, setPaymentSession] = useState(() => createEmptyPaymentSession());
+  const [formData, setFormData] = useState(() => ({
+    customer: {
+      name: '',
+      email: authUser?.email || rewardsProfile.email || '',
+      phone: '',
+    },
+    shipping: {
+      country: defaultCountry,
+      service: 'standard',
+      address1: '',
+      address2: '',
+      city: '',
+      region: '',
+      postalCode: '',
+    },
+  }));
+
+  const fieldRefs = useRef({});
+  const stripeRef = useRef(null);
+  const elementsRef = useRef(null);
+  const paymentElementRef = useRef(null);
+  const paymentMountRef = useRef(null);
+  const processedPurchaseRef = useRef('');
+
+  const countryOptions = useMemo(() => SUPPORTED_COUNTRY_CODES
+    .filter((countryCode) => Boolean(SHIPPING_ZONES[countryCode]))
+    .map((countryCode) => ({
+      value: countryCode,
+      label: SHIPPING_ZONES[countryCode]?.label || countryCode,
+    })), []);
+
+  const shippingServiceOptions = useMemo(() => {
+    const zone = SHIPPING_ZONES[formData.shipping.country];
+    if (!zone?.services) {
+      return [{ value: 'standard', label: 'Standard' }];
+    }
+    return Object.entries(zone.services).map(([value, config]) => ({
+      value,
+      label: config?.label || value,
+    }));
+  }, [formData.shipping.country]);
+
+  const activeReward = getRewardOffer(activeRewardId);
+  const calculatedTotals = paymentSession.totals;
+  const summaryTotal = calculatedTotals?.total ?? subtotal;
+  const showCalculatedTotals = step >= 3 && Boolean(calculatedTotals);
+
+  const clearFieldError = useCallback((fieldKey) => {
+    setFieldErrors((previousErrors) => {
+      if (!previousErrors[fieldKey]) return previousErrors;
+      const nextErrors = { ...previousErrors };
+      delete nextErrors[fieldKey];
+      return nextErrors;
+    });
+  }, []);
+
+  const registerFieldRef = useCallback((fieldKey) => (element) => {
+    if (element) {
+      fieldRefs.current[fieldKey] = element;
+      return;
+    }
+    delete fieldRefs.current[fieldKey];
+  }, []);
+
+  const focusFirstFieldError = useCallback((nextErrors, orderedKeys) => {
+    const firstInvalidField = orderedKeys.find((key) => nextErrors[key]);
+    if (!firstInvalidField) return;
+    requestAnimationFrame(() => {
+      const element = fieldRefs.current[firstInvalidField];
+      if (!element) return;
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (typeof element.focus === 'function') {
+        element.focus();
+      }
+    });
+  }, []);
+
+  const validateDetailsStep = useCallback(() => {
+    const nextErrors = {};
+    const name = formData.customer.name.trim();
+    const email = formData.customer.email.trim().toLowerCase();
+    const phone = formData.customer.phone.trim();
+
+    if (name.length < 2) {
+      nextErrors['customer.name'] = 'Please enter your full name.';
+    }
+    if (!isValidEmail(email)) {
+      nextErrors['customer.email'] = 'Please enter a valid email address.';
+    }
+    if (showPhone && phone && phone.length < 7) {
+      nextErrors['customer.phone'] = 'Please enter a valid phone number.';
+    }
+
+    return nextErrors;
+  }, [formData.customer.email, formData.customer.name, formData.customer.phone, showPhone]);
+
+  const validateShippingStep = useCallback(() => {
+    const nextErrors = {};
+    const shipping = formData.shipping;
+    if (!shipping.country) nextErrors['shipping.country'] = 'Select a shipping destination.';
+    if (!shipping.service) nextErrors['shipping.service'] = 'Select a shipping service.';
+    if (!shipping.address1.trim()) nextErrors['shipping.address1'] = 'Address line 1 is required.';
+    if (!shipping.city.trim()) nextErrors['shipping.city'] = 'City is required.';
+    if (!shipping.region.trim()) nextErrors['shipping.region'] = 'State/region is required.';
+    if (!shipping.postalCode.trim()) nextErrors['shipping.postalCode'] = 'Postal code is required.';
+    return nextErrors;
+  }, [formData.shipping]);
+
+  const clearInlineNotices = useCallback(() => {
+    setStepNotice('');
+    setRewardAuthPrompt('');
+    setPaymentError('');
+  }, []);
+
+  const handleCustomerFieldChange = useCallback((field, value) => {
+    setFormData((previousData) => ({
+      ...previousData,
+      customer: {
+        ...previousData.customer,
+        [field]: value,
+      },
+    }));
+    clearFieldError(`customer.${field}`);
+    setStepNotice('');
+    if (field === 'email') {
+      setRewardAuthPrompt('');
+    }
+  }, [clearFieldError]);
+
+  const handleShippingFieldChange = useCallback((field, value) => {
+    setFormData((previousData) => ({
+      ...previousData,
+      shipping: {
+        ...previousData.shipping,
+        [field]: value,
+      },
+    }));
+    clearFieldError(`shipping.${field}`);
+    setStepNotice('');
+  }, [clearFieldError]);
 
   useEffect(() => {
-    checkoutMetricsRef.current = {
-      total: pricing.total,
-      itemCount: totalCartQuantity,
-    };
-  }, [pricing.total, totalCartQuantity]);
+    setFormData((previousData) => {
+      if (previousData.customer.email || (!authUser?.email && !rewardsProfile.email)) {
+        return previousData;
+      }
+      return {
+        ...previousData,
+        customer: {
+          ...previousData.customer,
+          email: authUser?.email || rewardsProfile.email || '',
+        },
+      };
+    });
+  }, [authUser?.email, rewardsProfile.email]);
+
+  useEffect(() => {
+    if (!shippingServiceOptions.length) return;
+    if (shippingServiceOptions.some((option) => option.value === formData.shipping.service)) return;
+    setFormData((previousData) => ({
+      ...previousData,
+      shipping: {
+        ...previousData.shipping,
+        service: shippingServiceOptions[0].value,
+      },
+    }));
+  }, [formData.shipping.service, shippingServiceOptions]);
 
   useEffect(() => {
     if (cart.length !== 0) return;
-    sessionRequestKeyRef.current = '';
-    setEmbeddedClientSecret('');
-    setEmbeddedSessionId('');
-  }, [cart.length]);
+    setStep(1);
+    setIsMobileSummaryOpen(false);
+    setFieldErrors({});
+    clearInlineNotices();
+    setPaymentSession(createEmptyPaymentSession());
+  }, [cart.length, clearInlineNotices]);
 
-  useEffect(() => {
-    if (cart.length === 0) return;
-    if (!STRIPE_PUBLISHABLE_KEY) {
-      setCheckoutError('Stripe publishable key is missing. Set VITE_STRIPE_PUBLISHABLE_KEY.');
-    }
-  }, [cart.length]);
+  const handlePaymentSuccess = useCallback((paymentIntentPayload = null) => {
+    const paymentIntentId = typeof paymentIntentPayload?.id === 'string'
+      ? paymentIntentPayload.id
+      : (paymentSession.paymentIntentId || paymentSession.orderDraftId || 'checkout-success');
+    if (processedPurchaseRef.current === paymentIntentId) return;
+    processedPurchaseRef.current = paymentIntentId;
 
-  useEffect(() => {
-    if (!customerEmail && (authUser?.email || rewardsProfile.email)) {
-      setCustomerEmail(authUser?.email || rewardsProfile.email || '');
+    const purchaseValue = Number((paymentSession.totals?.total ?? pricing.total).toFixed(2));
+    setCheckoutNotice('Payment completed. Thank you for your order.');
+    setStepNotice('');
+    setPaymentError('');
+    setStep(1);
+    setIsMobileSummaryOpen(false);
+
+    if (typeof onCheckoutSuccess === 'function') {
+      onCheckoutSuccess({
+        total: purchaseValue,
+        reward: paymentSession.rewardIdUsed ? { id: paymentSession.rewardIdUsed } : null,
+        earnablePoints: 0,
+      });
     }
-  }, [authUser?.email, rewardsProfile.email, customerEmail]);
+
+    trackEvent('purchase', {
+      currency: 'USD',
+      value: purchaseValue,
+      item_count: totalCartQuantity,
+    });
+
+    setPaymentSession(createEmptyPaymentSession());
+  }, [onCheckoutSuccess, paymentSession.orderDraftId, paymentSession.paymentIntentId, paymentSession.rewardIdUsed, paymentSession.totals, pricing.total, totalCartQuantity]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-
     const params = new URLSearchParams(window.location.search);
-    const status = params.get('checkout');
-    if (!status) return;
+    if (params.get('checkout') !== 'complete') return;
 
-    if (status === 'success') {
-      let shouldTrackPurchase = false;
-      if (!hasProcessedCheckoutRef.current) {
-        try {
-          const raw = window.sessionStorage.getItem(PENDING_CHECKOUT_STORAGE_KEY);
-          if (raw) {
-            const checkoutPayload = JSON.parse(raw);
-            pendingCheckoutPayloadRef.current = checkoutPayload;
-            if (typeof onCheckoutSuccess === 'function') {
-              onCheckoutSuccess(checkoutPayload);
-            }
-            window.sessionStorage.removeItem(PENDING_CHECKOUT_STORAGE_KEY);
-          }
-        } catch (error) {
-          console.error('Failed to process post-checkout payload', error);
+    const clientSecretFromQuery = params.get('payment_intent_client_secret') || '';
+    const clearCheckoutParams = () => {
+      params.delete('checkout');
+      params.delete('payment_intent');
+      params.delete('payment_intent_client_secret');
+      params.delete('redirect_status');
+      const cleanedQuery = params.toString();
+      const cleanedUrl = `${window.location.pathname}${cleanedQuery ? `?${cleanedQuery}` : ''}`;
+      window.history.replaceState(window.history.state, '', cleanedUrl);
+    };
+
+    const verifyPaymentStatus = async () => {
+      if (!STRIPE_PUBLISHABLE_KEY) {
+        setPaymentError('Stripe publishable key is missing. Set VITE_STRIPE_PUBLISHABLE_KEY.');
+        clearCheckoutParams();
+        return;
+      }
+
+      if (!clientSecretFromQuery) {
+        setCheckoutNotice('Payment completed. Thank you for your order.');
+        clearCheckoutParams();
+        return;
+      }
+
+      try {
+        const StripeConstructor = await loadStripeJs();
+        const stripe = stripeRef.current || StripeConstructor(STRIPE_PUBLISHABLE_KEY);
+        stripeRef.current = stripe;
+        const result = await stripe.retrievePaymentIntent(clientSecretFromQuery);
+        const paymentIntent = result?.paymentIntent;
+        if (paymentIntent?.status === 'succeeded') {
+          handlePaymentSuccess(paymentIntent);
+        } else if (paymentIntent?.status === 'processing') {
+          setCheckoutNotice('Payment is processing. We will update this page shortly.');
+        } else {
+          setPaymentError('Payment confirmation is still pending. Please try again.');
         }
-        hasProcessedCheckoutRef.current = true;
-        shouldTrackPurchase = true;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unable to verify payment status right now.';
+        setPaymentError(message);
+      } finally {
+        clearCheckoutParams();
       }
+    };
 
-      setCheckoutNotice('Payment completed. Thank you for your order.');
-      if (shouldTrackPurchase) {
-        const paidTotal = Number(pendingCheckoutPayloadRef.current?.total || checkoutMetricsRef.current.total || 0);
-        trackEvent('purchase', {
-          currency: 'USD',
-          value: Number(paidTotal.toFixed(2)),
-          item_count: checkoutMetricsRef.current.itemCount,
-        });
-      }
-      setEmbeddedClientSecret('');
-      setEmbeddedSessionId(params.get('session_id') || embeddedSessionId);
-    } else if (status === 'cancelled') {
-      setCheckoutNotice('Checkout was cancelled. Your cart is still saved.');
-      trackEvent('checkout_cancelled');
-    }
-
-    params.delete('checkout');
-    const cleanedQuery = params.toString();
-    const cleanedUrl = `${window.location.pathname}${cleanedQuery ? `?${cleanedQuery}` : ''}`;
-    window.history.replaceState(window.history.state, '', cleanedUrl);
-  }, [embeddedSessionId, onCheckoutSuccess]);
+    verifyPaymentStatus();
+  }, [handlePaymentSuccess]);
 
   useEffect(() => {
-    if (!embeddedClientSecret) return undefined;
+    if (step !== 3 || !paymentSession.clientSecret) return undefined;
+    if (!paymentMountRef.current) return undefined;
 
     let cancelled = false;
-    const mountEmbeddedCheckout = async () => {
-      setCheckoutError('');
-      setIsEmbeddedBooting(true);
+    const mountPaymentElement = async () => {
+      setPaymentError('');
+      setIsPaymentElementReady(false);
 
       try {
         if (!STRIPE_PUBLISHABLE_KEY) {
@@ -4444,182 +4637,377 @@ const CheckoutView = ({
         }
 
         const StripeConstructor = await loadStripeJs();
-        const stripe = StripeConstructor(STRIPE_PUBLISHABLE_KEY);
-        if (!stripe || typeof stripe.initEmbeddedCheckout !== 'function') {
-          throw new Error('Embedded Stripe checkout is not available.');
+        const stripe = stripeRef.current || StripeConstructor(STRIPE_PUBLISHABLE_KEY);
+        stripeRef.current = stripe;
+        if (!stripe || typeof stripe.elements !== 'function') {
+          throw new Error('Stripe payment form is unavailable right now.');
         }
 
-        const embeddedCheckout = await stripe.initEmbeddedCheckout({
-          fetchClientSecret: async () => embeddedClientSecret,
-          onComplete: () => {
-            if (hasProcessedCheckoutRef.current) return;
-            hasProcessedCheckoutRef.current = true;
-
-            try {
-              const checkoutPayload = pendingCheckoutPayloadRef.current;
-              if (checkoutPayload && typeof onCheckoutSuccess === 'function') {
-                onCheckoutSuccess(checkoutPayload);
-              }
-              window.sessionStorage.removeItem(PENDING_CHECKOUT_STORAGE_KEY);
-            } catch (error) {
-              console.error('Failed to finalize checkout payload', error);
-            }
-
-            const paidTotal = Number(pendingCheckoutPayloadRef.current?.total || checkoutMetricsRef.current.total || 0);
-            setCheckoutNotice('Payment completed. Thank you for your order.');
-            trackEvent('purchase', {
-              currency: 'USD',
-              value: Number(paidTotal.toFixed(2)),
-              item_count: checkoutMetricsRef.current.itemCount,
-            });
+        const elements = stripe.elements({
+          clientSecret: paymentSession.clientSecret,
+          appearance: {
+            theme: 'night',
+            variables: {
+              colorPrimary: '#D4AF37',
+              colorBackground: '#0B0C0C',
+              colorText: '#F9F6F0',
+              colorTextSecondary: '#A8A8A8',
+              borderRadius: '2px',
+            },
           },
         });
 
-        if (cancelled) {
-          embeddedCheckout.destroy();
-          return;
-        }
+        const paymentElement = elements.create('payment', {
+          layout: 'tabs',
+        });
 
-        if (!embeddedContainerRef.current) {
-          embeddedCheckout.destroy();
-          throw new Error('Checkout container is not available.');
-        }
-
-        embeddedCheckout.mount(embeddedContainerRef.current);
-        embeddedCheckoutRef.current = embeddedCheckout;
-        setIsEmbeddedMounted(true);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Unable to initialize Stripe checkout.';
-        setCheckoutError(message);
-        setEmbeddedClientSecret('');
-        setEmbeddedSessionId('');
-      } finally {
+        paymentElement.mount(paymentMountRef.current);
+        elementsRef.current = elements;
+        paymentElementRef.current = paymentElement;
         if (!cancelled) {
-          setIsEmbeddedBooting(false);
+          setIsPaymentElementReady(true);
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unable to initialize secure payment form.';
+        if (!cancelled) {
+          setPaymentError(message);
         }
       }
     };
 
-    mountEmbeddedCheckout();
+    mountPaymentElement();
 
     return () => {
       cancelled = true;
-      const checkout = embeddedCheckoutRef.current;
-      if (checkout && typeof checkout.destroy === 'function') {
-        checkout.destroy();
+      if (paymentElementRef.current) {
+        try {
+          paymentElementRef.current.unmount();
+        } catch {
+          // Stripe Element might already be unmounted.
+        }
       }
-      embeddedCheckoutRef.current = null;
-      setIsEmbeddedMounted(false);
+      paymentElementRef.current = null;
+      elementsRef.current = null;
+      setIsPaymentElementReady(false);
     };
-  }, [embeddedClientSecret, onCheckoutSuccess]);
+  }, [paymentSession.clientSecret, step]);
 
-  const resetEmbeddedCheckout = () => {
-    const checkout = embeddedCheckoutRef.current;
-    if (checkout && typeof checkout.destroy === 'function') {
-      checkout.destroy();
-    }
-    embeddedCheckoutRef.current = null;
-    setEmbeddedClientSecret('');
-    setEmbeddedSessionId('');
-    setIsEmbeddedMounted(false);
-    setIsEmbeddedBooting(false);
-    sessionRequestKeyRef.current = '';
-    hasProcessedCheckoutRef.current = false;
-  };
-
-  const handleStartStripeCheckout = useCallback(async ({ force = false } = {}) => {
-    if (cart.length === 0 || (!force && (isSubmitting || isEmbeddedBooting))) return;
-    setCheckoutError('');
-    if (force) {
-      setCheckoutNotice('');
+  const handleContinueDetails = useCallback(() => {
+    clearInlineNotices();
+    const nextErrors = validateDetailsStep();
+    if (Object.keys(nextErrors).length > 0) {
+      setFieldErrors(nextErrors);
+      focusFirstFieldError(nextErrors, ['customer.name', 'customer.email', 'customer.phone']);
+      return;
     }
 
-    const normalizedEmail = customerEmail.trim().toLowerCase();
-    if (normalizedEmail && !isValidEmail(normalizedEmail)) {
-      setCheckoutError('Please enter a valid email address.');
+    setFieldErrors({});
+    setStep(2);
+  }, [clearInlineNotices, focusFirstFieldError, validateDetailsStep]);
+
+  const handleContinueShipping = useCallback(async () => {
+    clearInlineNotices();
+    const nextErrors = validateShippingStep();
+    if (Object.keys(nextErrors).length > 0) {
+      setFieldErrors(nextErrors);
+      focusFirstFieldError(nextErrors, ['shipping.country', 'shipping.service', 'shipping.address1', 'shipping.city', 'shipping.region', 'shipping.postalCode']);
       return;
     }
 
     if (!STRIPE_PUBLISHABLE_KEY) {
-      setCheckoutError('Stripe publishable key is missing. Set VITE_STRIPE_PUBLISHABLE_KEY.');
+      setStepNotice('Stripe publishable key is missing. Set VITE_STRIPE_PUBLISHABLE_KEY.');
       return;
     }
 
-    setIsSubmitting(true);
-    hasProcessedCheckoutRef.current = false;
-
-    trackEvent('checkout_submit', {
-      currency: 'USD',
-      value: Number(pricing.total.toFixed(2)),
-      item_count: totalCartQuantity,
-      reward_id: activeRewardId || undefined,
-    });
+    setFieldErrors({});
+    setIsSubmittingStep(true);
 
     try {
-      const response = await fetch('/api/checkout', {
+      const customerPayload = {
+        name: formData.customer.name.trim(),
+        email: formData.customer.email.trim().toLowerCase(),
+        ...(showPhone && formData.customer.phone.trim() ? { phone: formData.customer.phone.trim() } : {}),
+        ...(authUser?.id ? { userId: authUser.id } : {}),
+      };
+      const shippingPayload = {
+        country: formData.shipping.country,
+        service: formData.shipping.service || 'standard',
+        address1: formData.shipping.address1.trim(),
+        address2: formData.shipping.address2.trim(),
+        city: formData.shipping.city.trim(),
+        region: formData.shipping.region.trim(),
+        postalCode: formData.shipping.postalCode.trim(),
+      };
+
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      if (authAccessToken) {
+        headers.Authorization = `Bearer ${authAccessToken}`;
+      }
+
+      const response = await fetch('/api/create-payment-intent', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         credentials: 'same-origin',
         body: JSON.stringify({
           items: getCheckoutItemsFromCart(cart),
+          customer: customerPayload,
+          shipping: shippingPayload,
           rewardId: activeRewardId || null,
-          customerEmail: normalizedEmail || undefined,
-          uiMode: 'embedded',
+          orderDraftId: paymentSession.orderDraftId || undefined,
+          paymentIntentId: paymentSession.paymentIntentId || undefined,
+          clientSecret: paymentSession.clientSecret || undefined,
         }),
       });
 
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
-        throw new Error(payload?.error || 'Unable to start checkout right now.');
+        const errorCode = typeof payload?.code === 'string' ? payload.code : '';
+        const message = typeof payload?.error === 'string' && payload.error
+          ? payload.error
+          : 'Unable to continue checkout right now.';
+
+        if (errorCode === 'invalid_customer') {
+          const detailsErrors = validateDetailsStep();
+          if (!detailsErrors['customer.name'] && message.toLowerCase().includes('name')) {
+            detailsErrors['customer.name'] = message;
+          }
+          if (!detailsErrors['customer.email'] && message.toLowerCase().includes('email')) {
+            detailsErrors['customer.email'] = message;
+          }
+          setFieldErrors(detailsErrors);
+          setStep(1);
+          setStepNotice(message);
+          focusFirstFieldError(detailsErrors, ['customer.name', 'customer.email', 'customer.phone']);
+          return;
+        }
+
+        if (errorCode === 'incomplete_shipping' || errorCode === 'unsupported_destination' || errorCode === 'invalid_shipping_service') {
+          const shippingErrors = validateShippingStep();
+          if (errorCode === 'unsupported_destination') {
+            shippingErrors['shipping.country'] = message;
+          }
+          if (errorCode === 'invalid_shipping_service') {
+            shippingErrors['shipping.service'] = message;
+          }
+          if (errorCode === 'incomplete_shipping' && !shippingErrors['shipping.address1']) {
+            shippingErrors['shipping.address1'] = message;
+          }
+          setFieldErrors(shippingErrors);
+          setStep(2);
+          setStepNotice(message);
+          focusFirstFieldError(shippingErrors, ['shipping.country', 'shipping.service', 'shipping.address1', 'shipping.city', 'shipping.region', 'shipping.postalCode']);
+          return;
+        }
+
+        if (errorCode === 'auth_required') {
+          setRewardAuthPrompt('Sign in to apply account rewards.');
+          setStepNotice('Sign in to apply account rewards.');
+          setStep(1);
+          return;
+        }
+
+        if (errorCode === 'reward_not_active') {
+          if (typeof onRemoveReward === 'function') {
+            onRemoveReward();
+          }
+          setStepNotice('Your active reward is no longer available and was removed.');
+          return;
+        }
+
+        setStepNotice(message);
+        return;
       }
 
-      const checkoutProvider = typeof payload.provider === 'string' ? payload.provider.toLowerCase() : '';
-      if (checkoutProvider !== 'stripe') {
-        throw new Error('Stripe checkout is not available right now.');
-      }
-
-      if (typeof window !== 'undefined') {
-        window.sessionStorage.setItem(PENDING_CHECKOUT_STORAGE_KEY, JSON.stringify(payload));
-      }
-      pendingCheckoutPayloadRef.current = payload;
-
-      if (payload?.uiMode === 'embedded' && payload?.clientSecret) {
-        setEmbeddedSessionId(typeof payload.checkoutSessionId === 'string' ? payload.checkoutSessionId : '');
-        setEmbeddedClientSecret(payload.clientSecret);
-        sessionRequestKeyRef.current = checkoutRequestKey;
-      } else if (payload?.checkoutUrl) {
-        window.location.assign(payload.checkoutUrl);
-      } else {
-        throw new Error('Stripe checkout response is incomplete.');
-      }
+      setPaymentSession({
+        orderDraftId: payload.orderDraftId || '',
+        paymentIntentId: payload.paymentIntentId || '',
+        clientSecret: payload.clientSecret || '',
+        totals: payload.totals || null,
+        notices: Array.isArray(payload.notices) ? payload.notices : [],
+        rewardIdUsed: activeRewardId || null,
+      });
+      setCheckoutNotice(
+        Array.isArray(payload.notices) && payload.notices[0]?.message
+          ? payload.notices[0].message
+          : '',
+      );
+      setStep(3);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unable to start checkout right now.';
-      setCheckoutError(message);
-      trackEvent('checkout_error', { message });
+      const message = error instanceof Error ? error.message : 'Unable to continue checkout right now.';
+      setStepNotice(message);
     } finally {
-      setIsSubmitting(false);
+      setIsSubmittingStep(false);
     }
   }, [
-    cart,
-    checkoutRequestKey,
-    customerEmail,
-    isEmbeddedBooting,
-    isSubmitting,
-    pricing.total,
-    totalCartQuantity,
     activeRewardId,
+    authAccessToken,
+    authUser?.id,
+    cart,
+    clearInlineNotices,
+    focusFirstFieldError,
+    formData.customer.email,
+    formData.customer.name,
+    formData.customer.phone,
+    formData.shipping.address1,
+    formData.shipping.address2,
+    formData.shipping.city,
+    formData.shipping.country,
+    formData.shipping.postalCode,
+    formData.shipping.region,
+    formData.shipping.service,
+    onRemoveReward,
+    paymentSession.clientSecret,
+    paymentSession.orderDraftId,
+    paymentSession.paymentIntentId,
+    showPhone,
+    validateDetailsStep,
+    validateShippingStep,
   ]);
 
-  useEffect(() => {
-    if (!checkoutRequestKey || cart.length === 0) return;
-    if (sessionRequestKeyRef.current === checkoutRequestKey) return;
-    if (!STRIPE_PUBLISHABLE_KEY) return;
+  const handlePaySecurely = useCallback(async () => {
+    if (!stripeRef.current || !elementsRef.current) {
+      setPaymentError('Secure payment form is still loading.');
+      return;
+    }
 
-    sessionRequestKeyRef.current = checkoutRequestKey;
-    handleStartStripeCheckout();
-  }, [cart.length, checkoutRequestKey, handleStartStripeCheckout]);
+    setIsPaying(true);
+    setPaymentError('');
+    setStepNotice('');
 
-  const isEmbeddedActive = Boolean(embeddedClientSecret || isEmbeddedMounted || isEmbeddedBooting);
+    const submittedValue = Number((paymentSession.totals?.total ?? pricing.total).toFixed(2));
+    trackEvent('checkout_submit', {
+      currency: 'USD',
+      value: submittedValue,
+      item_count: totalCartQuantity,
+      reward_id: activeRewardId || undefined,
+    });
+
+    try {
+      const returnUrl = `${window.location.origin}${window.location.pathname}?checkout=complete`;
+      const result = await stripeRef.current.confirmPayment({
+        elements: elementsRef.current,
+        confirmParams: {
+          return_url: returnUrl,
+        },
+        redirect: 'if_required',
+      });
+
+      if (result?.error) {
+        const message = result.error.message || 'Unable to complete payment right now.';
+        setPaymentError(message);
+        trackEvent('checkout_error', { message });
+        return;
+      }
+
+      const paymentIntent = result?.paymentIntent;
+      if (paymentIntent?.status === 'succeeded') {
+        handlePaymentSuccess(paymentIntent);
+      } else if (paymentIntent?.status === 'processing') {
+        setCheckoutNotice('Payment is processing. We will update this page shortly.');
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to complete payment right now.';
+      setPaymentError(message);
+      trackEvent('checkout_error', { message });
+    } finally {
+      setIsPaying(false);
+    }
+  }, [activeRewardId, handlePaymentSuccess, paymentSession.totals, pricing.total, totalCartQuantity]);
+
+  const handleBackStep = () => {
+    clearInlineNotices();
+    setStep((previousStep) => Math.max(1, previousStep - 1));
+  };
+
+  const handleStepAction = async () => {
+    if (step === 1) {
+      handleContinueDetails();
+      return;
+    }
+    if (step === 2) {
+      await handleContinueShipping();
+      return;
+    }
+    await handlePaySecurely();
+  };
+
+  const renderStepButtons = () => (
+    <div className="mt-6 flex items-center justify-between gap-3">
+      {step > 1 ? (
+        <button
+          type="button"
+          onClick={handleBackStep}
+          className="border border-gray-300 text-[#0B0C0C] px-4 py-3 text-xs font-bold tracking-wide hover:border-[#D4AF37] hover:text-[#D4AF37]"
+        >
+          Back
+        </button>
+      ) : <span />}
+      <button
+        type="button"
+        onClick={handleStepAction}
+        disabled={isSubmittingStep || isPaying || (step === 3 && !isPaymentElementReady)}
+        className={`ml-auto bg-[#0B0C0C] text-[#D4AF37] px-5 py-3 text-xs font-bold tracking-wide ${(isSubmittingStep || isPaying || (step === 3 && !isPaymentElementReady)) ? 'opacity-60 cursor-not-allowed' : 'hover:bg-[#1b1d1d]'}`}
+      >
+        {step === 3 ? (isPaying ? 'Processing...' : 'Pay Securely') : (isSubmittingStep ? 'Continuing...' : 'Continue')}
+      </button>
+    </div>
+  );
+
+  const summaryBreakdown = (
+    <>
+      <div className="space-y-3">
+        {checkoutItems.map((item) => (
+          <div key={item.productId} className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-[#0B0C0C]">{item.name}</p>
+              <p className="text-xs text-gray-500">{item.subtitle}</p>
+              <p className="text-[11px] uppercase tracking-wider text-gray-500 mt-1">Qty ×{item.quantity}</p>
+            </div>
+            <p className="text-sm font-semibold text-[#0B0C0C]">${(item.price * item.quantity).toFixed(2)}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-5 border-t border-gray-200 pt-4 space-y-2 text-sm">
+        {showCalculatedTotals ? (
+          <>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Subtotal</span>
+              <span className="font-semibold text-[#0B0C0C]">${Number(calculatedTotals.subtotal || 0).toFixed(2)}</span>
+            </div>
+            {Number(calculatedTotals.discount || 0) > 0 && (
+              <div className="flex justify-between">
+                <span className="text-gray-600">Discount</span>
+                <span className="font-semibold text-green-700">-${Number(calculatedTotals.discount || 0).toFixed(2)}</span>
+              </div>
+            )}
+            <div className="flex justify-between">
+              <span className="text-gray-600">Shipping</span>
+              <span className="font-semibold text-[#0B0C0C]">${Number(calculatedTotals.shipping || 0).toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Tax</span>
+              <span className="font-semibold text-[#0B0C0C]">${Number(calculatedTotals.tax || 0).toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between border-t border-gray-200 pt-3 mt-2">
+              <span className="text-xs uppercase tracking-wider text-gray-700">Total</span>
+              <span className="font-serif text-2xl text-[#0B0C0C]">${Number(calculatedTotals.total || 0).toFixed(2)}</span>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Estimated subtotal</span>
+              <span className="font-semibold text-[#0B0C0C]">${subtotal.toFixed(2)}</span>
+            </div>
+            <p className="text-xs text-gray-500">Shipping calculated at payment.</p>
+          </>
+        )}
+      </div>
+    </>
+  );
 
   return (
     <div className="pt-28 pb-20 bg-[#F9F6F0] min-h-screen">
@@ -4634,9 +5022,14 @@ const CheckoutView = ({
         </button>
 
         <div className="mt-8 grid grid-cols-1 lg:grid-cols-[1.2fr,1fr] gap-8">
-          <section className="bg-white border border-gray-200 p-6 md:p-8">
-            <div className="flex items-center justify-between gap-3 mb-4">
-              <h1 className="text-3xl md:text-4xl font-serif text-[#0B0C0C]">Checkout</h1>
+          <section className="bg-white border border-gray-200 p-5 md:p-7">
+            <div className="flex items-start justify-between gap-3 mb-6">
+              <div>
+                <h1 className="text-3xl md:text-4xl font-serif text-[#0B0C0C]">Secure Checkout</h1>
+                <p className="mt-2 text-xs text-gray-500">
+                  Encrypted Stripe checkout. Card details are never stored on Velure servers.
+                </p>
+              </div>
               <button
                 type="button"
                 onClick={onOpenCart}
@@ -4646,9 +5039,59 @@ const CheckoutView = ({
               </button>
             </div>
 
+            <div className="grid grid-cols-3 gap-2 mb-6">
+              {['Details', 'Shipping', 'Payment'].map((label, index) => {
+                const stepNumber = index + 1;
+                const isActive = step === stepNumber;
+                const canSelect = stepNumber <= step;
+                return (
+                  <button
+                    key={label}
+                    type="button"
+                    disabled={!canSelect}
+                    onClick={() => {
+                      if (!canSelect) return;
+                      setStep(stepNumber);
+                    }}
+                    className={`border px-2 py-2 text-[11px] tracking-wide ${
+                      isActive
+                        ? 'border-[#D4AF37] bg-[#0B0C0C] text-[#D4AF37]'
+                        : canSelect
+                          ? 'border-gray-300 text-gray-600 hover:border-[#D4AF37] hover:text-[#0B0C0C]'
+                          : 'border-gray-200 text-gray-400 cursor-not-allowed'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="lg:hidden mb-4 border border-gray-200">
+              <button
+                type="button"
+                onClick={() => setIsMobileSummaryOpen((previous) => !previous)}
+                className="w-full px-4 py-3 flex items-center justify-between text-left"
+                aria-expanded={isMobileSummaryOpen}
+              >
+                <span className="text-xs uppercase tracking-widest text-gray-600">Order summary</span>
+                <span className="font-serif text-lg text-[#0B0C0C]">${summaryTotal.toFixed(2)}</span>
+              </button>
+              <div className={`motion-accordion-panel ${isMobileSummaryOpen ? 'is-open' : ''}`}>
+                <div className="px-4 pb-4 border-t border-gray-100">
+                  {summaryBreakdown}
+                </div>
+              </div>
+            </div>
+
             {checkoutNotice && (
-              <p className="mb-4 border border-green-200 bg-green-50 text-green-800 px-4 py-3 text-sm" role="status">
+              <p className="mb-4 text-sm text-green-700" role="status">
                 {checkoutNotice}
+              </p>
+            )}
+            {stepNotice && (
+              <p className="mb-4 text-sm text-[#8A5A5A]" role="status">
+                {stepNotice}
               </p>
             )}
 
@@ -4665,110 +5108,249 @@ const CheckoutView = ({
               </div>
             ) : (
               <>
-                <div className="space-y-3">
-                  {checkoutItems.map((item) => (
-                    <div key={item.productId} className="flex items-start justify-between gap-4 border-b border-gray-100 pb-3">
-                      <div>
-                        <p className="font-serif text-lg text-[#0B0C0C]">{item.name}</p>
-                        <p className="text-xs text-gray-600">{item.subtitle}</p>
-                        <p className="text-xs uppercase tracking-wider text-gray-500 mt-1">Qty {item.quantity}</p>
+                {step === 1 && (
+                  <div className="space-y-4">
+                    <label className="block">
+                      <span className="text-xs uppercase tracking-wider text-gray-600">Full name</span>
+                      <input
+                        ref={registerFieldRef('customer.name')}
+                        type="text"
+                        autoComplete="name"
+                        value={formData.customer.name}
+                        onChange={(event) => handleCustomerFieldChange('name', event.target.value)}
+                        className={`mt-2 w-full border px-4 py-3 text-sm text-[#0B0C0C] outline-none ${fieldErrors['customer.name'] ? 'border-[#B57F7F]' : 'border-gray-300 focus:border-[#D4AF37]'}`}
+                      />
+                      {fieldErrors['customer.name'] && (
+                        <p className="mt-1 text-xs text-[#8A5A5A]">{fieldErrors['customer.name']}</p>
+                      )}
+                    </label>
+
+                    <label className="block">
+                      <span className="text-xs uppercase tracking-wider text-gray-600">Email</span>
+                      <input
+                        ref={registerFieldRef('customer.email')}
+                        type="email"
+                        autoComplete="email"
+                        value={formData.customer.email}
+                        onChange={(event) => handleCustomerFieldChange('email', event.target.value)}
+                        className={`mt-2 w-full border px-4 py-3 text-sm text-[#0B0C0C] outline-none ${fieldErrors['customer.email'] ? 'border-[#B57F7F]' : 'border-gray-300 focus:border-[#D4AF37]'}`}
+                      />
+                      {fieldErrors['customer.email'] && (
+                        <p className="mt-1 text-xs text-[#8A5A5A]">{fieldErrors['customer.email']}</p>
+                      )}
+                    </label>
+
+                    <div className="border border-gray-200 bg-[#F8F6F2] px-4 py-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (typeof onOpenAuthModal === 'function') {
+                              onOpenAuthModal();
+                              return;
+                            }
+                            setView('account');
+                          }}
+                          className="text-xs font-bold uppercase tracking-wider text-[#0B0C0C] hover:text-[#D4AF37]"
+                        >
+                          Sign in for rewards and saved orders
+                        </button>
+                        {activeReward && (
+                          <span className="text-[11px] text-[#0B0C0C]/70">Reward: {activeReward.name}</span>
+                        )}
                       </div>
-                      <p className="font-bold text-[#0B0C0C]">${(item.price * item.quantity).toFixed(2)}</p>
+                      <p className="mt-1 text-xs text-gray-500">Guest checkout is always available.</p>
+                      {rewardAuthPrompt && (
+                        <p className="mt-2 text-xs text-[#8A5A5A]">{rewardAuthPrompt}</p>
+                      )}
                     </div>
-                  ))}
-                </div>
 
-                <div className="mt-6 border-t border-gray-200 pt-4 space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Subtotal</span>
-                    <span className="font-semibold text-[#0B0C0C]">${pricing.subtotal.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Shipping</span>
-                    <span className="font-semibold text-[#0B0C0C]">${pricing.shipping.toFixed(2)}</span>
-                  </div>
-                  {pricing.rewardDiscount > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Rewards Discount</span>
-                      <span className="font-semibold text-green-700">-${pricing.rewardDiscount.toFixed(2)}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between border-t border-gray-200 pt-3 mt-2">
-                    <span className="text-xs uppercase tracking-wider text-gray-700">Total</span>
-                    <span className="font-serif text-2xl text-[#0B0C0C]">${pricing.total.toFixed(2)}</span>
-                  </div>
-                </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowPhone((previousState) => !previousState);
+                        if (showPhone) {
+                          handleCustomerFieldChange('phone', '');
+                        }
+                      }}
+                      className="text-xs uppercase tracking-wider text-gray-600 hover:text-[#0B0C0C]"
+                      aria-expanded={showPhone}
+                    >
+                      {showPhone ? 'Hide phone field' : 'Add phone for delivery updates'}
+                    </button>
 
-                {embeddedSessionId && (
-                  <p className="mt-4 text-xs text-gray-500">
-                    Session: {embeddedSessionId}
-                  </p>
+                    {showPhone && (
+                      <label className="block">
+                        <span className="text-xs uppercase tracking-wider text-gray-600">Phone (optional)</span>
+                        <input
+                          ref={registerFieldRef('customer.phone')}
+                          type="tel"
+                          autoComplete="tel"
+                          value={formData.customer.phone}
+                          onChange={(event) => handleCustomerFieldChange('phone', event.target.value)}
+                          className={`mt-2 w-full border px-4 py-3 text-sm text-[#0B0C0C] outline-none ${fieldErrors['customer.phone'] ? 'border-[#B57F7F]' : 'border-gray-300 focus:border-[#D4AF37]'}`}
+                        />
+                        {fieldErrors['customer.phone'] && (
+                          <p className="mt-1 text-xs text-[#8A5A5A]">{fieldErrors['customer.phone']}</p>
+                        )}
+                      </label>
+                    )}
+                  </div>
                 )}
+
+                {step === 2 && (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <label className="block">
+                        <span className="text-xs uppercase tracking-wider text-gray-600">Country</span>
+                        <select
+                          ref={registerFieldRef('shipping.country')}
+                          value={formData.shipping.country}
+                          onChange={(event) => handleShippingFieldChange('country', event.target.value)}
+                          className={`mt-2 w-full border px-4 py-3 text-sm text-[#0B0C0C] outline-none bg-white ${fieldErrors['shipping.country'] ? 'border-[#B57F7F]' : 'border-gray-300 focus:border-[#D4AF37]'}`}
+                        >
+                          {countryOptions.map((option) => (
+                            <option key={option.value} value={option.value}>{option.label}</option>
+                          ))}
+                        </select>
+                        {fieldErrors['shipping.country'] && (
+                          <p className="mt-1 text-xs text-[#8A5A5A]">{fieldErrors['shipping.country']}</p>
+                        )}
+                      </label>
+
+                      <label className="block">
+                        <span className="text-xs uppercase tracking-wider text-gray-600">Shipping service</span>
+                        <select
+                          ref={registerFieldRef('shipping.service')}
+                          value={formData.shipping.service}
+                          onChange={(event) => handleShippingFieldChange('service', event.target.value)}
+                          className={`mt-2 w-full border px-4 py-3 text-sm text-[#0B0C0C] outline-none bg-white ${fieldErrors['shipping.service'] ? 'border-[#B57F7F]' : 'border-gray-300 focus:border-[#D4AF37]'}`}
+                        >
+                          {shippingServiceOptions.map((option) => (
+                            <option key={option.value} value={option.value}>{option.label}</option>
+                          ))}
+                        </select>
+                        {fieldErrors['shipping.service'] && (
+                          <p className="mt-1 text-xs text-[#8A5A5A]">{fieldErrors['shipping.service']}</p>
+                        )}
+                      </label>
+                    </div>
+
+                    <label className="block">
+                      <span className="text-xs uppercase tracking-wider text-gray-600">Address line 1</span>
+                      <input
+                        ref={registerFieldRef('shipping.address1')}
+                        type="text"
+                        autoComplete="address-line1"
+                        value={formData.shipping.address1}
+                        onChange={(event) => handleShippingFieldChange('address1', event.target.value)}
+                        className={`mt-2 w-full border px-4 py-3 text-sm text-[#0B0C0C] outline-none ${fieldErrors['shipping.address1'] ? 'border-[#B57F7F]' : 'border-gray-300 focus:border-[#D4AF37]'}`}
+                      />
+                      {fieldErrors['shipping.address1'] && (
+                        <p className="mt-1 text-xs text-[#8A5A5A]">{fieldErrors['shipping.address1']}</p>
+                      )}
+                    </label>
+
+                    <label className="block">
+                      <span className="text-xs uppercase tracking-wider text-gray-600">Address line 2 (optional)</span>
+                      <input
+                        type="text"
+                        autoComplete="address-line2"
+                        value={formData.shipping.address2}
+                        onChange={(event) => handleShippingFieldChange('address2', event.target.value)}
+                        className="mt-2 w-full border border-gray-300 px-4 py-3 text-sm text-[#0B0C0C] outline-none focus:border-[#D4AF37]"
+                      />
+                    </label>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <label className="block">
+                        <span className="text-xs uppercase tracking-wider text-gray-600">City</span>
+                        <input
+                          ref={registerFieldRef('shipping.city')}
+                          type="text"
+                          autoComplete="address-level2"
+                          value={formData.shipping.city}
+                          onChange={(event) => handleShippingFieldChange('city', event.target.value)}
+                          className={`mt-2 w-full border px-4 py-3 text-sm text-[#0B0C0C] outline-none ${fieldErrors['shipping.city'] ? 'border-[#B57F7F]' : 'border-gray-300 focus:border-[#D4AF37]'}`}
+                        />
+                        {fieldErrors['shipping.city'] && (
+                          <p className="mt-1 text-xs text-[#8A5A5A]">{fieldErrors['shipping.city']}</p>
+                        )}
+                      </label>
+
+                      <label className="block">
+                        <span className="text-xs uppercase tracking-wider text-gray-600">State / Region</span>
+                        <input
+                          ref={registerFieldRef('shipping.region')}
+                          type="text"
+                          autoComplete="address-level1"
+                          value={formData.shipping.region}
+                          onChange={(event) => handleShippingFieldChange('region', event.target.value)}
+                          className={`mt-2 w-full border px-4 py-3 text-sm text-[#0B0C0C] outline-none ${fieldErrors['shipping.region'] ? 'border-[#B57F7F]' : 'border-gray-300 focus:border-[#D4AF37]'}`}
+                        />
+                        {fieldErrors['shipping.region'] && (
+                          <p className="mt-1 text-xs text-[#8A5A5A]">{fieldErrors['shipping.region']}</p>
+                        )}
+                      </label>
+
+                      <label className="block">
+                        <span className="text-xs uppercase tracking-wider text-gray-600">ZIP / Postal code</span>
+                        <input
+                          ref={registerFieldRef('shipping.postalCode')}
+                          type="text"
+                          autoComplete="postal-code"
+                          value={formData.shipping.postalCode}
+                          onChange={(event) => handleShippingFieldChange('postalCode', event.target.value)}
+                          className={`mt-2 w-full border px-4 py-3 text-sm text-[#0B0C0C] outline-none ${fieldErrors['shipping.postalCode'] ? 'border-[#B57F7F]' : 'border-gray-300 focus:border-[#D4AF37]'}`}
+                        />
+                        {fieldErrors['shipping.postalCode'] && (
+                          <p className="mt-1 text-xs text-[#8A5A5A]">{fieldErrors['shipping.postalCode']}</p>
+                        )}
+                      </label>
+                    </div>
+                  </div>
+                )}
+
+                {step === 3 && (
+                  <div className="space-y-4">
+                    {paymentSession.notices.map((notice, index) => (
+                      <p key={`${notice.type || 'notice'}-${index}`} className="text-xs text-gray-500">
+                        {notice.message}
+                      </p>
+                    ))}
+
+                    {!paymentSession.clientSecret && (
+                      <p className="text-sm text-[#8A5A5A]">
+                        Return to Shipping and continue to initialize secure payment.
+                      </p>
+                    )}
+
+                    <div className="border border-gray-300 bg-white p-3 min-h-[240px]">
+                      {!isPaymentElementReady && (
+                        <p className="text-sm text-gray-500 mb-3">Loading payment form...</p>
+                      )}
+                      <div ref={paymentMountRef} />
+                    </div>
+
+                    {paymentError && (
+                      <p className="text-sm text-[#8A5A5A]" role="alert">
+                        {paymentError}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {renderStepButtons()}
               </>
             )}
           </section>
 
-          <section className="bg-[#0B0C0C] text-[#F9F6F0] p-6 md:p-8">
-            <h2 className="font-serif text-2xl mb-3">Secure Payment</h2>
-            <p className="text-sm text-gray-300 mb-6">
-              Complete payment directly on this page. Stripe securely collects checkout details including email, phone, billing/shipping address, and country.
-            </p>
-
-            {!isEmbeddedActive && (
-              <div className="rounded-sm border border-white/15 bg-white/5 p-4 min-h-[120px] flex items-center">
-                <p className="text-sm text-gray-300">
-                  {cart.length === 0
-                    ? 'Add items to cart to begin checkout.'
-                    : (isSubmitting ? 'Preparing secure checkout...' : 'Loading secure checkout...')
-                  }
-                </p>
-              </div>
-            )}
-
-            {isEmbeddedActive && (
-              <div className="space-y-4">
-                <div className="rounded-sm bg-white p-2 min-h-[420px]">
-                  {isEmbeddedBooting && (
-                    <p className="text-sm text-[#0B0C0C] px-2 py-2">Loading secure checkout...</p>
-                  )}
-                  <div ref={embeddedContainerRef} />
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    resetEmbeddedCheckout();
-                    handleStartStripeCheckout({ force: true });
-                  }}
-                  className="w-full border border-[#D4AF37] text-[#D4AF37] py-3 text-xs font-bold uppercase tracking-wider hover:bg-[#D4AF37] hover:text-[#0B0C0C]"
-                >
-                  Reload Checkout
-                </button>
-              </div>
-            )}
-
-            {checkoutError && (
-              <p className="mt-4 text-sm border border-red-500/40 bg-red-500/10 text-red-200 px-4 py-3" role="alert">
-                {checkoutError}
-              </p>
-            )}
-
-            {!isEmbeddedActive && checkoutError && cart.length > 0 && (
-              <button
-                type="button"
-                onClick={() => {
-                  resetEmbeddedCheckout();
-                  handleStartStripeCheckout({ force: true });
-                }}
-                className="mt-4 w-full border border-[#D4AF37] text-[#D4AF37] py-3 text-xs font-bold uppercase tracking-wider hover:bg-[#D4AF37] hover:text-[#0B0C0C]"
-              >
-                Retry Secure Checkout
-              </button>
-            )}
-
-            <p className="mt-5 text-xs text-gray-400">
-              Powered securely by Stripe.
-            </p>
-          </section>
+          <aside className="hidden lg:block">
+            <div className="bg-white border border-gray-200 p-6 sticky top-28">
+              <h2 className="font-serif text-2xl text-[#0B0C0C] mb-4">Order summary</h2>
+              {summaryBreakdown}
+            </div>
+          </aside>
         </div>
       </div>
     </div>
@@ -9017,8 +9599,11 @@ const App = () => {
           cart={cart}
           rewardsProfile={rewardsProfile}
           authUser={authState.user}
+          authAccessToken={authState.session?.accessToken || ''}
           setView={setView}
           onOpenCart={openCart}
+          onOpenAuthModal={() => setIsAuthModalOpen(true)}
+          onRemoveReward={removeReward}
           onCheckoutSuccess={handleCheckoutSuccess}
         />
       );
