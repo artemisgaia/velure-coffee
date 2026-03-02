@@ -4414,6 +4414,11 @@ const CheckoutView = ({
   const calculatedTotals = paymentSession.totals;
   const summaryTotal = calculatedTotals?.total ?? subtotal;
   const showCalculatedTotals = step >= 3 && Boolean(calculatedTotals);
+  const mobileSummaryShippingCopy = showCalculatedTotals
+    ? (Number(calculatedTotals?.shipping || 0) <= 0
+      ? 'Shipping: Free'
+      : `Shipping: $${Number(calculatedTotals?.shipping || 0).toFixed(2)}`)
+    : 'Shipping calculated at payment.';
 
   const clearFieldError = useCallback((fieldKey) => {
     setFieldErrors((previousErrors) => {
@@ -4957,7 +4962,7 @@ const CheckoutView = ({
         disabled={isSubmittingStep || isPaying || (step === 3 && !isPaymentElementReady)}
         className={`ml-auto bg-[#0B0C0C] text-[#D4AF37] px-5 py-3 text-xs font-bold tracking-wide ${(isSubmittingStep || isPaying || (step === 3 && !isPaymentElementReady)) ? 'opacity-60 cursor-not-allowed' : 'hover:bg-[#1b1d1d]'}`}
       >
-        {step === 3 ? (isPaying ? 'Processing...' : 'Pay Securely') : (isSubmittingStep ? 'Continuing...' : 'Continue')}
+        {step === 3 ? (isPaying ? 'Processing...' : 'PAY SECURELY') : (isSubmittingStep ? 'Continuing...' : 'Continue')}
       </button>
     </div>
   );
@@ -5082,7 +5087,10 @@ const CheckoutView = ({
                 aria-expanded={isMobileSummaryOpen}
               >
                 <span className="text-xs uppercase tracking-widest text-gray-600">Order summary</span>
-                <span className="font-serif text-lg text-[#0B0C0C]">${summaryTotal.toFixed(2)}</span>
+                <span className="text-right">
+                  <span className="block font-serif text-lg text-[#0B0C0C]">${summaryTotal.toFixed(2)}</span>
+                  <span className="block text-[11px] text-gray-500">{mobileSummaryShippingCopy}</span>
+                </span>
               </button>
               <div className={`motion-accordion-panel ${isMobileSummaryOpen ? 'is-open' : ''}`}>
                 <div className="px-4 pb-4 border-t border-gray-100">
@@ -5320,6 +5328,7 @@ const CheckoutView = ({
 
                 {step === 3 && (
                   <div className="space-y-4">
+                    <p className="text-sm text-gray-600">Review and complete your order.</p>
                     {paymentSession.notices.map((notice, index) => (
                       <p key={`${notice.type || 'notice'}-${index}`} className="text-xs text-gray-500">
                         {notice.message}
