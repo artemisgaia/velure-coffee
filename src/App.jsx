@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { ShoppingBag, Menu, X, Coffee, Leaf, Award, Check, Trash2, Mail, MapPin, Phone, ArrowLeft, User, LogOut, Share2, Link2 } from 'lucide-react';
+import { ShoppingBag, Menu, X, Coffee, Leaf, Award, Check, Trash2, Mail, MapPin, Phone, ArrowLeft, User, Share2, Link2 } from 'lucide-react';
+import { supabase } from './lib/supabaseClient';
 
 // --- BRAND ASSETS & DATA ---
 const DEFAULT_SHARE_IMAGE_URL = 'https://res.cloudinary.com/dfygdydcj/image/upload/v1767217072/6843a1f1-d7bc-41c5-97b3-990b7dd18a18.png';
@@ -907,18 +908,18 @@ const CATEGORY_LABELS = {
 };
 
 const VELURE_STANDARD_FACTS = [
-  'Gluten-Free',
+  'Gluten Free',
   'Vegetarian',
-  'Lactose-Free',
-  'Allergen-Free',
-  'Hormone-Free',
+  'Lactose Free',
+  'Allergen Free',
+  'Hormone Free',
   '100% Natural',
-  'Antibiotic-Free',
+  'Antibiotic Free',
   'Non-GMO',
-  'Corn-Free',
+  'Corn Free',
   'Vegan',
   'Halal Certified',
-  'Cruelty-Free',
+  'Cruelty Free',
 ];
 
 const SUBSCRIPTION_PRODUCTS = PRODUCTS.filter((product) => product.subscriptionEligible);
@@ -1896,9 +1897,8 @@ const getPathForView = (view, options = {}) => {
 };
 
 const normalizeLower = (value) => (typeof value === 'string' ? value.trim().toLowerCase() : '');
-const AUTH_STORAGE_KEY = 'velure_auth_state_v1';
 const DEFAULT_AUTH_STATE = {
-  isLoading: false,
+  isLoading: true,
   user: null,
   session: null,
 };
@@ -1930,192 +1930,39 @@ const DEFAULT_ACCOUNT_ADDRESS_FORM = {
   isDefault: false,
 };
 
-const normalizeAuthState = (value) => {
-  if (!value || typeof value !== 'object') {
-    return { ...DEFAULT_AUTH_STATE };
+const mapSupabaseSessionToAuthState = (session) => {
+  if (!session || typeof session !== 'object') {
+    return {
+      user: null,
+      session: null,
+    };
   }
 
-  const session = value.session && typeof value.session === 'object'
-    ? {
-        accessToken: typeof value.session.accessToken === 'string' ? value.session.accessToken : '',
-        refreshToken: typeof value.session.refreshToken === 'string' ? value.session.refreshToken : '',
-        expiresAt: Number.isFinite(Number(value.session.expiresAt)) ? Number(value.session.expiresAt) : 0,
-      }
-    : null;
+  const accessToken = typeof session.access_token === 'string' ? session.access_token : '';
+  const refreshToken = typeof session.refresh_token === 'string' ? session.refresh_token : '';
+  const expiresAtSeconds = Number(session.expires_at);
+  const expiresAt = Number.isFinite(expiresAtSeconds) ? expiresAtSeconds * 1000 : 0;
+  const userId = typeof session?.user?.id === 'string' ? session.user.id : '';
+  const userEmail = typeof session?.user?.email === 'string' ? session.user.email : '';
 
-  const user = value.user && typeof value.user === 'object'
-    ? {
-        id: typeof value.user.id === 'string' ? value.user.id : '',
-        email: typeof value.user.email === 'string' ? value.user.email : '',
-      }
-    : null;
-
-  if (!session?.accessToken || !user?.id) {
+  if (!accessToken || !refreshToken || !userId) {
     return {
-      isLoading: false,
       user: null,
       session: null,
     };
   }
 
   return {
-    isLoading: false,
-    user,
-    session,
+    user: {
+      id: userId,
+      email: userEmail,
+    },
+    session: {
+      accessToken,
+      refreshToken,
+      expiresAt,
+    },
   };
-};
-
-const getSupabaseConfig = () => {
-  const url = (import.meta.env.VITE_SUPABASE_URL || '').trim().replace(/\/+$/, '');
-  const anonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim();
-
-  if (!url || !anonKey) {
-    throw new Error('Auth is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
-  }
-
-  return { url, anonKey };
-};
-
-const parseSupabaseError = (payload, fallbackMessage) => {
-  if (!payload || typeof payload !== 'object') return fallbackMessage;
-  if (typeof payload.error_description === 'string' && payload.error_description.trim()) {
-    return payload.error_description;
-  }
-  if (typeof payload.msg === 'string' && payload.msg.trim()) {
-    return payload.msg;
-  }
-  if (typeof payload.error === 'string' && payload.error.trim()) {
-    return payload.error;
-  }
-  if (typeof payload.message === 'string' && payload.message.trim()) {
-    return payload.message;
-  }
-  return fallbackMessage;
-};
-
-const supabaseRequest = async (path, options = {}) => {
-  const { url, anonKey } = getSupabaseConfig();
-  const {
-    method = 'GET',
-    body,
-    accessToken,
-  } = options;
-
-  const headers = {
-    apikey: anonKey,
-    'Content-Type': 'application/json',
-    ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-  };
-
-  const response = await fetch(`${url}${path}`, {
-    method,
-    headers,
-    body: body ? JSON.stringify(body) : undefined,
-  });
-
-  let payload = null;
-  try {
-    payload = await response.json();
-  } catch {
-    payload = null;
-  }
-
-  if (!response.ok) {
-    throw new Error(parseSupabaseError(payload, 'Unable to complete auth request.'));
-  }
-
-  return payload;
-};
-
-const createSessionFromSupabasePayload = (payload) => {
-  const source = payload?.session && typeof payload.session === 'object'
-    ? payload.session
-    : payload;
-  const accessToken = typeof source?.access_token === 'string' ? source.access_token : '';
-  const refreshToken = typeof source?.refresh_token === 'string' ? source.refresh_token : '';
-  const expiresAtSeconds = Number(source?.expires_at);
-  const expiresInSeconds = Number(source?.expires_in);
-  const expiresAt = Number.isFinite(expiresAtSeconds)
-    ? expiresAtSeconds * 1000
-    : (Number.isFinite(expiresInSeconds) ? Date.now() + (expiresInSeconds * 1000) : 0);
-
-  if (!accessToken || !refreshToken) return null;
-
-  return {
-    accessToken,
-    refreshToken,
-    expiresAt,
-  };
-};
-
-const supabaseSignUp = async (email, password) => {
-  const payload = await supabaseRequest('/auth/v1/signup', {
-    method: 'POST',
-    body: { email, password },
-  });
-
-  return {
-    user: payload?.user || payload?.session?.user || null,
-    session: createSessionFromSupabasePayload(payload),
-  };
-};
-
-const supabaseSignIn = async (email, password) => {
-  const payload = await supabaseRequest('/auth/v1/token?grant_type=password', {
-    method: 'POST',
-    body: { email, password },
-  });
-
-  return {
-    user: payload?.user || null,
-    session: createSessionFromSupabasePayload(payload),
-  };
-};
-
-const supabaseRefreshSession = async (refreshToken) => {
-  const payload = await supabaseRequest('/auth/v1/token?grant_type=refresh_token', {
-    method: 'POST',
-    body: { refresh_token: refreshToken },
-  });
-
-  return {
-    user: payload?.user || null,
-    session: createSessionFromSupabasePayload(payload),
-  };
-};
-
-const supabaseGetUser = async (accessToken) => {
-  const payload = await supabaseRequest('/auth/v1/user', {
-    method: 'GET',
-    accessToken,
-  });
-  return payload && typeof payload === 'object' ? payload : null;
-};
-
-const supabaseSignOut = async (accessToken) => {
-  await supabaseRequest('/auth/v1/logout', {
-    method: 'POST',
-    accessToken,
-  });
-};
-
-const supabaseSendPasswordResetEmail = async (email, redirectTo) => {
-  const payload = {
-    email,
-    ...(redirectTo ? { redirect_to: redirectTo } : {}),
-  };
-  await supabaseRequest('/auth/v1/recover', {
-    method: 'POST',
-    body: payload,
-  });
-};
-
-const supabaseUpdatePassword = async (accessToken, nextPassword) => {
-  await supabaseRequest('/auth/v1/user', {
-    method: 'PUT',
-    accessToken,
-    body: { password: nextPassword },
-  });
 };
 
 const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
@@ -2578,22 +2425,10 @@ const ProductDetailView = ({
   const galleryTouchStartXRef = useRef(null);
   const [mainImageIndex, setMainImageIndex] = useState(0);
   const [qty, setQty] = useState(1);
-  const [openAccordion, setOpenAccordion] = useState('details');
+  const [openAccordion, setOpenAccordion] = useState('');
   const [bundleSelections, setBundleSelections] = useState(() => getDefaultBundleSelections(product.id));
   const [bundlePreviewProduct, setBundlePreviewProduct] = useState(null);
   const nutritionSpecs = product.nutritionSpecs || null;
-  const ingredientText = product.details.ingredients || '';
-  const hasOrganicIngredients = /organic/i.test(ingredientText);
-  const hasSyntheticFlavoring = /(artificial|flavor)/i.test(ingredientText);
-  const hasAddedSweetener = /(sugar|syrup|sucralose|aspartame|stevia)/i.test(ingredientText);
-  const cleanLabelClaims = nutritionSpecs?.cleanLabelClaims?.length
-    ? nutritionSpecs.cleanLabelClaims
-    : [
-        hasOrganicIngredients ? 'Organic ingredients listed' : 'No organic claim listed',
-        'No GMO ingredients listed',
-        hasSyntheticFlavoring ? 'Synthetic flavoring listed' : 'No synthetic flavoring listed',
-        hasAddedSweetener ? 'Added sweeteners listed' : 'No added sweeteners listed',
-      ];
   const nutritionRows = nutritionSpecs
     ? [
         nutritionSpecs.varietals ? { label: 'Varietals', value: nutritionSpecs.varietals } : null,
@@ -2620,7 +2455,7 @@ const ProductDetailView = ({
     () => (isBundleProduct ? getBundleSlotOptions(product.id) : []),
     [isBundleProduct, product.id],
   );
-  const productClaims = [...new Set([...cleanLabelClaims, ...VELURE_STANDARD_FACTS])];
+  const productClaims = VELURE_STANDARD_FACTS;
   const isBundleSelectionComplete = !isBundleProduct
     || (bundleSlots.length > 0 && bundleSlots.every((slot) => Boolean(bundleSelections[slot.key])));
   const [reviewsState, setReviewsState] = useState({
@@ -3111,26 +2946,14 @@ const ProductDetailView = ({
                           </ul>
                         )}
                       </div>
-                      <div className="space-y-4">
-                        <div>
-                          <span className="block mb-2 text-xs uppercase tracking-widest text-gray-400">Product Claims</span>
-                          <div className="flex flex-wrap gap-2">
-                            {cleanLabelClaims.map((claim) => (
-                              <span key={claim} className="px-2 py-1 border border-gray-700 text-xs text-[#F9F6F0]">
-                                {claim}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                        <div className="border border-gray-800 p-3 bg-[#111111]">
-                          <span className="block mb-2 text-xs uppercase tracking-widest text-[#D4AF37]">Velure Standards</span>
-                          <div className="flex flex-wrap gap-2">
-                            {productClaims.map((claim) => (
-                              <span key={claim} className="px-2 py-1 border border-gray-700 text-xs text-[#F9F6F0]">
-                                {claim}
-                              </span>
-                            ))}
-                          </div>
+                      <div className="border border-gray-800 p-3 bg-[#111111]">
+                        <span className="block mb-2 text-xs uppercase tracking-widest text-[#D4AF37]">Velure Standards</span>
+                        <div className="flex flex-wrap gap-2">
+                          {productClaims.map((claim) => (
+                            <span key={claim} className="px-2 py-1 border border-gray-700 text-xs text-[#F9F6F0]">
+                              {claim}
+                            </span>
+                          ))}
                         </div>
                       </div>
                     </div>
@@ -3365,9 +3188,236 @@ const ProductDetailView = ({
   );
 };
 
-const Navigation = ({ currentView, cartCount, setView, toggleCart, authUser, onSignOut, onSharePage }) => {
+const AuthModal = ({
+  isOpen,
+  onClose,
+  onPasswordSignIn,
+  onMagicLinkSignIn,
+  onSignUp,
+  onForgotPassword,
+}) => {
+  const [mode, setMode] = useState('signin');
+  const [signInMethod, setSignInMethod] = useState('magic');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [status, setStatus] = useState({ type: 'idle', message: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const handleModeChange = (nextMode) => {
+    setMode(nextMode);
+    setStatus({ type: 'idle', message: '' });
+  };
+  const handleSignInMethodChange = (nextMethod) => {
+    setSignInMethod(nextMethod);
+    setStatus({ type: 'idle', message: '' });
+  };
+
+  useEffect(() => {
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    const { overflow } = document.body.style;
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.body.style.overflow = overflow;
+      window.removeEventListener('keydown', handleEscape);
+    };
+  }, [onClose]);
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    const normalizedEmail = normalizeLower(email);
+
+    if (!isValidEmail(normalizedEmail)) {
+      setStatus({ type: 'error', message: 'Enter a valid email address.' });
+      return;
+    }
+
+    if (mode === 'signin' && signInMethod === 'password' && password.length < 8) {
+      setStatus({ type: 'error', message: 'Password must be at least 8 characters.' });
+      return;
+    }
+
+    if (mode === 'signup') {
+      if (password.length < 8) {
+        setStatus({ type: 'error', message: 'Password must be at least 8 characters.' });
+        return;
+      }
+      if (password !== confirmPassword) {
+        setStatus({ type: 'error', message: 'Password confirmation does not match.' });
+        return;
+      }
+    }
+
+    setIsSubmitting(true);
+    setStatus({ type: 'idle', message: '' });
+
+    let result = { ok: false, message: 'Unable to complete your request.' };
+    if (mode === 'signin' && signInMethod === 'magic') {
+      result = await onMagicLinkSignIn(normalizedEmail);
+    } else if (mode === 'signin') {
+      result = await onPasswordSignIn(normalizedEmail, password);
+    } else if (mode === 'signup') {
+      result = await onSignUp(normalizedEmail, password);
+    } else {
+      result = await onForgotPassword(normalizedEmail);
+    }
+
+    setStatus({ type: result.ok ? 'success' : 'error', message: result.message });
+    setIsSubmitting(false);
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-[90] bg-black/70"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="auth-modal-title"
+      onClick={onClose}
+    >
+      <div className="min-h-screen flex items-end sm:items-center justify-center sm:p-6">
+        <div
+          className="w-full sm:max-w-md bg-[#151515] border border-gray-800 rounded-t-2xl sm:rounded-sm p-6 sm:p-8 shadow-2xl"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <div className="flex items-start justify-between gap-3 mb-5">
+            <div>
+              <p className="text-[11px] tracking-[0.24em] uppercase text-gray-400">Velure Account</p>
+              <h2 id="auth-modal-title" className="font-serif text-3xl text-[#F9F6F0] mt-1">
+                {mode === 'signup' ? 'Create Account' : mode === 'forgot' ? 'Reset Password' : 'Sign In'}
+              </h2>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="h-10 w-10 inline-flex items-center justify-center border border-gray-700 text-gray-300 hover:text-[#F9F6F0] hover:border-gray-500"
+              aria-label="Close account dialog"
+            >
+              <X size={18} />
+            </button>
+          </div>
+
+          <div className="flex gap-2 mb-5">
+            <button
+              type="button"
+              onClick={() => handleModeChange('signin')}
+              className={`px-3 py-2 text-[11px] font-bold uppercase tracking-wider border ${mode === 'signin' ? 'border-[#D4AF37] text-[#D4AF37]' : 'border-gray-700 text-gray-400 hover:text-[#F9F6F0]'}`}
+            >
+              Sign In
+            </button>
+            <button
+              type="button"
+              onClick={() => handleModeChange('signup')}
+              className={`px-3 py-2 text-[11px] font-bold uppercase tracking-wider border ${mode === 'signup' ? 'border-[#D4AF37] text-[#D4AF37]' : 'border-gray-700 text-gray-400 hover:text-[#F9F6F0]'}`}
+            >
+              Create
+            </button>
+            <button
+              type="button"
+              onClick={() => handleModeChange('forgot')}
+              className={`px-3 py-2 text-[11px] font-bold uppercase tracking-wider border ${mode === 'forgot' ? 'border-[#D4AF37] text-[#D4AF37]' : 'border-gray-700 text-gray-400 hover:text-[#F9F6F0]'}`}
+            >
+              Forgot
+            </button>
+          </div>
+
+          {mode === 'signin' && (
+            <div className="grid grid-cols-2 gap-2 mb-4">
+              <button
+                type="button"
+                onClick={() => handleSignInMethodChange('magic')}
+                className={`py-2 text-[11px] font-bold uppercase tracking-wider border ${signInMethod === 'magic' ? 'border-[#D4AF37] text-[#D4AF37]' : 'border-gray-700 text-gray-400 hover:text-[#F9F6F0]'}`}
+                aria-pressed={signInMethod === 'magic'}
+              >
+                Magic Link
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSignInMethodChange('password')}
+                className={`py-2 text-[11px] font-bold uppercase tracking-wider border ${signInMethod === 'password' ? 'border-[#D4AF37] text-[#D4AF37]' : 'border-gray-700 text-gray-400 hover:text-[#F9F6F0]'}`}
+                aria-pressed={signInMethod === 'password'}
+              >
+                Password
+              </button>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} noValidate>
+            <div className="space-y-3">
+              <input
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="Email"
+                autoComplete="email"
+                className="w-full border border-gray-700 bg-[#0B0C0C] p-3 outline-none focus:border-[#D4AF37]"
+              />
+              {((mode === 'signin' && signInMethod === 'password') || mode === 'signup') && (
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  placeholder={mode === 'signup' ? 'Password (min 8 chars)' : 'Password'}
+                  autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+                  className="w-full border border-gray-700 bg-[#0B0C0C] p-3 outline-none focus:border-[#D4AF37]"
+                />
+              )}
+              {mode === 'signup' && (
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(event) => setConfirmPassword(event.target.value)}
+                  placeholder="Confirm password"
+                  autoComplete="new-password"
+                  className="w-full border border-gray-700 bg-[#0B0C0C] p-3 outline-none focus:border-[#D4AF37]"
+                />
+              )}
+            </div>
+
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className={`mt-5 w-full bg-[#D4AF37] text-[#0B0C0C] px-6 py-3 text-xs font-bold uppercase tracking-wider ${isSubmitting ? 'opacity-60 cursor-not-allowed' : 'hover:bg-[#b5952f]'}`}
+            >
+              {isSubmitting
+                ? 'Please wait...'
+                : mode === 'signup'
+                  ? 'Create Account'
+                  : mode === 'forgot'
+                    ? 'Send Reset Link'
+                    : signInMethod === 'magic'
+                      ? 'Send Magic Link'
+                      : 'Sign In'}
+            </button>
+          </form>
+
+          {status.message && (
+            <p className={`text-sm mt-4 ${status.type === 'error' ? 'text-red-400' : 'text-green-400'}`} role="status">
+              {status.message}
+            </p>
+          )}
+
+          <p className="text-xs text-gray-500 mt-6">
+            Guest checkout remains available with no account required.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const Navigation = ({ currentView, cartCount, setView, toggleCart, authUser, onSignOut, onSharePage, onOpenAuthModal }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const accountMenuRef = useRef(null);
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 50);
@@ -3375,9 +3425,21 @@ const Navigation = ({ currentView, cartCount, setView, toggleCart, authUser, onS
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  useEffect(() => {
+    const handleOutsideClick = (event) => {
+      if (!accountMenuRef.current?.contains(event.target)) {
+        setAccountMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
+
   const handleNav = (viewName) => {
     setView(viewName);
     setMobileMenuOpen(false);
+    setAccountMenuOpen(false);
   };
 
   const handleShare = async () => {
@@ -3385,6 +3447,25 @@ const Navigation = ({ currentView, cartCount, setView, toggleCart, authUser, onS
       await onSharePage();
     }
     setMobileMenuOpen(false);
+    setAccountMenuOpen(false);
+  };
+
+  const handleAccountAction = () => {
+    if (authUser) {
+      setAccountMenuOpen((previous) => !previous);
+      return;
+    }
+
+    if (typeof onOpenAuthModal === 'function') {
+      onOpenAuthModal();
+    }
+    setMobileMenuOpen(false);
+    setAccountMenuOpen(false);
+  };
+
+  const handleAccountMenuSignOut = () => {
+    setAccountMenuOpen(false);
+    onSignOut();
   };
 
   const isTransparent = currentView === 'home' && !isScrolled;
@@ -3471,28 +3552,46 @@ const Navigation = ({ currentView, cartCount, setView, toggleCart, authUser, onS
             </span>
           </button>
 
-          <button
-            type="button"
-            className="text-[#F9F6F0] hover:text-[#D4AF37] transition-colors flex items-center gap-2"
-            onClick={() => handleNav('account')}
-            aria-label={authUser ? 'Open account' : 'Log in or sign up'}
-          >
-            <User size={20} />
-            <span className="hidden md:inline text-xs uppercase tracking-widest">
-              {authUser ? 'Account' : 'Login'}
-            </span>
-          </button>
-
-          {authUser && (
+          <div className="relative" ref={accountMenuRef}>
             <button
               type="button"
-              className="text-[#F9F6F0] hover:text-[#D4AF37] transition-colors"
-              onClick={onSignOut}
-              aria-label="Sign out"
+              className="text-[#F9F6F0] hover:text-[#D4AF37] transition-colors flex items-center gap-2"
+              onClick={handleAccountAction}
+              aria-label={authUser ? 'Open account menu' : 'Log in or sign up'}
+              aria-haspopup={authUser ? 'menu' : undefined}
+              aria-expanded={authUser ? accountMenuOpen : undefined}
             >
-              <LogOut size={20} />
+              <User size={20} />
+              <span className="hidden md:inline text-xs uppercase tracking-widest">
+                {authUser ? 'Account' : 'Login'}
+              </span>
             </button>
-          )}
+
+            {authUser && accountMenuOpen && (
+              <div
+                className="absolute right-0 top-full mt-2 w-44 bg-[#151515] border border-gray-800 shadow-2xl z-50"
+                role="menu"
+                aria-label="Account actions"
+              >
+                <button
+                  type="button"
+                  onClick={() => handleNav('account')}
+                  className="w-full text-left px-4 py-3 text-xs uppercase tracking-wider text-[#F9F6F0] hover:bg-[#1C1C1C]"
+                  role="menuitem"
+                >
+                  Account
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAccountMenuSignOut}
+                  className="w-full text-left px-4 py-3 text-xs uppercase tracking-wider text-[#D4AF37] hover:bg-[#1C1C1C]"
+                  role="menuitem"
+                >
+                  Sign out
+                </button>
+              </div>
+            )}
+          </div>
 
           <button
             type="button"
@@ -3523,7 +3622,19 @@ const Navigation = ({ currentView, cartCount, setView, toggleCart, authUser, onS
            <button onClick={() => handleNav('subscription')} className="text-[#F9F6F0] text-left font-sans tracking-widest">SUBSCRIPTION</button>
            <button onClick={() => handleNav('contact')} className="text-[#F9F6F0] text-left font-sans tracking-widest">CONTACT</button>
            <button type="button" onClick={handleShare} className="text-[#F9F6F0] text-left font-sans tracking-widest">SHARE THIS PAGE</button>
-           <button onClick={() => handleNav('account')} className="text-[#F9F6F0] text-left font-sans tracking-widest">
+           <button
+             onClick={() => {
+               if (authUser) {
+                 handleNav('account');
+                 return;
+               }
+               if (typeof onOpenAuthModal === 'function') {
+                 onOpenAuthModal();
+               }
+               setMobileMenuOpen(false);
+             }}
+             className="text-[#F9F6F0] text-left font-sans tracking-widest"
+           >
              {authUser ? 'ACCOUNT' : 'LOGIN / SIGN UP'}
            </button>
            {authUser && (
@@ -6430,15 +6541,8 @@ const App = () => {
     }
   }, [handleShareLink]);
 
-  const [authState, setAuthState] = useState(() => {
-    try {
-      const storedAuth = localStorage.getItem(AUTH_STORAGE_KEY);
-      return normalizeAuthState(storedAuth ? JSON.parse(storedAuth) : DEFAULT_AUTH_STATE);
-    } catch (error) {
-      console.error('Failed to load auth state', error);
-      return { ...DEFAULT_AUTH_STATE };
-    }
-  });
+  const [authState, setAuthState] = useState({ ...DEFAULT_AUTH_STATE });
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [ordersState, setOrdersState] = useState({
     isLoading: false,
     error: '',
@@ -6457,121 +6561,79 @@ const App = () => {
   const [passwordRecovery, setPasswordRecovery] = useState({ ...DEFAULT_PASSWORD_RECOVERY_STATE });
 
   useEffect(() => {
-    try {
-      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({
-        user: authState.user,
-        session: authState.session,
-      }));
-    } catch (error) {
-      console.error('Failed to save auth state', error);
-    }
-  }, [authState.session, authState.user]);
+    let isMounted = true;
 
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return undefined;
-    }
+    const applySession = (sessionPayload) => {
+      if (!isMounted) return;
+      const mapped = mapSupabaseSessionToAuthState(sessionPayload);
+      setAuthState({
+        isLoading: false,
+        user: mapped.user,
+        session: mapped.session,
+      });
+    };
 
-    const rawHash = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : '';
-    if (!rawHash) {
-      return undefined;
-    }
+    const loadSession = async () => {
+      setAuthState((previousState) => ({ ...previousState, isLoading: true }));
+      const { data, error } = await supabase.auth.getSession();
 
-    const hashParams = new URLSearchParams(rawHash);
-    const hashType = normalizeLower(hashParams.get('type'));
-    const accessToken = (hashParams.get('access_token') || '').trim();
-    if (hashType !== 'recovery' || !accessToken) {
-      return undefined;
-    }
+      if (!isMounted) return;
 
-    let cancelled = false;
-    const activateRecovery = async () => {
-      let email = '';
-      try {
-        const user = await supabaseGetUser(accessToken);
-        email = normalizeLower(user?.email || '');
-      } catch {
-        email = '';
-      }
-
-      if (cancelled) {
+      if (error) {
+        console.error('Failed to hydrate auth session', error);
+        setAuthState({
+          isLoading: false,
+          user: null,
+          session: null,
+        });
         return;
       }
 
-      setPasswordRecovery({
-        active: true,
-        accessToken,
-        email,
-      });
-      navigateToView('account', { replace: true, preserveScroll: true });
-      trackEvent('password_recovery_opened');
+      applySession(data?.session || null);
     };
 
-    activateRecovery();
+    loadSession();
+
+    const { data: listenerData } = supabase.auth.onAuthStateChange((event, sessionPayload) => {
+      applySession(sessionPayload || null);
+
+      if (event === 'SIGNED_IN') {
+        setIsAuthModalOpen(false);
+      }
+
+      if (event === 'SIGNED_OUT') {
+        setPasswordRecovery({ ...DEFAULT_PASSWORD_RECOVERY_STATE });
+      }
+
+      if (event === 'PASSWORD_RECOVERY') {
+        const recoverSessionToken = typeof sessionPayload?.access_token === 'string'
+          ? sessionPayload.access_token
+          : '';
+        const recoverEmail = normalizeLower(sessionPayload?.user?.email || '');
+        setPasswordRecovery({
+          active: true,
+          accessToken: recoverSessionToken,
+          email: recoverEmail,
+        });
+        navigateToView('account', { replace: true, preserveScroll: true });
+        trackEvent('password_recovery_opened');
+      }
+    });
 
     return () => {
-      cancelled = true;
+      isMounted = false;
+      listenerData?.subscription?.unsubscribe?.();
     };
   }, [navigateToView]);
 
   useEffect(() => {
-    let cancelled = false;
+    if (authState.isLoading) return;
+    if (currentView !== 'account') return;
+    if (authState.user?.id || passwordRecovery.active) return;
 
-    const hydrateAuthSession = async () => {
-      if (!authState.session?.accessToken) {
-        return;
-      }
-
-      setAuthState((previousState) => ({ ...previousState, isLoading: true }));
-
-      try {
-        let currentSession = authState.session;
-        let currentUser = authState.user;
-
-        const shouldRefresh = currentSession.expiresAt && currentSession.expiresAt <= Date.now() + 60_000;
-        if (shouldRefresh && currentSession.refreshToken) {
-          const refreshed = await supabaseRefreshSession(currentSession.refreshToken);
-          if (refreshed.session) {
-            currentSession = refreshed.session;
-            currentUser = refreshed.user || currentUser;
-          }
-        }
-
-        if (!currentUser?.id) {
-          const fetchedUser = await supabaseGetUser(currentSession.accessToken);
-          currentUser = fetchedUser ? { id: fetchedUser.id, email: fetchedUser.email || '' } : null;
-        }
-
-        if (!cancelled) {
-          if (!currentUser?.id) {
-            setAuthState({ ...DEFAULT_AUTH_STATE });
-            return;
-          }
-
-          setAuthState({
-            isLoading: false,
-            session: currentSession,
-            user: {
-              id: currentUser.id,
-              email: currentUser.email || '',
-            },
-          });
-        }
-      } catch (error) {
-        if (!cancelled) {
-          console.error('Failed to hydrate auth session', error);
-          setAuthState({ ...DEFAULT_AUTH_STATE });
-        }
-      }
-    };
-
-    hydrateAuthSession();
-
-    return () => {
-      cancelled = true;
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    setIsAuthModalOpen(true);
+    navigateToView('home', { replace: true, preserveScroll: true });
+  }, [authState.isLoading, authState.user?.id, currentView, navigateToView, passwordRecovery.active]);
 
   const accountStorageScope = authState.user?.id || 'guest';
   const cartStorageKey = `velure_cart_${accountStorageScope}`;
@@ -7155,28 +7217,13 @@ const App = () => {
 
     try {
       const normalizedEmail = normalizeLower(email);
-      const signInResult = await supabaseSignIn(normalizedEmail, password);
-      if (!signInResult.session?.accessToken) {
-        throw new Error('Unable to start a session. Please check your credentials.');
-      }
-
-      let resolvedUser = signInResult.user;
-      if (!resolvedUser?.id) {
-        resolvedUser = await supabaseGetUser(signInResult.session.accessToken);
-      }
-
-      if (!resolvedUser?.id) {
-        throw new Error('Unable to load account details.');
-      }
-
-      setAuthState({
-        isLoading: false,
-        session: signInResult.session,
-        user: {
-          id: resolvedUser.id,
-          email: resolvedUser.email || normalizedEmail,
-        },
+      const { error } = await supabase.auth.signInWithPassword({
+        email: normalizedEmail,
+        password,
       });
+      if (error) {
+        throw error;
+      }
 
       trackEvent('login', { method: 'password' });
       return { ok: true, message: 'Signed in successfully.' };
@@ -7187,28 +7234,55 @@ const App = () => {
     }
   }, []);
 
+  const handleMagicLinkSignIn = useCallback(async (email) => {
+    const normalizedEmail = normalizeLower(email);
+    if (!isValidEmail(normalizedEmail)) {
+      return { ok: false, message: 'Enter a valid account email.' };
+    }
+
+    setAuthState((previousState) => ({ ...previousState, isLoading: true }));
+
+    try {
+      const redirectTo = typeof window !== 'undefined' ? window.location.origin : undefined;
+      const { error } = await supabase.auth.signInWithOtp({
+        email: normalizedEmail,
+        options: {
+          emailRedirectTo: redirectTo,
+        },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      setAuthState((previousState) => ({ ...previousState, isLoading: false }));
+      trackEvent('login', { method: 'magic_link' });
+      return { ok: true, message: 'Magic link sent. Check your inbox and spam folder.' };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to send magic link right now.';
+      setAuthState((previousState) => ({ ...previousState, isLoading: false }));
+      return { ok: false, message };
+    }
+  }, []);
+
   const handleSignUp = useCallback(async (email, password) => {
     setAuthState((previousState) => ({ ...previousState, isLoading: true }));
 
     try {
       const normalizedEmail = normalizeLower(email);
-      const signUpResult = await supabaseSignUp(normalizedEmail, password);
+      const redirectTo = typeof window !== 'undefined' ? window.location.origin : undefined;
+      const { data, error } = await supabase.auth.signUp({
+        email: normalizedEmail,
+        password,
+        options: {
+          emailRedirectTo: redirectTo,
+        },
+      });
+      if (error) {
+        throw error;
+      }
 
-      if (signUpResult.session?.accessToken) {
-        const resolvedUser = signUpResult.user || await supabaseGetUser(signUpResult.session.accessToken);
-        if (!resolvedUser?.id) {
-          throw new Error('Account created, but user profile could not be loaded.');
-        }
-
-        setAuthState({
-          isLoading: false,
-          session: signUpResult.session,
-          user: {
-            id: resolvedUser.id,
-            email: resolvedUser.email || normalizedEmail,
-          },
-        });
-
+      if (data?.session?.access_token) {
         trackEvent('sign_up', { method: 'password' });
         return { ok: true, message: 'Account created and signed in.' };
       }
@@ -7227,21 +7301,24 @@ const App = () => {
   }, []);
 
   const handleSignOut = useCallback(async () => {
-    const accessToken = authState.session?.accessToken;
     setAuthState((previousState) => ({ ...previousState, isLoading: true }));
 
     try {
-      if (accessToken) {
-        await supabaseSignOut(accessToken);
-      }
+      await supabase.auth.signOut();
     } catch (error) {
       console.error('Sign-out request failed', error);
     } finally {
-      setAuthState({ ...DEFAULT_AUTH_STATE });
+      setAuthState({
+        isLoading: false,
+        user: null,
+        session: null,
+      });
+      setPasswordRecovery({ ...DEFAULT_PASSWORD_RECOVERY_STATE });
+      setIsAuthModalOpen(false);
       trackEvent('logout');
       navigateToView('home', { replace: true });
     }
-  }, [authState.session?.accessToken, navigateToView]);
+  }, [navigateToView]);
 
   const handleRequestPasswordReset = useCallback(async (email) => {
     const normalizedEmail = normalizeLower(email);
@@ -7250,8 +7327,11 @@ const App = () => {
     }
 
     try {
-      const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/` : '';
-      await supabaseSendPasswordResetEmail(normalizedEmail, redirectTo);
+      const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/update-password` : '';
+      const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, { redirectTo });
+      if (error) {
+        throw error;
+      }
       trackEvent('password_reset_requested', { email: normalizedEmail });
       return {
         ok: true,
@@ -7272,9 +7352,12 @@ const App = () => {
     }
 
     try {
-      await supabaseUpdatePassword(passwordRecovery.accessToken, nextPassword);
+      const { error } = await supabase.auth.updateUser({ password: nextPassword });
+      if (error) {
+        throw error;
+      }
       setPasswordRecovery({ ...DEFAULT_PASSWORD_RECOVERY_STATE });
-      setAuthState({ ...DEFAULT_AUTH_STATE });
+      setAuthState((previousState) => ({ ...previousState, isLoading: false }));
       navigateToView('account', { replace: true, preserveScroll: true });
       trackEvent('password_reset_completed');
       return { ok: true, message: 'Password updated. Sign in with your new password.' };
@@ -7585,7 +7668,13 @@ const App = () => {
           onCopyProductLink={handleCopyProductLink}
           authUser={authState.user}
           authAccessToken={authState.session?.accessToken || ''}
-          onOpenAccount={() => setView('account')}
+          onOpenAccount={() => {
+            if (authState.user) {
+              setView('account');
+              return;
+            }
+            setIsAuthModalOpen(true);
+          }}
         />
       );
     }
@@ -7705,7 +7794,19 @@ const App = () => {
         authUser={authState.user}
         onSignOut={handleSignOut}
         onSharePage={handleSharePage}
+        onOpenAuthModal={() => setIsAuthModalOpen(true)}
       />
+
+      {isAuthModalOpen && (
+        <AuthModal
+          isOpen={isAuthModalOpen}
+          onClose={() => setIsAuthModalOpen(false)}
+          onPasswordSignIn={handleSignIn}
+          onMagicLinkSignIn={handleMagicLinkSignIn}
+          onSignUp={handleSignUp}
+          onForgotPassword={handleRequestPasswordReset}
+        />
+      )}
       
       <CartDrawer 
         isOpen={isCartOpen} 
