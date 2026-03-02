@@ -3276,15 +3276,15 @@ const AuthModal = ({
 
   return (
     <div
-      className="fixed inset-0 z-[90] bg-black/70"
+      className="fixed inset-0 z-[90] bg-black/70 px-4 py-6 sm:p-6"
       role="dialog"
       aria-modal="true"
       aria-labelledby="auth-modal-title"
       onClick={onClose}
     >
-      <div className="min-h-screen flex items-end sm:items-center justify-center sm:p-6">
+      <div className="min-h-full flex items-center justify-center">
         <div
-          className="w-full sm:max-w-md bg-[#151515] border border-gray-800 rounded-t-2xl sm:rounded-sm p-6 sm:p-8 shadow-2xl"
+          className="w-full max-w-md max-h-[90vh] overflow-y-auto bg-[#151515] border border-gray-800 rounded-2xl sm:rounded-sm p-6 sm:p-8 shadow-2xl"
           onClick={(event) => event.stopPropagation()}
         >
           <div className="flex items-start justify-between gap-3 mb-5">
