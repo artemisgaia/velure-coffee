@@ -4319,6 +4319,13 @@ const createEmptyPaymentSession = () => ({
   rewardIdUsed: null,
 });
 
+/*
+Checkout flow audit (2026-03-02):
+- Flow type: Stripe Payment Element mounted on step 3.
+- Endpoint: POST /api/create-payment-intent for intent creation/updates and totals.
+- Client-side fields collected before payment: customer details + shipping address/service.
+- Cart payload sent as aggregated line items: [{ productId, quantity }].
+*/
 const CheckoutView = ({
   cart,
   rewardsProfile,
