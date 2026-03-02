@@ -2381,7 +2381,7 @@ const saveProductReviewToApi = async (accessToken, review) => {
 const ProductCard = ({ product, openProductDetail }) => (
   <button
     type="button"
-    className="group cursor-pointer text-left w-full"
+    className="group cursor-pointer text-left w-full motion-card"
     onClick={() => openProductDetail(product)}
     aria-label={`View details for ${product.name}`}
   >
@@ -2391,11 +2391,11 @@ const ProductCard = ({ product, openProductDetail }) => (
         alt={`${product.name} product image`}
         loading="lazy"
         decoding="async"
-        className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-90 group-hover:opacity-100"
+        className="absolute inset-0 w-full h-full object-cover motion-card-image"
       />
       <div className="absolute top-4 left-4 bg-[#D4AF37] text-[#0B0C0C] text-xs font-bold px-3 py-1 uppercase tracking-wider">{product.tag}</div>
-      <div className="absolute bottom-0 left-0 w-full p-4 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-        <span className="block w-full text-center bg-[#F9F6F0] text-[#0B0C0C] py-3 font-sans font-bold tracking-wider group-hover:bg-[#D4AF37] transition-colors shadow-lg">
+      <div className="absolute bottom-0 left-0 w-full p-4 motion-card-cta">
+        <span className="block w-full text-center bg-[#F9F6F0] text-[#0B0C0C] py-3 font-sans font-bold tracking-wider shadow-lg">
           VIEW RITUAL
         </span>
       </div>
@@ -2538,6 +2538,9 @@ const ProductDetailView = ({
   const toggleAccordion = useCallback((sectionKey) => {
     setOpenAccordion((previous) => (previous === sectionKey ? '' : sectionKey));
   }, []);
+  const isDetailsOpen = openAccordion === 'details';
+  const isShippingOpen = openAccordion === 'shipping';
+  const isReviewsOpen = openAccordion === 'reviews';
 
   useEffect(() => {
     window.scrollTo(0,0);
@@ -2907,14 +2910,19 @@ const ProductDetailView = ({
                   type="button"
                   onClick={() => toggleAccordion('details')}
                   className="w-full px-5 py-4 flex items-center justify-between text-left"
-                  aria-expanded={openAccordion === 'details'}
+                  aria-expanded={isDetailsOpen}
                   aria-controls={detailsPanelId}
                 >
                   <span className="font-serif text-[#D4AF37]">The Details</span>
-                  <span className="text-xs text-gray-400 uppercase tracking-widest">{openAccordion === 'details' ? 'Hide' : 'Show'}</span>
+                  <span className="text-xs text-gray-400 uppercase tracking-widest">{isDetailsOpen ? 'Hide' : 'Show'}</span>
                 </button>
-                {openAccordion === 'details' && (
-                  <div id={detailsPanelId} className="px-5 pb-5">
+                <div
+                  id={detailsPanelId}
+                  className={`motion-accordion-panel ${isDetailsOpen ? 'is-open' : ''}`}
+                  aria-hidden={!isDetailsOpen}
+                  inert={!isDetailsOpen ? '' : undefined}
+                >
+                  <div className="px-5 pb-5 pt-1">
                     <div className="grid grid-cols-1 md:grid-cols-[1fr,260px] gap-5 items-start">
                       <div>
                         <ul className="space-y-3 text-sm text-gray-400 font-sans">
@@ -2961,7 +2969,7 @@ const ProductDetailView = ({
                       Nutrition values are shown from verified product specifications and label data.
                     </p>
                   </div>
-                )}
+                </div>
               </section>
 
               <section className="border border-gray-800 bg-[#151515]">
@@ -2969,14 +2977,19 @@ const ProductDetailView = ({
                   type="button"
                   onClick={() => toggleAccordion('shipping')}
                   className="w-full px-5 py-4 flex items-center justify-between text-left"
-                  aria-expanded={openAccordion === 'shipping'}
+                  aria-expanded={isShippingOpen}
                   aria-controls={shippingPanelId}
                 >
                   <span className="font-serif text-[#D4AF37]">Shipping &amp; Returns</span>
-                  <span className="text-xs text-gray-400 uppercase tracking-widest">{openAccordion === 'shipping' ? 'Hide' : 'Show'}</span>
+                  <span className="text-xs text-gray-400 uppercase tracking-widest">{isShippingOpen ? 'Hide' : 'Show'}</span>
                 </button>
-                {openAccordion === 'shipping' && (
-                  <div id={shippingPanelId} className="px-5 pb-5">
+                <div
+                  id={shippingPanelId}
+                  className={`motion-accordion-panel ${isShippingOpen ? 'is-open' : ''}`}
+                  aria-hidden={!isShippingOpen}
+                  inert={!isShippingOpen ? '' : undefined}
+                >
+                  <div className="px-5 pb-5 pt-1">
                     <ul className="space-y-2 text-sm text-gray-300 font-sans">
                       <li className="flex items-center gap-2"><Check size={14} className="text-[#D4AF37]" /> Free shipping on orders over $50.</li>
                       <li className="flex items-center gap-2"><Check size={14} className="text-[#D4AF37]" /> Standard domestic delivery is typically 2-5 business days.</li>
@@ -2984,7 +2997,7 @@ const ProductDetailView = ({
                       <li className="flex items-center gap-2"><Check size={14} className="text-[#D4AF37]" /> Secure checkout processing on all orders.</li>
                     </ul>
                   </div>
-                )}
+                </div>
               </section>
 
               <section className="border border-gray-800 bg-[#151515]">
@@ -2992,14 +3005,19 @@ const ProductDetailView = ({
                   type="button"
                   onClick={() => toggleAccordion('reviews')}
                   className="w-full px-5 py-4 flex items-center justify-between text-left"
-                  aria-expanded={openAccordion === 'reviews'}
+                  aria-expanded={isReviewsOpen}
                   aria-controls={reviewsPanelId}
                 >
                   <span className="font-serif text-[#D4AF37]">Reviews</span>
-                  <span className="text-xs text-gray-400 uppercase tracking-widest">{openAccordion === 'reviews' ? 'Hide' : 'Show'}</span>
+                  <span className="text-xs text-gray-400 uppercase tracking-widest">{isReviewsOpen ? 'Hide' : 'Show'}</span>
                 </button>
-                {openAccordion === 'reviews' && (
-                  <div id={reviewsPanelId} className="px-5 pb-5">
+                <div
+                  id={reviewsPanelId}
+                  className={`motion-accordion-panel ${isReviewsOpen ? 'is-open' : ''}`}
+                  aria-hidden={!isReviewsOpen}
+                  inert={!isReviewsOpen ? '' : undefined}
+                >
+                  <div className="px-5 pb-5 pt-1">
                     {reviewsState.isLoading ? (
                       <p className="text-sm text-gray-400">Loading reviews...</p>
                     ) : reviewsState.error ? (
@@ -3092,7 +3110,7 @@ const ProductDetailView = ({
                       <p className="text-sm text-gray-400 mt-5">{reviewsState.reason || 'Only verified customers can leave a review.'}</p>
                     )}
                   </div>
-                )}
+                </div>
               </section>
             </div>
           </div>
@@ -3100,8 +3118,8 @@ const ProductDetailView = ({
       </div>
 
       {bundlePreviewProduct && (
-        <div className="fixed inset-0 z-[70] bg-black/70 px-4 py-10 md:py-16 overflow-y-auto" role="dialog" aria-modal="true" aria-label={`${bundlePreviewProduct.name} preview`}>
-          <div className="max-w-2xl mx-auto border border-gray-700 bg-[#0B0C0C]">
+        <div className="fixed inset-0 z-[70] bg-black/70 px-4 py-10 md:py-16 overflow-y-auto motion-modal-overlay" role="dialog" aria-modal="true" aria-label={`${bundlePreviewProduct.name} preview`}>
+          <div className="max-w-2xl mx-auto border border-gray-700 bg-[#0B0C0C] motion-modal-panel">
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800">
               <p className="text-xs uppercase tracking-widest text-[#D4AF37]">Bundle Preview</p>
               <button
@@ -3276,7 +3294,7 @@ const AuthModal = ({
 
   return (
     <div
-      className="fixed inset-0 z-[90] bg-black/70 px-4 py-6 sm:p-6"
+      className="fixed inset-0 z-[90] bg-black/70 px-4 py-6 sm:p-6 motion-modal-overlay"
       role="dialog"
       aria-modal="true"
       aria-labelledby="auth-modal-title"
@@ -3284,7 +3302,7 @@ const AuthModal = ({
     >
       <div className="min-h-full flex items-center justify-center">
         <div
-          className="w-full max-w-md max-h-[90vh] overflow-y-auto bg-[#151515] border border-gray-800 rounded-2xl sm:rounded-sm p-6 sm:p-8 shadow-2xl"
+          className="w-full max-w-md max-h-[90vh] overflow-y-auto bg-[#151515] border border-gray-800 rounded-2xl sm:rounded-sm p-6 sm:p-8 shadow-2xl motion-modal-panel"
           onClick={(event) => event.stopPropagation()}
         >
           <div className="flex items-start justify-between gap-3 mb-5">
@@ -3739,14 +3757,14 @@ const CartDrawer = ({
   };
 
   return (
-    <div className={`fixed inset-0 z-[60] flex justify-end transition-opacity duration-300 ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
-      <button type="button" className="absolute inset-0 bg-black/50" onClick={closeCart} aria-label="Close cart drawer" />
+    <div className={`fixed inset-0 z-[60] flex justify-end motion-overlay ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
+      <button type="button" className={`absolute inset-0 bg-black/50 motion-backdrop ${isOpen ? 'opacity-100' : 'opacity-0'}`} onClick={closeCart} aria-label="Close cart drawer" />
       <div
         ref={drawerRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="cart-drawer-title"
-        className={`relative w-full max-w-md bg-[#F9F6F0] h-full shadow-2xl transform transition-transform duration-300 flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
+        className={`relative w-full max-w-md bg-[#F9F6F0] h-full shadow-2xl flex flex-col motion-drawer-panel ${isOpen ? 'motion-drawer-panel-open' : 'motion-drawer-panel-closed'}`}
       >
         
         <div className="p-6 bg-[#0B0C0C] text-[#F9F6F0] flex justify-between items-center">
@@ -4462,10 +4480,10 @@ const ShopView = ({ category, openProductDetail }) => {
   return (
     <div className="pt-32 pb-24 bg-[#0B0C0C] min-h-screen">
       <div className="max-w-7xl mx-auto px-6">
-        <h1 className="text-4xl md:text-5xl font-serif text-[#F9F6F0] mb-4">{collectionTitle}</h1>
-        <p className="text-gray-400 font-sans mb-8 max-w-2xl">Explore our range of meticulously sourced and roasted coffees, designed to elevate your daily ritual.</p>
+        <h1 className="text-4xl md:text-5xl font-serif text-[#F9F6F0] mb-4 motion-enter">{collectionTitle}</h1>
+        <p className="text-gray-400 font-sans mb-8 max-w-2xl motion-enter">Explore our range of meticulously sourced and roasted coffees, designed to elevate your daily ritual.</p>
 
-        <div className="mb-10">
+        <div className="mb-10 motion-enter">
           <button
             type="button"
             onClick={() => setIsFilterPanelOpen((previous) => !previous)}
@@ -6268,12 +6286,12 @@ const HomeView = ({ openProductDetail, setView }) => (
     <div className="relative h-screen w-full flex items-center justify-center overflow-hidden bg-[#0B0C0C]">
       <div className="absolute inset-0 bg-gradient-to-b from-black/70 to-[#0B0C0C] z-10"></div>
       <div className="absolute inset-0 z-0 opacity-40 bg-[url('https://images.unsplash.com/photo-1497935586351-b67a49e012bf?ixlib=rb-4.0.3&auto=format&fit=crop&w=2071&q=80')] bg-cover bg-center"></div>
-      <div className="relative z-20 text-center px-4 max-w-4xl mx-auto">
-        <p className="text-[#D4AF37] font-sans tracking-[0.3em] text-sm md:text-base mb-6 uppercase animate-fade-in-up">The Standard of Smooth</p>
+      <div className="relative z-20 text-center px-4 max-w-4xl mx-auto motion-enter">
+        <p className="text-[#D4AF37] font-sans tracking-[0.3em] text-sm md:text-base mb-6 uppercase">The Standard of Smooth</p>
         <h1 className="text-5xl md:text-7xl lg:text-8xl font-serif text-[#F9F6F0] mb-8 leading-tight">ELEVATE THE <br /><span className="italic text-[#D4AF37]">RITUAL</span></h1>
         <div className="flex flex-col md:flex-row gap-4 justify-center">
-          <button onClick={() => setView('shop_all')} className="bg-[#D4AF37] text-[#0B0C0C] px-8 py-4 font-sans font-bold tracking-widest hover:bg-[#b5952f] transition-all transform hover:scale-105">SHOP COLLECTION</button>
-          <button onClick={() => setView('about')} className="border border-[#F9F6F0] text-[#F9F6F0] px-8 py-4 font-sans font-bold tracking-widest hover:bg-[#F9F6F0] hover:text-[#0B0C0C] transition-all">OUR STORY</button>
+          <button onClick={() => setView('shop_all')} className="bg-[#D4AF37] text-[#0B0C0C] px-8 py-4 font-sans font-bold tracking-widest hover:bg-[#b5952f] transition-colors">SHOP COLLECTION</button>
+          <button onClick={() => setView('about')} className="border border-[#F9F6F0] text-[#F9F6F0] px-8 py-4 font-sans font-bold tracking-widest hover:bg-[#F9F6F0] hover:text-[#0B0C0C] transition-colors">OUR STORY</button>
         </div>
       </div>
     </div>
@@ -6315,7 +6333,7 @@ const HomeView = ({ openProductDetail, setView }) => (
     {/* FEATURED SHOP */}
     <div className="bg-[#0B0C0C] py-24 border-t border-gray-900">
       <div className="max-w-7xl mx-auto px-6">
-        <div className="text-center mb-16">
+        <div className="text-center mb-16 motion-enter">
           <h2 className="text-4xl md:text-5xl font-serif text-[#F9F6F0] mb-6">Curated Excellence</h2>
           <div className="w-24 h-1 bg-[#D4AF37] mx-auto"></div>
         </div>

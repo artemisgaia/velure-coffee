@@ -3,9 +3,163 @@
 @tailwind utilities;
 
 /* Reset specific to ensure full height */
+:root {
+    --motion-fast: 180ms;
+    --motion-base: 240ms;
+    --motion-slow: 320ms;
+    --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
 html, body, #root {
     height: 100%;
     margin: 0;
     padding: 0;
     background-color: #0B0C0C; /* Obsidian Black fallback */
+    scroll-behavior: smooth;
+}
+
+button {
+    transition-property: transform, box-shadow, filter, background-color, border-color, color, opacity;
+    transition-duration: var(--motion-fast);
+    transition-timing-function: var(--ease-standard);
+    transform: translateY(0) scale(1);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    button:not(:disabled):not([aria-disabled="true"]):hover {
+        transform: translateY(-1px);
+        filter: brightness(1.03);
+    }
+}
+
+button:not(:disabled):not([aria-disabled="true"]):active {
+    transform: translateY(0) scale(0.98);
+}
+
+button:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 1px rgba(11, 12, 12, 0.95), 0 0 0 2px #D4AF37;
+}
+
+.motion-card {
+    transition: transform var(--motion-base) var(--ease-standard), box-shadow var(--motion-base) var(--ease-standard);
+}
+
+.motion-card-image {
+    transition: transform var(--motion-base) var(--ease-standard), opacity var(--motion-base) var(--ease-standard);
+    transform: scale(1);
+    opacity: 0.92;
+}
+
+.motion-card-cta {
+    transition: transform var(--motion-base) var(--ease-standard), opacity var(--motion-base) var(--ease-standard);
+}
+
+@media (min-width: 768px) and (hover: hover) and (pointer: fine) {
+    .motion-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 14px 32px rgba(0, 0, 0, 0.28);
+    }
+
+    .motion-card:hover .motion-card-image {
+        transform: scale(1.01);
+        opacity: 1;
+    }
+
+    .motion-card .motion-card-cta {
+        transform: translateY(8px);
+        opacity: 0;
+    }
+
+    .motion-card:hover .motion-card-cta {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.motion-accordion-panel {
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    transform: translateY(-8px);
+    transition:
+        max-height var(--motion-base) var(--ease-standard),
+        opacity var(--motion-base) var(--ease-standard),
+        transform var(--motion-base) var(--ease-standard);
+}
+
+.motion-accordion-panel.is-open {
+    max-height: 5000px;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.motion-overlay {
+    transition: opacity var(--motion-base) var(--ease-standard);
+}
+
+.motion-backdrop {
+    transition: opacity var(--motion-base) var(--ease-standard);
+}
+
+.motion-drawer-panel {
+    transition:
+        transform var(--motion-slow) var(--ease-standard),
+        opacity var(--motion-base) var(--ease-standard);
+}
+
+.motion-drawer-panel-open {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.motion-drawer-panel-closed {
+    transform: translateX(12px);
+    opacity: 0;
+}
+
+@keyframes quiet-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes quiet-fade-up {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.motion-modal-overlay {
+    animation: quiet-fade-in var(--motion-base) var(--ease-standard);
+}
+
+.motion-modal-panel {
+    animation: quiet-fade-up var(--motion-base) var(--ease-standard);
+}
+
+.motion-enter {
+    animation: quiet-fade-up var(--motion-slow) var(--ease-standard) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    :root {
+        --motion-fast: 0ms;
+        --motion-base: 0ms;
+        --motion-slow: 0ms;
+    }
+
+    * {
+        scroll-behavior: auto !important;
+    }
+
+    .motion-enter,
+    .motion-modal-overlay,
+    .motion-modal-panel {
+        animation: none !important;
+    }
 }
