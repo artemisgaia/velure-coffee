@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { ShoppingBag, Menu, X, Coffee, Leaf, Award, Check, Mail, MapPin, Phone, ArrowLeft, User, Share2, Link2 } from 'lucide-react';
+import { ShoppingBag, Menu, X, ChevronDown, Coffee, Leaf, Award, Check, Mail, MapPin, Phone, ArrowLeft, User, Share2, Link2 } from 'lucide-react';
 import { supabase } from './lib/supabaseClient';
 
 // --- BRAND ASSETS & DATA ---
@@ -4036,21 +4036,19 @@ const CartDrawer = ({
             <div>
               <h2 id="cart-drawer-title" className="font-serif text-[1.45rem] leading-none tracking-wide">Your Ritual</h2>
               <p className="text-[11px] text-gray-400 mt-1.5">{cartTotalQty} item{cartTotalQty === 1 ? '' : 's'}</p>
-            </div>
-            <div className="flex items-center gap-2">
               {cartDisplayItems.length > 0 && (
                 <button
                   type="button"
                   onClick={clearCart}
-                  className="text-[10px] uppercase tracking-widest text-gray-400 hover:text-[#D4AF37]"
+                  className="mt-1.5 text-[10px] uppercase tracking-widest text-gray-400 hover:text-[#D4AF37]"
                 >
                   Clear
                 </button>
               )}
-              <button type="button" onClick={handleCloseCart} aria-label="Close cart" className="h-10 w-10 inline-flex items-center justify-center border border-gray-700 text-gray-300 hover:text-[#F9F6F0] hover:border-gray-500">
-                <X size={20} />
-              </button>
             </div>
+            <button type="button" onClick={handleCloseCart} aria-label="Close cart" className="h-10 w-10 inline-flex items-center justify-center border border-gray-700 text-gray-300 hover:text-[#F9F6F0] hover:border-gray-500">
+              <X size={20} />
+            </button>
           </div>
         </div>
 
@@ -4064,6 +4062,8 @@ const CartDrawer = ({
             <div className="divide-y divide-white/10">
               {cartDisplayItems.map((item) => {
                 const bundleSelectionSlots = Array.isArray(item.bundleSelection?.slots) ? item.bundleSelection.slots : [];
+                const canDecreaseQty = item.quantity > 1;
+                const canIncreaseQty = item.quantity < 10;
                 return (
                   <article key={item.productId} className="py-3.5">
                     <div className="flex gap-3">
@@ -4125,7 +4125,9 @@ const CartDrawer = ({
                             <button
                               type="button"
                               onClick={() => decrementCartItemQty(item.productId)}
-                              className="h-9 w-9 text-[#D4AF37] hover:bg-[#D4AF37]/10"
+                              disabled={!canDecreaseQty}
+                              aria-disabled={!canDecreaseQty}
+                              className={`h-9 w-9 text-[#D4AF37] ${canDecreaseQty ? 'hover:bg-[#D4AF37]/10' : 'opacity-40 cursor-not-allowed'}`}
                               aria-label={`Decrease quantity for ${item.name}`}
                             >
                               -
@@ -4142,7 +4144,9 @@ const CartDrawer = ({
                             <button
                               type="button"
                               onClick={() => incrementCartItemQty(item.productId)}
-                              className="h-9 w-9 text-[#D4AF37] hover:bg-[#D4AF37]/10"
+                              disabled={!canIncreaseQty}
+                              aria-disabled={!canIncreaseQty}
+                              className={`h-9 w-9 text-[#D4AF37] ${canIncreaseQty ? 'hover:bg-[#D4AF37]/10' : 'opacity-40 cursor-not-allowed'}`}
                               aria-label={`Increase quantity for ${item.name}`}
                             >
                               +
@@ -4165,28 +4169,35 @@ const CartDrawer = ({
         </div>
 
         <div className="sticky bottom-0 shrink-0 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+12px)] bg-[#0B0C0C]/95 backdrop-blur border-t border-white/10">
-          {!authUser && (
+          <div className="flex items-center justify-between gap-3">
+            {!authUser ? (
+              <button
+                type="button"
+                onClick={() => {
+                  if (typeof onOpenAuthModal === 'function') {
+                    onOpenAuthModal();
+                  }
+                }}
+                className="flex-1 min-w-0 truncate text-left text-[11px] text-[#D4AF37] hover:text-[#F9F6F0]"
+              >
+                Sign in for rewards
+              </button>
+            ) : (
+              <span className="flex-1 min-w-0 truncate text-[11px] text-gray-500">
+                {activeReward ? `Reward applied: ${activeReward.name}` : `${rewardsProfile.points} pts available`}
+              </span>
+            )}
+
             <button
               type="button"
-              onClick={() => {
-                if (typeof onOpenAuthModal === 'function') {
-                  onOpenAuthModal();
-                }
-              }}
-              className="text-[11px] text-[#D4AF37] hover:text-[#F9F6F0]"
+              onClick={() => setIsOrderDetailsOpen((previous) => !previous)}
+              className="shrink-0 inline-flex items-center gap-2 text-[11px] text-gray-400 hover:text-[#D4AF37]"
+              aria-expanded={isOrderDetailsOpen}
             >
-              Sign in for rewards
+              Order details
+              <ChevronDown size={14} className={`transition-transform ${isOrderDetailsOpen ? 'rotate-180' : ''}`} />
             </button>
-          )}
-
-          <button
-            type="button"
-            onClick={() => setIsOrderDetailsOpen((previous) => !previous)}
-            className="mt-2 text-[11px] uppercase tracking-widest text-gray-400 hover:text-[#D4AF37]"
-            aria-expanded={isOrderDetailsOpen}
-          >
-            {isOrderDetailsOpen ? 'Hide order details' : 'Order details'}
-          </button>
+          </div>
 
           <div className={`motion-accordion-panel ${isOrderDetailsOpen ? 'is-open' : ''}`}>
             <div className="mt-2 max-h-44 overflow-y-auto border border-white/10 bg-white/[0.02] p-3 space-y-2">
