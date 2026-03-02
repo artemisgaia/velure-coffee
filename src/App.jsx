@@ -782,7 +782,7 @@ A bold dark roast built around deep cocoa and toasted depth—full-bodied, smoot
     category: "bundles",
     tag: "Bundle",
     subscriptionEligible: false,
-    images: ["https://res.cloudinary.com/dfygdydcj/image/upload/v1772414548/Ritual_cxrq4f.png"],
+    images: [DEFAULT_SHARE_IMAGE_URL],
     bundleContents: ["Choose any 2 coffee bags (12 oz)"],
     description: "A calm entry into the Velure ritual, built for consistency and range. The Ritual Set includes two 12 oz coffee bags so you can keep one profile for weekdays and another for slower mornings, without compromising on quality or finish.",
     details: {
@@ -807,7 +807,7 @@ A bold dark roast built around deep cocoa and toasted depth—full-bodied, smoot
     category: "bundles",
     tag: "Bundle",
     subscriptionEligible: false,
-    images: ["https://res.cloudinary.com/dfygdydcj/image/upload/v1772414548/Starter_fnnhi2.png"],
+    images: [DEFAULT_SHARE_IMAGE_URL],
     bundleContents: ["1 coffee bag (12 oz)", "1 instant coffee (54 g)"],
     description: "A balanced starter format for flexible routines: one 12 oz coffee bag for brewed cups and one instant format for speed. STARTER is designed for mornings that alternate between deliberate brewing and efficient, polished preparation.",
     details: {
@@ -832,7 +832,7 @@ A bold dark roast built around deep cocoa and toasted depth—full-bodied, smoot
     category: "bundles",
     tag: "Bundle",
     subscriptionEligible: false,
-    images: ["https://res.cloudinary.com/dfygdydcj/image/upload/v1772414548/Dark_rnx5i9.png"],
+    images: [DEFAULT_SHARE_IMAGE_URL],
     bundleContents: ["2 dark-roast coffees (format varies by inventory)"],
     description: "A composed dark-roast bundle built for fuller body and deeper cup structure. DARK SET pairs two bold coffees selected for richness, making it a practical option for espresso-style brewing, press, or strong daily drip.",
     details: {
@@ -857,7 +857,7 @@ A bold dark roast built around deep cocoa and toasted depth—full-bodied, smoot
     category: "bundles",
     tag: "Bundle",
     subscriptionEligible: false,
-    images: ["https://res.cloudinary.com/dfygdydcj/image/upload/v1772414548/Light_mepzfs.png"],
+    images: [DEFAULT_SHARE_IMAGE_URL],
     bundleContents: ["2 light-roast coffees (format varies by inventory)"],
     description: "A bright, clarity-forward bundle designed for clean finishes and lively cups. BRIGHT SET combines two light-roast profiles selected for citrus lift and definition across pour-over, drip, and iced preparations.",
     details: {
@@ -3533,6 +3533,7 @@ const Navigation = ({ currentView, cartCount, setView, toggleCart, authUser, onS
 
         <div className="hidden md:flex space-x-8 text-sm font-sans tracking-widest text-[#F9F6F0] opacity-80">
           <button onClick={() => handleNav('shop_all')} className="hover:text-[#D4AF37] transition-colors uppercase">Shop</button>
+          <button onClick={() => handleNav('shop_bundles')} className="hover:text-[#D4AF37] transition-colors uppercase">Bundles</button>
           <button onClick={() => handleNav('blog')} className="hover:text-[#D4AF37] transition-colors uppercase">Journal</button>
           <button onClick={() => handleNav('rewards')} className="hover:text-[#D4AF37] transition-colors uppercase">Rewards</button>
           <button onClick={() => handleNav('about')} className="hover:text-[#D4AF37] transition-colors uppercase">Our Story</button>
