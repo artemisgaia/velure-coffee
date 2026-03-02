@@ -1399,6 +1399,16 @@ Note: General lifestyle content only.`,
   },
 ];
 
+const DEFAULT_BLOG_RELATED_PRODUCT_IDS = ['fuse', 'aureo', 'onyx'];
+const BLOG_RELATED_PRODUCTS_BY_SLUG = {
+  'make-instant-coffee-taste-premium': ['fuse', 'onyx'],
+  'hot-vs-iced-instant-coffee': ['fuse', 'onyx'],
+  'clean-label-functional-coffee': ['fuse', 'vitality', 'zen'],
+  'lions-mane-coffee-explained': ['fuse', 'vitality', 'zen'],
+  'chaga-coffee-explained': ['fuse', 'vitality', 'zen'],
+  '5-minute-morning-coffee-ritual': ['aureo', 'zen', 'bundle-ritual-set'],
+};
+
 const LEGAL_CONTENT = {
   privacy: `Last Updated: February 8, 2026
 
@@ -1846,6 +1856,29 @@ const getDefaultBundleSelections = (bundleProductId) => getBundleSlotOptions(bun
 }, {});
 
 const getBlogPostBySlug = (slug) => BLOG_POSTS.find((post) => post.slug === slug) || null;
+const getBlogImage = (src) => {
+  if (typeof src !== 'string') return DEFAULT_SHARE_IMAGE_URL;
+  const trimmed = src.trim();
+  if (!trimmed) return DEFAULT_SHARE_IMAGE_URL;
+  if (trimmed.startsWith('/') || trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return trimmed;
+  }
+  return DEFAULT_SHARE_IMAGE_URL;
+};
+const handleBlogImageError = (event) => {
+  if (!event?.currentTarget) return;
+  if (event.currentTarget.dataset.fallbackApplied === 'true') return;
+  event.currentTarget.dataset.fallbackApplied = 'true';
+  event.currentTarget.src = DEFAULT_SHARE_IMAGE_URL;
+};
+const getRelatedProductsForBlogPost = (slug, limit = 3) => {
+  const mappedIds = BLOG_RELATED_PRODUCTS_BY_SLUG[slug] || DEFAULT_BLOG_RELATED_PRODUCT_IDS;
+  const uniqueIds = [...new Set([...(mappedIds || []), ...DEFAULT_BLOG_RELATED_PRODUCT_IDS])];
+  const resolvedProducts = uniqueIds
+    .map((productId) => PRODUCTS.find((product) => product.id === productId))
+    .filter(Boolean);
+  return resolvedProducts.slice(0, limit);
+};
 
 const getRouteFromPath = (pathname) => {
   const normalizedPathname = pathname !== '/' ? pathname.replace(/\/+$/, '') : pathname;
@@ -3440,6 +3473,8 @@ const Navigation = ({ currentView, cartCount, setView, toggleCart, authUser, onS
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const accountMenuRef = useRef(null);
+  const mobileMenuRef = useRef(null);
+  const mobileMenuToggleRef = useRef(null);
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 50);
@@ -3458,9 +3493,53 @@ const Navigation = ({ currentView, cartCount, setView, toggleCart, authUser, onS
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, []);
 
+  useEffect(() => {
+    if (!mobileMenuOpen) return undefined;
+
+    const previousActiveElement = document.activeElement;
+    const previousBodyOverflow = document.body.style.overflow;
+    const focusableElements = mobileMenuRef.current?.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+    );
+    const firstFocusable = focusableElements?.[0];
+    const lastFocusable = focusableElements?.[focusableElements.length - 1];
+
+    if (firstFocusable instanceof HTMLElement) {
+      firstFocusable.focus();
+    }
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setMobileMenuOpen(false);
+        return;
+      }
+
+      if (event.key === 'Tab' && focusableElements?.length) {
+        if (event.shiftKey && document.activeElement === firstFocusable) {
+          event.preventDefault();
+          lastFocusable?.focus();
+        } else if (!event.shiftKey && document.activeElement === lastFocusable) {
+          event.preventDefault();
+          firstFocusable?.focus();
+        }
+      }
+    };
+
+    document.body.style.overflow = 'hidden';
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+      document.removeEventListener('keydown', handleKeyDown);
+      if (previousActiveElement instanceof HTMLElement) {
+        previousActiveElement.focus();
+      }
+    };
+  }, [mobileMenuOpen]);
+
+  const handleCloseMobileMenu = () => setMobileMenuOpen(false);
   const handleNav = (viewName) => {
     setView(viewName);
-    setMobileMenuOpen(false);
+    handleCloseMobileMenu();
     setAccountMenuOpen(false);
   };
 
@@ -3468,7 +3547,7 @@ const Navigation = ({ currentView, cartCount, setView, toggleCart, authUser, onS
     if (typeof onSharePage === 'function') {
       await onSharePage();
     }
-    setMobileMenuOpen(false);
+    handleCloseMobileMenu();
     setAccountMenuOpen(false);
   };
 
@@ -3481,7 +3560,7 @@ const Navigation = ({ currentView, cartCount, setView, toggleCart, authUser, onS
     if (typeof onOpenAuthModal === 'function') {
       onOpenAuthModal();
     }
-    setMobileMenuOpen(false);
+    handleCloseMobileMenu();
     setAccountMenuOpen(false);
   };
 
@@ -3497,10 +3576,12 @@ const Navigation = ({ currentView, cartCount, setView, toggleCart, authUser, onS
       <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
         <button
           type="button"
+          ref={mobileMenuToggleRef}
           className="md:hidden text-[#F9F6F0] h-11 w-11 inline-flex items-center justify-center rounded-sm"
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          onClick={() => setMobileMenuOpen((previous) => !previous)}
           aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
           aria-expanded={mobileMenuOpen}
+          aria-haspopup="dialog"
           aria-controls="mobile-navigation"
         >
           {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -3632,47 +3713,112 @@ const Navigation = ({ currentView, cartCount, setView, toggleCart, authUser, onS
         </div>
       </div>
 
-	      {mobileMenuOpen && (
-		        <div id="mobile-navigation" className="absolute top-full left-0 w-full bg-[#0B0C0C] border-t border-gray-800 p-6 md:hidden flex flex-col space-y-4 shadow-2xl z-50">
-		           <button onClick={() => handleNav('shop_all')} className="text-[#F9F6F0] text-left font-sans tracking-widest">SHOP</button>
-		           <button onClick={() => handleNav('shop_functional')} className="text-[#F9F6F0] text-left font-sans tracking-widest">FUNCTIONAL BLENDS</button>
-		           <button onClick={() => handleNav('shop_signature')} className="text-[#F9F6F0] text-left font-sans tracking-widest">SIGNATURE BLENDS</button>
-		           <button onClick={() => handleNav('shop_single_origin')} className="text-[#F9F6F0] text-left font-sans tracking-widest">SINGLE ORIGIN</button>
-		           <button onClick={() => handleNav('shop_bundles')} className="text-[#F9F6F0] text-left font-sans tracking-widest">BUNDLES</button>
-		           <button onClick={() => handleNav('blog')} className="text-[#F9F6F0] text-left font-sans tracking-widest">JOURNAL</button>
-		           <button onClick={() => handleNav('rewards')} className="text-[#F9F6F0] text-left font-sans tracking-widest">REWARDS</button>
-		           <button onClick={() => handleNav('about')} className="text-[#F9F6F0] text-left font-sans tracking-widest">OUR STORY</button>
-           <button onClick={() => handleNav('subscription')} className="text-[#F9F6F0] text-left font-sans tracking-widest">SUBSCRIPTION</button>
-           <button onClick={() => handleNav('contact')} className="text-[#F9F6F0] text-left font-sans tracking-widest">CONTACT</button>
-           <button type="button" onClick={handleShare} className="text-[#F9F6F0] text-left font-sans tracking-widest">SHARE THIS PAGE</button>
-           <button
-             onClick={() => {
-               if (authUser) {
-                 handleNav('account');
-                 return;
-               }
-               if (typeof onOpenAuthModal === 'function') {
-                 onOpenAuthModal();
-               }
-               setMobileMenuOpen(false);
-             }}
-             className="text-[#F9F6F0] text-left font-sans tracking-widest"
-           >
-             {authUser ? 'ACCOUNT' : 'LOGIN / SIGN UP'}
-           </button>
-           {authUser && (
-             <button
-               type="button"
-               onClick={onSignOut}
-               className="text-[#D4AF37] text-left font-sans tracking-widest"
-             >
-               SIGN OUT
-             </button>
-           )}
-	        </div>
-	      )}
-    </nav>
-  );
+	      <div
+	        className={`fixed inset-0 z-[70] md:hidden ${mobileMenuOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
+	        aria-hidden={!mobileMenuOpen}
+	      >
+	        <button
+	          type="button"
+	          className={`absolute inset-0 bg-black/60 transition-opacity duration-200 ${mobileMenuOpen ? 'opacity-100' : 'opacity-0'}`}
+	          onClick={handleCloseMobileMenu}
+	          aria-label="Close navigation menu"
+	        />
+	        <aside
+	          id="mobile-navigation"
+	          ref={mobileMenuRef}
+	          role="dialog"
+	          aria-modal="true"
+	          aria-label="Mobile navigation"
+	          className={`absolute top-0 left-0 h-full w-[min(88vw,22rem)] bg-[#0B0C0C] border-r border-gray-800 shadow-2xl transition-transform duration-300 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}
+	          style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
+	        >
+	          <div className="h-full overflow-y-auto pt-8 px-5 pb-4">
+	            <div className="flex items-center justify-between mb-6">
+	              <p className="text-xs uppercase tracking-[0.22em] text-[#D4AF37]">Menu</p>
+	              <button
+	                type="button"
+	                onClick={handleCloseMobileMenu}
+	                className="h-11 w-11 inline-flex items-center justify-center border border-gray-700 text-gray-300 hover:text-[#F9F6F0] hover:border-gray-500"
+	                aria-label="Close menu"
+	              >
+	                <X size={20} />
+	              </button>
+	            </div>
+
+	            <div className="space-y-7">
+	              <div>
+	                <p className="text-[10px] uppercase tracking-[0.2em] text-gray-500 mb-2">Shop</p>
+	                <div className="space-y-1">
+	                  <button type="button" onClick={() => handleNav('shop_all')} className="w-full min-h-[44px] text-left text-sm tracking-wider text-[#F9F6F0] hover:text-[#D4AF37]">All Coffee</button>
+	                  <button type="button" onClick={() => handleNav('shop_functional')} className="w-full min-h-[44px] text-left text-sm tracking-wider text-[#F9F6F0] hover:text-[#D4AF37]">Functional Blends</button>
+	                  <button type="button" onClick={() => handleNav('shop_signature')} className="w-full min-h-[44px] text-left text-sm tracking-wider text-[#F9F6F0] hover:text-[#D4AF37]">Signature Blends</button>
+	                  <button type="button" onClick={() => handleNav('shop_single_origin')} className="w-full min-h-[44px] text-left text-sm tracking-wider text-[#F9F6F0] hover:text-[#D4AF37]">Single Origin</button>
+	                  <button type="button" onClick={() => handleNav('shop_bundles')} className="w-full min-h-[44px] text-left text-sm tracking-wider text-[#F9F6F0] hover:text-[#D4AF37]">Bundles</button>
+	                </div>
+	              </div>
+
+	              <div>
+	                <p className="text-[10px] uppercase tracking-[0.2em] text-gray-500 mb-2">Content</p>
+	                <div className="space-y-1">
+	                  <button type="button" onClick={() => handleNav('blog')} className="w-full min-h-[44px] text-left text-sm tracking-wider text-[#F9F6F0] hover:text-[#D4AF37]">Journal</button>
+	                  <button type="button" onClick={() => handleNav('about')} className="w-full min-h-[44px] text-left text-sm tracking-wider text-[#F9F6F0] hover:text-[#D4AF37]">Our Story</button>
+	                  <button type="button" onClick={() => handleNav('sourcing')} className="w-full min-h-[44px] text-left text-sm tracking-wider text-[#F9F6F0] hover:text-[#D4AF37]">Sourcing</button>
+	                </div>
+	              </div>
+
+	              <div>
+	                <p className="text-[10px] uppercase tracking-[0.2em] text-gray-500 mb-2">Account</p>
+	                <div className="space-y-1">
+	                  <button type="button" onClick={() => handleNav('rewards')} className="w-full min-h-[44px] text-left text-sm tracking-wider text-[#F9F6F0] hover:text-[#D4AF37]">Rewards</button>
+	                  <button type="button" onClick={() => handleNav('subscription')} className="w-full min-h-[44px] text-left text-sm tracking-wider text-[#F9F6F0] hover:text-[#D4AF37]">Subscription</button>
+	                  <button
+	                    type="button"
+	                    onClick={() => {
+	                      if (authUser) {
+	                        handleNav('account');
+	                        return;
+	                      }
+	                      if (typeof onOpenAuthModal === 'function') {
+	                        onOpenAuthModal();
+	                      }
+	                      handleCloseMobileMenu();
+	                    }}
+	                    className="w-full min-h-[44px] text-left text-sm tracking-wider text-[#F9F6F0] hover:text-[#D4AF37]"
+	                  >
+	                    Account
+	                  </button>
+	                  {authUser && (
+	                    <button
+	                      type="button"
+	                      onClick={() => {
+	                        handleCloseMobileMenu();
+	                        onSignOut();
+	                      }}
+	                      className="w-full min-h-[44px] text-left text-sm tracking-wider text-[#D4AF37] hover:text-[#F9F6F0]"
+	                    >
+	                      Sign Out
+	                    </button>
+	                  )}
+	                </div>
+	              </div>
+	            </div>
+
+	            <div className="mt-8 pt-4 border-t border-gray-800 flex flex-wrap gap-4 text-xs text-gray-500">
+	              <button type="button" onClick={() => handleNav('contact')} className="min-h-[44px] hover:text-[#F9F6F0]">
+	                Contact
+	              </button>
+	              <button type="button" onClick={() => handleNav('privacy')} className="min-h-[44px] hover:text-[#F9F6F0]">
+	                Privacy
+	              </button>
+	              <button type="button" onClick={() => handleNav('terms')} className="min-h-[44px] hover:text-[#F9F6F0]">
+	                Terms
+	              </button>
+	            </div>
+	          </div>
+	        </aside>
+	      </div>
+	    </nav>
+	  );
 };
 
 const CartDrawer = ({
@@ -5047,58 +5193,128 @@ const ShopView = ({ category, openProductDetail, setView }) => {
   );
 };
 
-const BlogView = ({ openBlogPost }) => (
-  <div className="pt-32 pb-24 bg-[#F9F6F0] min-h-screen">
-    <div className="max-w-5xl mx-auto px-6">
-      <p className="text-xs uppercase tracking-[0.2em] text-[#0B0C0C]/70 mb-3">Velure Journal</p>
-      <h1 className="text-4xl md:text-5xl font-serif text-[#0B0C0C] mb-4">Coffee Guides & Ritual Notes</h1>
-      <p className="text-gray-700 max-w-3xl mb-10">
-        Calm, factual guides with clean-label standards and repeatable coffee rituals. No hype, just useful guidance.
-      </p>
+const BlogView = ({ openBlogPost }) => {
+  const [selectedTag, setSelectedTag] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
-      <div className="space-y-6">
-        {BLOG_POSTS.map((post) => (
-          <article key={post.slug} className="bg-white border border-gray-200 overflow-hidden">
-            <div className="grid grid-cols-1 md:grid-cols-3">
-              <img
-                src={post.heroImage}
-                alt={post.title}
-                loading="lazy"
-                className="w-full h-56 md:h-full object-cover"
-              />
-              <div className="md:col-span-2 p-6 md:p-8">
-                <p className="text-xs uppercase tracking-widest text-gray-500 mb-2">
-                  {new Date(post.publishedAt).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })} • {post.readTime}
-                </p>
-                <div className="flex flex-wrap gap-2 mb-3">
-                  {post.featured && (
-                    <span className="text-[10px] font-bold uppercase tracking-widest bg-[#0B0C0C] text-[#D4AF37] px-2 py-1">
-                      Featured
-                    </span>
-                  )}
-                  {Array.isArray(post.tags) && post.tags.slice(0, 3).map((tag) => (
-                    <span key={`${post.slug}-${tag}`} className="text-[10px] uppercase tracking-wider text-gray-600 border border-gray-300 px-2 py-1">
-                      {tag}
-                    </span>
-                  ))}
+  const availableTags = useMemo(() => {
+    const tags = BLOG_POSTS.flatMap((post) => (Array.isArray(post.tags) ? post.tags : []));
+    return [...new Set(tags.filter(Boolean))];
+  }, []);
+
+  const filteredPosts = useMemo(() => {
+    const normalizedQuery = normalizeLower(searchQuery);
+    return BLOG_POSTS.filter((post) => {
+      if (selectedTag !== 'all') {
+        const postTags = Array.isArray(post.tags) ? post.tags : [];
+        if (!postTags.includes(selectedTag)) {
+          return false;
+        }
+      }
+
+      if (normalizedQuery) {
+        const haystack = `${post.title} ${post.description}`.toLowerCase();
+        if (!haystack.includes(normalizedQuery)) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [searchQuery, selectedTag]);
+
+  return (
+    <div className="pt-32 pb-24 bg-[#F9F6F0] min-h-screen">
+      <div className="max-w-5xl mx-auto px-6">
+        <p className="text-xs uppercase tracking-[0.2em] text-[#0B0C0C]/70 mb-3">Velure Journal</p>
+        <h1 className="text-4xl md:text-5xl font-serif text-[#0B0C0C] mb-4">Coffee Guides & Ritual Notes</h1>
+        <p className="text-gray-700 max-w-3xl mb-8">
+          Calm, factual guides with clean-label standards and repeatable coffee rituals. No hype, just useful guidance.
+        </p>
+
+        <div className="bg-white border border-gray-200 p-4 md:p-5 mb-8">
+          <div className="flex flex-wrap gap-2 mb-4">
+            <button
+              type="button"
+              onClick={() => setSelectedTag('all')}
+              className={`px-3 py-2 text-[11px] uppercase tracking-wider border ${selectedTag === 'all' ? 'border-[#D4AF37] bg-[#0B0C0C] text-[#D4AF37]' : 'border-gray-300 text-gray-600 hover:border-[#D4AF37] hover:text-[#0B0C0C]'}`}
+              aria-pressed={selectedTag === 'all'}
+            >
+              All
+            </button>
+            {availableTags.map((tag) => (
+              <button
+                key={tag}
+                type="button"
+                onClick={() => setSelectedTag(tag)}
+                className={`px-3 py-2 text-[11px] uppercase tracking-wider border ${selectedTag === tag ? 'border-[#D4AF37] bg-[#0B0C0C] text-[#D4AF37]' : 'border-gray-300 text-gray-600 hover:border-[#D4AF37] hover:text-[#0B0C0C]'}`}
+                aria-pressed={selectedTag === tag}
+              >
+                {tag}
+              </button>
+            ))}
+          </div>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <input
+              type="search"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Search journal"
+              className="w-full md:max-w-sm border border-gray-300 bg-[#F9F6F0] px-4 py-3 text-sm text-[#0B0C0C] outline-none focus:border-[#D4AF37]"
+            />
+            <p className="text-xs uppercase tracking-wider text-gray-500">{filteredPosts.length} article{filteredPosts.length === 1 ? '' : 's'}</p>
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          {filteredPosts.length ? filteredPosts.map((post) => (
+            <article key={post.slug} className="bg-white border border-gray-200 overflow-hidden">
+              <div className="grid grid-cols-1 md:grid-cols-3">
+                <img
+                  src={getBlogImage(post.heroImage)}
+                  alt={post.title}
+                  loading="lazy"
+                  onError={handleBlogImageError}
+                  className="w-full h-56 md:h-full object-cover"
+                />
+                <div className="md:col-span-2 p-6 md:p-8">
+                  <p className="text-xs uppercase tracking-widest text-gray-500 mb-2">
+                    {new Date(post.publishedAt).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })} • {post.readTime}
+                  </p>
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {post.featured && (
+                      <span className="text-[10px] font-bold uppercase tracking-widest bg-[#0B0C0C] text-[#D4AF37] px-2 py-1">
+                        Featured
+                      </span>
+                    )}
+                    {Array.isArray(post.tags) && post.tags.slice(0, 3).map((tag) => (
+                      <span key={`${post.slug}-${tag}`} className="text-[10px] uppercase tracking-wider text-gray-600 border border-gray-300 px-2 py-1">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                  <h2 className="font-serif text-3xl text-[#0B0C0C] mb-3">{post.title}</h2>
+                  <p className="text-gray-700 mb-6">{post.description}</p>
+                  <button
+                    type="button"
+                    onClick={() => openBlogPost(post.slug)}
+                    className="bg-[#0B0C0C] text-[#D4AF37] px-5 py-3 text-xs font-bold uppercase tracking-wider hover:bg-[#1c1c1c]"
+                  >
+                    Read Article
+                  </button>
                 </div>
-                <h2 className="font-serif text-3xl text-[#0B0C0C] mb-3">{post.title}</h2>
-                <p className="text-gray-700 mb-6">{post.description}</p>
-                <button
-                  type="button"
-                  onClick={() => openBlogPost(post.slug)}
-                  className="bg-[#0B0C0C] text-[#D4AF37] px-5 py-3 text-xs font-bold uppercase tracking-wider hover:bg-[#1c1c1c]"
-                >
-                  Read Article
-                </button>
               </div>
+            </article>
+          )) : (
+            <div className="bg-white border border-gray-200 p-8 text-center">
+              <p className="text-gray-700">No journal posts match this filter.</p>
             </div>
-          </article>
-        ))}
+          )}
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 const renderBlogContent = (content) => {
   if (typeof content !== 'string') return null;
@@ -5194,68 +5410,222 @@ const renderBlogContent = (content) => {
   return nodes;
 };
 
-const BlogPostView = ({ post, onBackToBlog, onOpenProduct }) => (
+const RitualLetterInline = ({ contextKey = 'journal' }) => {
+  const [email, setEmail] = useState('');
+  const [trap, setTrap] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [status, setStatus] = useState({ type: 'idle', message: '' });
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (trap) return;
+
+    if (!email.trim() || !isValidEmail(email.trim())) {
+      setStatus({ type: 'error', message: 'Enter a valid email address.' });
+      return;
+    }
+
+    setIsSubmitting(true);
+    setStatus({ type: 'idle', message: '' });
+
+    try {
+      await submitFormPayload('newsletter', { email: email.trim() });
+      trackEvent('generate_lead', { lead_type: 'newsletter', context: `blog_${contextKey}` });
+      setStatus({ type: 'success', message: 'You are subscribed.' });
+      setEmail('');
+      setTrap('');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Subscription failed. Please try again.';
+      setStatus({ type: 'error', message });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="mt-12 border border-gray-300 bg-white p-6">
+      <p className="text-[10px] uppercase tracking-[0.22em] text-[#D4AF37] mb-2">The Ritual Letter</p>
+      <h3 className="font-serif text-2xl text-[#0B0C0C] mb-2">Weekly notes from Velure</h3>
+      <p className="text-sm text-gray-600 mb-4">Practical brew guides, calm product updates, and clean-label reads.</p>
+      <form onSubmit={handleSubmit} noValidate>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <label htmlFor={`ritual-letter-${contextKey}`} className="sr-only">Email</label>
+          <input
+            id={`ritual-letter-${contextKey}`}
+            type="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            placeholder="you@example.com"
+            className="flex-1 border border-gray-300 bg-[#F9F6F0] px-4 py-3 text-sm outline-none focus:border-[#D4AF37]"
+          />
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className={`px-5 py-3 text-xs font-bold uppercase tracking-wider ${isSubmitting ? 'bg-[#b5952f]/60 text-[#0B0C0C] cursor-not-allowed' : 'bg-[#0B0C0C] text-[#D4AF37] hover:bg-[#1d1d1d]'}`}
+          >
+            {isSubmitting ? 'Joining...' : 'Join'}
+          </button>
+        </div>
+        <input
+          type="text"
+          value={trap}
+          onChange={(event) => setTrap(event.target.value)}
+          tabIndex={-1}
+          autoComplete="off"
+          className="hidden"
+          aria-hidden="true"
+        />
+        {status.message && (
+          <p className={`mt-3 text-xs ${status.type === 'error' ? 'text-red-600' : 'text-green-700'}`} role="status">
+            {status.message}
+          </p>
+        )}
+      </form>
+    </div>
+  );
+};
+
+const BlogPostView = ({ post, onBackToBlog, onOpenProduct, onShopAll }) => {
+  const relatedProducts = useMemo(() => getRelatedProductsForBlogPost(post.slug), [post.slug]);
+
+  return (
+    <div className="pt-32 pb-24 bg-[#F9F6F0] min-h-screen">
+      <div className="max-w-5xl mx-auto px-6">
+        <button
+          type="button"
+          onClick={onBackToBlog}
+          className="text-xs uppercase tracking-widest text-[#0B0C0C] hover:text-[#D4AF37] mb-6"
+        >
+          ← Back to Journal
+        </button>
+
+        <article className="max-w-3xl mx-auto">
+          <img
+            src={getBlogImage(post.heroImage)}
+            alt={post.title}
+            onError={handleBlogImageError}
+            className="w-full h-64 md:h-80 object-cover mb-8 border border-gray-200"
+          />
+
+          <p className="text-xs uppercase tracking-widest text-gray-500 mb-3">
+            {new Date(post.publishedAt).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })} • {post.readTime}
+          </p>
+          <h1 className="text-4xl md:text-5xl font-serif text-[#0B0C0C] mb-6">{post.title}</h1>
+
+          <div className="font-sans text-base">
+            {renderBlogContent(post.content)}
+          </div>
+
+          {Array.isArray(post.supportingImages) && post.supportingImages.length > 0 && (
+            <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-4">
+              {post.supportingImages.slice(0, 2).map((image) => (
+                <img
+                  key={`${post.slug}-${image.src}`}
+                  src={getBlogImage(image.src)}
+                  alt={image.alt || post.title}
+                  loading="lazy"
+                  onError={handleBlogImageError}
+                  className="w-full h-64 object-cover border border-gray-200"
+                />
+              ))}
+            </div>
+          )}
+
+          <RitualLetterInline contextKey={post.slug} />
+        </article>
+
+        <div className="mt-14 border border-gray-300 bg-white p-6 md:p-8">
+          <div className="flex flex-wrap gap-3 items-start justify-between mb-6">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.22em] text-[#D4AF37] mb-2">Shop this post</p>
+              <h2 className="font-serif text-3xl text-[#0B0C0C]">Continue the ritual</h2>
+            </div>
+            <button
+              type="button"
+              onClick={onShopAll}
+              className="border border-[#0B0C0C] text-[#0B0C0C] px-4 py-2 text-xs font-bold uppercase tracking-wider hover:border-[#D4AF37] hover:text-[#D4AF37]"
+            >
+              Shop all coffee
+            </button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {relatedProducts.map((relatedProduct) => (
+              <ProductCard
+                key={`${post.slug}-${relatedProduct.id}`}
+                product={relatedProduct}
+                openProductDetail={(selectedProduct) => onOpenProduct(selectedProduct.id)}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const ABOUT_PILLARS = [
+  {
+    title: 'Design + Ritual',
+    description: 'Velure is built for calm repetition: clear navigation, intentional product pages, and a morning flow that feels considered on desktop and mobile.',
+  },
+  {
+    title: 'Taste + Craft',
+    description: 'We focus on balanced roast profiles, straightforward format choices, and clean brew guidance so each cup feels refined and repeatable.',
+  },
+  {
+    title: 'Transparency',
+    description: 'Ingredients, roast details, and product specs are kept visible and factual. No inflated language, no hidden blend storytelling.',
+  },
+  {
+    title: 'Experience',
+    description: 'From secure checkout to clear shipping and returns, every step is designed to be readable, dependable, and easy to revisit.',
+  },
+];
+
+const AboutView = ({ setView }) => (
   <div className="pt-32 pb-24 bg-[#F9F6F0] min-h-screen">
-    <div className="max-w-3xl mx-auto px-6">
-      <button
-        type="button"
-        onClick={onBackToBlog}
-        className="text-xs uppercase tracking-widest text-[#0B0C0C] hover:text-[#D4AF37] mb-6"
-      >
-        ← Back to Journal
-      </button>
+    <div className="max-w-6xl mx-auto px-6">
+      <section className="mb-12">
+        <p className="text-xs uppercase tracking-[0.2em] text-[#0B0C0C]/70 mb-3">Our Story</p>
+        <h1 className="text-4xl md:text-5xl font-serif text-[#0B0C0C] mb-4">Designed for a calmer daily cup</h1>
+        <p className="text-gray-700 text-base md:text-lg max-w-3xl leading-relaxed">
+          Velure started with a simple intention: make coffee feel premium without overcomplicating the ritual. We focus on clear product details, consistent cup quality, and a composed experience from first browse to checkout.
+        </p>
+      </section>
 
-      <img
-        src={post.heroImage}
-        alt={post.title}
-        className="w-full h-64 md:h-80 object-cover mb-8 border border-gray-200"
-      />
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        {ABOUT_PILLARS.map((pillar) => (
+          <article key={pillar.title} className="border border-gray-300 bg-white p-6 md:p-7">
+            <div className="w-8 h-px bg-[#D4AF37] mb-4"></div>
+            <h2 className="font-serif text-2xl text-[#0B0C0C] mb-3">{pillar.title}</h2>
+            <p className="text-gray-700 leading-relaxed">{pillar.description}</p>
+          </article>
+        ))}
+      </section>
 
-      <p className="text-xs uppercase tracking-widest text-gray-500 mb-3">
-        {new Date(post.publishedAt).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })} • {post.readTime}
-      </p>
-      <h1 className="text-4xl md:text-5xl font-serif text-[#0B0C0C] mb-6">{post.title}</h1>
-
-      <div className="font-sans text-base">
-        {renderBlogContent(post.content)}
-      </div>
-
-      {Array.isArray(post.supportingImages) && post.supportingImages.length > 0 && (
-        <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-4">
-          {post.supportingImages.slice(0, 2).map((image) => (
-            <img
-              key={`${post.slug}-${image.src}`}
-              src={image.src}
-              alt={image.alt || post.title}
-              loading="lazy"
-              className="w-full h-64 object-cover border border-gray-200"
-            />
-          ))}
+      <section className="mt-12 bg-[#0B0C0C] border border-[#D4AF37] p-7 md:p-9 text-[#F9F6F0]">
+        <p className="text-xs uppercase tracking-[0.2em] text-[#D4AF37] mb-3">Continue</p>
+        <h2 className="font-serif text-3xl mb-4">Explore the Velure collection</h2>
+        <p className="text-gray-300 max-w-2xl mb-6">
+          Start with full collection browsing or jump directly into functional blends for instant and adaptogenic options.
+        </p>
+        <div className="flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={() => setView('shop_all')}
+            className="bg-[#D4AF37] text-[#0B0C0C] px-6 py-3 text-xs font-bold uppercase tracking-wider hover:bg-[#b5952f]"
+          >
+            Shop Coffee
+          </button>
+          <button
+            type="button"
+            onClick={() => setView('shop_functional')}
+            className="border border-[#D4AF37] text-[#D4AF37] px-6 py-3 text-xs font-bold uppercase tracking-wider hover:bg-[#D4AF37] hover:text-[#0B0C0C]"
+          >
+            Explore Functional Blends
+          </button>
         </div>
-      )}
-
-      <div className="mt-10 bg-[#0B0C0C] text-[#F9F6F0] p-6 border border-[#D4AF37]">
-        <p className="text-xs uppercase tracking-widest text-[#D4AF37] mb-4">Related Velure Picks</p>
-        <div className="space-y-3">
-          {(post.relatedProducts || []).map((item) => {
-            const product = PRODUCTS.find((entry) => entry.id === item.productId);
-            if (!product) return null;
-            return (
-              <div key={`${post.slug}-${item.productId}`} className="border border-gray-700 p-4">
-                <p className="font-serif text-xl text-[#F9F6F0]">{product.name}</p>
-                <p className="text-sm text-gray-300 mb-3">{item.blurb}</p>
-                <button
-                  type="button"
-                  onClick={() => onOpenProduct(product.id)}
-                  className="bg-[#D4AF37] text-[#0B0C0C] px-4 py-2 text-xs font-bold uppercase tracking-wider hover:bg-[#b5952f]"
-                >
-                  Explore {product.name}
-                </button>
-              </div>
-            );
-          })}
-        </div>
-      </div>
+      </section>
     </div>
   </div>
 );
@@ -6501,6 +6871,44 @@ const SubscriptionView = ({ setView, authUser }) => {
         <p className="text-gray-300 text-base sm:text-lg mb-8 max-w-3xl">
           Choose your blend, choose your quantity, and lock in recurring deliveries with encrypted Stripe checkout.
         </p>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+          <section className="bg-[#151515] border border-gray-800 p-5 sm:p-6">
+            <p className="text-[10px] uppercase tracking-[0.22em] text-[#D4AF37] mb-3">How it works</p>
+            <ol className="space-y-3 text-sm text-gray-300">
+              <li className="flex items-start gap-3">
+                <span className="text-[#D4AF37] font-bold">1.</span>
+                <span>Choose your coffee.</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="text-[#D4AF37] font-bold">2.</span>
+                <span>Monthly delivery.</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="text-[#D4AF37] font-bold">3.</span>
+                <span>Edit or cancel anytime.</span>
+              </li>
+            </ol>
+          </section>
+
+          <section className="bg-[#151515] border border-gray-800 p-5 sm:p-6">
+            <p className="text-[10px] uppercase tracking-[0.22em] text-[#D4AF37] mb-3">Benefits</p>
+            <ul className="space-y-3 text-sm text-gray-300">
+              <li className="flex items-start gap-3">
+                <Check className="text-[#D4AF37] mt-0.5" size={16} />
+                <span>Easy changes to blend and quantity.</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <Check className="text-[#D4AF37] mt-0.5" size={16} />
+                <span>Secure checkout powered by Stripe.</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <Check className="text-[#D4AF37] mt-0.5" size={16} />
+                <span>Clear subscription terms and controls.</span>
+              </li>
+            </ul>
+          </section>
+        </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-[1.45fr_1fr] gap-6">
           <div className="bg-[#151515] border border-gray-800 p-5 sm:p-6">
@@ -8238,6 +8646,7 @@ const App = () => {
           post={selectedBlogPost}
           onBackToBlog={() => setView('blog')}
           onOpenProduct={openBlogRelatedProduct}
+          onShopAll={() => setView('shop_all')}
         />
       );
     }
@@ -8295,9 +8704,7 @@ const App = () => {
       case 'product_detail': return <ShopView category="all" openProductDetail={openProductDetail} setView={setView} />;
       case 'blog_post': return <BlogView openBlogPost={openBlogPost} />;
       
-      case 'about': return (
-        <TextView title="Our Story" content={`In a world that rushes, Velure exists to make you pause. We believe your morning cup is not just caffeine, it is the ritual that sets the tone for your day.\n\nJoe Hart has wanted to build his own coffee brand for a long time. He built Velure around one standard: source from ethical, clean farms and keep every blend transparent.\n\nOur beans are selected for quality and traceability, with no genetically engineered or modified ingredients listed in our formulas. We focus on real coffee beans, thoughtful functional additions, and no unnecessary fillers.\n\nFrom the altitude of the Brazilian highlands to the precision of our functional mushroom blends, every decision we make is guided by uncompromising quality.\n\n"Velure is my invitation to you: Slow down, taste the difference, and start your day with excellence." — Joe Hart, Founder`} />
-      );
+      case 'about': return <AboutView setView={setView} />;
 
       case 'sourcing': return (
         <TextView title="Sourcing & Sustainability" content={`We partner directly with small-lot farmers who prioritize soil health and biodiversity. \n\nOur beans are shade-grown at high altitudes, ensuring a denser bean and a more complex flavor profile. We pay 20% above Fair Trade prices to ensure our partners can thrive.`} />
