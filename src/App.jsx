@@ -5140,8 +5140,9 @@ const ShopView = ({ category, openProductDetail, setView }) => {
         <p className="text-gray-400 font-sans mb-8 max-w-2xl motion-enter">Explore our range of meticulously sourced and roasted coffees, designed to elevate your daily ritual.</p>
 
         <div className="mb-6 motion-enter" aria-label="Collection switcher">
-          <div className="scroll-fade" style={{ '--scroll-fade-color': '#0B0C0C' }}>
-            <div className="flex gap-2 overflow-x-auto no-scrollbar whitespace-nowrap py-2 px-4 -mx-4 snap-row md:flex-wrap md:overflow-visible md:whitespace-normal md:px-0 md:mx-0 md:snap-none">
+          <div className="bg-[#0B0C0C] overflow-hidden">
+            <div className="chip-scroller flex gap-2 overflow-x-auto no-scrollbar whitespace-nowrap py-2 snap-row md:flex-wrap md:overflow-visible md:whitespace-normal">
+              <span aria-hidden="true" className="chip-scroll-spacer md:hidden" />
               {seriesChips.map((chip) => {
                 const isActive = chip.view === currentCollectionView;
                 return (
@@ -5160,6 +5161,7 @@ const ShopView = ({ category, openProductDetail, setView }) => {
                   </button>
                 );
               })}
+              <span aria-hidden="true" className="chip-scroll-spacer md:hidden" />
             </div>
           </div>
         </div>
@@ -5498,12 +5500,13 @@ const BlogView = ({ openBlogPost }) => {
 
         <div className="bg-white border border-gray-200 p-4 md:p-5 mb-8">
           <div className="mb-4">
-            <div className="scroll-fade" style={{ '--scroll-fade-color': '#FFFFFF' }}>
-              <div className="flex gap-2 overflow-x-auto no-scrollbar whitespace-nowrap py-2 px-4 -mx-4 snap-row" aria-label="Journal tag filters">
+            <div className="bg-[#0B0C0C] rounded-sm overflow-hidden">
+              <div className="chip-scroller flex gap-2 overflow-x-auto no-scrollbar whitespace-nowrap py-2 snap-row" aria-label="Journal tag filters">
+                <span aria-hidden="true" className="chip-scroll-spacer" />
                 <button
                   type="button"
                   onClick={() => setSelectedTag('all')}
-                  className={`snap-item inline-flex shrink-0 px-3 py-2 text-[11px] uppercase tracking-wider border ${selectedTag === 'all' ? 'border-[#D4AF37] bg-[#0B0C0C] text-[#D4AF37]' : 'border-gray-300 text-gray-600 hover:border-[#D4AF37] hover:text-[#0B0C0C]'}`}
+                  className={`snap-item inline-flex shrink-0 px-3 py-2 text-[11px] uppercase tracking-wider border ${selectedTag === 'all' ? 'border-[#D4AF37] bg-[#D4AF37]/10 text-[#D4AF37]' : 'border-white/20 text-[#F9F6F0]/75 hover:border-[#D4AF37] hover:text-[#F9F6F0]'}`}
                   aria-pressed={selectedTag === 'all'}
                 >
                   All
@@ -5513,7 +5516,7 @@ const BlogView = ({ openBlogPost }) => {
                     key={tag}
                     type="button"
                     onClick={() => setSelectedTag(tag)}
-                    className={`snap-item inline-flex shrink-0 px-3 py-2 text-[11px] uppercase tracking-wider border ${selectedTag === tag ? 'border-[#D4AF37] bg-[#0B0C0C] text-[#D4AF37]' : 'border-gray-300 text-gray-600 hover:border-[#D4AF37] hover:text-[#0B0C0C]'}`}
+                    className={`snap-item inline-flex shrink-0 px-3 py-2 text-[11px] uppercase tracking-wider border ${selectedTag === tag ? 'border-[#D4AF37] bg-[#D4AF37]/10 text-[#D4AF37]' : 'border-white/20 text-[#F9F6F0]/75 hover:border-[#D4AF37] hover:text-[#F9F6F0]'}`}
                     aria-pressed={selectedTag === tag}
                   >
                     {tag}
@@ -5523,12 +5526,13 @@ const BlogView = ({ openBlogPost }) => {
                   <button
                     type="button"
                     onClick={() => setIsTagListExpanded((previous) => !previous)}
-                    className="snap-item inline-flex shrink-0 px-3 py-2 text-[11px] uppercase tracking-wider border border-gray-300 text-gray-600 hover:border-[#D4AF37] hover:text-[#0B0C0C]"
+                    className="snap-item inline-flex shrink-0 px-3 py-2 text-[11px] uppercase tracking-wider border border-white/20 text-[#F9F6F0]/75 hover:border-[#D4AF37] hover:text-[#F9F6F0]"
                     aria-expanded={isTagListExpanded}
                   >
                     {isTagListExpanded ? 'Less' : 'More'}
                   </button>
                 )}
+                <span aria-hidden="true" className="chip-scroll-spacer" />
               </div>
             </div>
             {isTagListExpanded && remainingTags.length > 0 && (
