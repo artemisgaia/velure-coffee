@@ -4,6 +4,7 @@ import { supabase } from './lib/supabaseClient';
 
 // --- BRAND ASSETS & DATA ---
 const DEFAULT_SHARE_IMAGE_URL = 'https://res.cloudinary.com/dfygdydcj/image/upload/v1767217072/6843a1f1-d7bc-41c5-97b3-990b7dd18a18.png';
+const HOME_HERO_IMAGE_URL = 'https://res.cloudinary.com/dfygdydcj/image/upload/v1772420231/velure_homepage_pbzzhb.png';
 
 const PRODUCTS = [
   {
@@ -14,6 +15,7 @@ const PRODUCTS = [
     category: "functional",
     tag: "Best Seller",
     subscriptionEligible: true,
+    featuredHome: true,
     images: [
       "https://res.cloudinary.com/dfygdydcj/image/upload/v1767209595/1766845371046-generated-label-image-0_omteke.jpg",
       "https://res.cloudinary.com/dfygdydcj/image/upload/v1767209605/1766845371047-generated-label-image-1_ym8z0w.jpg",
@@ -326,6 +328,7 @@ Dark roast pods with a deep, caramelized profile and a bold, satisfying finish. 
     category: "signature",
     tag: "Signature Blend",
     subscriptionEligible: false,
+    featuredHome: true,
     images: [
       "https://res.cloudinary.com/dfygdydcj/image/upload/v1772320857/1772237170011-generated-label-image-0_zzj3ml.jpg",
       "https://res.cloudinary.com/dfygdydcj/image/upload/v1772320862/1772237170028-generated-label-image-3_dmduxl.jpg",
@@ -668,6 +671,7 @@ A composed medium roast with classic structure—dark chocolate character, roast
     category: "single_origin",
     tag: "Single Origin",
     subscriptionEligible: false,
+    featuredHome: true,
     images: [
       "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321172/1772235308237-generated-label-image-0_w4atkr.jpg",
       "https://res.cloudinary.com/dfygdydcj/image/upload/v1772321176/1772235308240-generated-label-image-2_chiesw.jpg",
@@ -6742,76 +6746,144 @@ const Footer = ({ setView }) => {
   );
 };
 
-const HomeView = ({ openProductDetail, setView }) => (
-  <>
-    {/* HERO */}
-    <div className="relative h-screen w-full flex items-center justify-center overflow-hidden bg-[#0B0C0C]">
-      <div className="absolute inset-0 bg-gradient-to-b from-black/70 to-[#0B0C0C] z-10"></div>
-      <div className="absolute inset-0 z-0 opacity-40 bg-[url('https://images.unsplash.com/photo-1497935586351-b67a49e012bf?ixlib=rb-4.0.3&auto=format&fit=crop&w=2071&q=80')] bg-cover bg-center"></div>
-      <div className="relative z-20 text-center px-4 max-w-4xl mx-auto motion-enter">
-        <p className="text-[#D4AF37] font-sans tracking-[0.3em] text-sm md:text-base mb-6 uppercase">The Standard of Smooth</p>
-        <h1 className="text-5xl md:text-7xl lg:text-8xl font-serif text-[#F9F6F0] mb-8 leading-tight">ELEVATE THE <br /><span className="italic text-[#D4AF37]">RITUAL</span></h1>
-        <div className="flex flex-col md:flex-row gap-4 justify-center">
-          <button onClick={() => setView('shop_all')} className="bg-[#D4AF37] text-[#0B0C0C] px-8 py-4 font-sans font-bold tracking-widest hover:bg-[#b5952f] transition-colors">SHOP COLLECTION</button>
-          <button onClick={() => setView('about')} className="border border-[#F9F6F0] text-[#F9F6F0] px-8 py-4 font-sans font-bold tracking-widest hover:bg-[#F9F6F0] hover:text-[#0B0C0C] transition-colors">OUR STORY</button>
-        </div>
-      </div>
-    </div>
+const HOME_SERIES_TILES = [
+  {
+    id: 'functional',
+    title: 'Functional Blends',
+    description: 'Adaptogenic coffee and matcha with transparent ingredient labeling.',
+    view: 'shop_functional',
+  },
+  {
+    id: 'single-origin',
+    title: 'Single Origin',
+    description: 'Origin-led coffees with clear sourcing and a refined cup profile.',
+    view: 'shop_single_origin',
+  },
+  {
+    id: 'signature',
+    title: 'Signature Blends',
+    description: 'Velure house blends designed for balanced, repeatable daily brewing.',
+    view: 'shop_signature',
+  },
+  {
+    id: 'bundles',
+    title: 'Bundle Sets',
+    description: 'Curated multi-item sets prepared for gifting or first-time rituals.',
+    view: 'shop_bundles',
+  },
+];
 
-    {/* VALUE PROPS */}
-    <div className="bg-[#F9F6F0] py-20">
-      <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
-        <div className="flex flex-col items-center">
-          <div className="bg-[#0B0C0C] p-4 rounded-full mb-6"><Leaf className="text-[#D4AF37]" size={32} /></div>
-          <h3 className="font-serif text-2xl mb-3 text-[#0B0C0C]">Ethically Sourced</h3>
-          <p className="font-sans text-gray-600">Direct trade with farmers ensures quality and fair wages.</p>
-        </div>
-        <div className="flex flex-col items-center">
-          <div className="bg-[#0B0C0C] p-4 rounded-full mb-6"><Award className="text-[#D4AF37]" size={32} /></div>
-          <h3 className="font-serif text-2xl mb-3 text-[#0B0C0C]">Small Batch Roast</h3>
-          <p className="font-sans text-gray-600">Roasted in limited quantities for peak freshness.</p>
-        </div>
-        <div className="flex flex-col items-center">
-          <div className="bg-[#0B0C0C] p-4 rounded-full mb-6"><Coffee className="text-[#D4AF37]" size={32} /></div>
-          <h3 className="font-serif text-2xl mb-3 text-[#0B0C0C]">Functional Benefits</h3>
-          <p className="font-sans text-gray-600">Infused with Lion's Mane for focus and clarity.</p>
-        </div>
-      </div>
-    </div>
+const getHomeFeaturedProducts = (products, limit = 3) => {
+  const explicitlyFeatured = products.filter((product) => product.featuredHome);
+  if (explicitlyFeatured.length >= limit) {
+    return explicitlyFeatured.slice(0, limit);
+  }
 
-    <div className="bg-[#121212] border-y border-gray-800 py-10">
-      <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row gap-4 md:items-center md:justify-between">
-        <div>
-          <p className="text-[#D4AF37] text-xs uppercase tracking-[0.2em] mb-2">New</p>
-          <h3 className="font-serif text-2xl text-[#F9F6F0]">Rewards App + Instant Shipping Rewards</h3>
-          <p className="text-gray-400 text-sm mt-2">Collect points and unlock discounts or free shipping faster.</p>
-        </div>
-        <button type="button" onClick={() => setView('rewards')} className="border border-[#D4AF37] text-[#D4AF37] px-6 py-3 font-sans uppercase tracking-widest hover:bg-[#D4AF37] hover:text-[#0B0C0C] transition-all">
-          Explore Rewards
-        </button>
-      </div>
-    </div>
+  const featuredIds = new Set(explicitlyFeatured.map((product) => product.id));
+  const fallbackProducts = products.filter((product) => !featuredIds.has(product.id));
+  return [...explicitlyFeatured, ...fallbackProducts].slice(0, limit);
+};
 
-    {/* FEATURED SHOP */}
-    <div className="bg-[#0B0C0C] py-24 border-t border-gray-900">
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="text-center mb-16 motion-enter">
-          <h2 className="text-4xl md:text-5xl font-serif text-[#F9F6F0] mb-6">Curated Excellence</h2>
-          <div className="w-24 h-1 bg-[#D4AF37] mx-auto"></div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {/* Displaying first 3 products as featured */}
-          {PRODUCTS.slice(0, 3).map((product) => (
-            <ProductCard key={product.id} product={product} openProductDetail={openProductDetail} />
-          ))}
-        </div>
-        <div className="text-center mt-12">
-           <button onClick={() => setView('shop_all')} className="border border-[#D4AF37] text-[#D4AF37] px-8 py-3 font-sans uppercase tracking-widest hover:bg-[#D4AF37] hover:text-[#0B0C0C] transition-all">View All</button>
+const HomeView = ({ openProductDetail, setView }) => {
+  const featuredHomeProducts = getHomeFeaturedProducts(PRODUCTS, 3);
+
+  return (
+    <>
+      {/* HERO */}
+      <div className="relative min-h-[100svh] w-full flex items-center justify-center overflow-hidden bg-[#0B0C0C]">
+        <div className="absolute inset-0 bg-gradient-to-b from-black/70 to-[#0B0C0C] z-10"></div>
+        <div
+          className="absolute inset-0 z-0 opacity-40 bg-cover bg-center"
+          style={{ backgroundImage: `url('${HOME_HERO_IMAGE_URL}')` }}
+          aria-hidden="true"
+        ></div>
+        <div className="relative z-20 text-center px-4 max-w-4xl mx-auto motion-enter">
+          <p className="text-[#D4AF37] font-sans tracking-[0.3em] text-sm md:text-base mb-6 uppercase">The Standard of Smooth</p>
+          <h1 className="text-5xl md:text-7xl lg:text-8xl font-serif text-[#F9F6F0] mb-8 leading-tight">ELEVATE THE <br /><span className="italic text-[#D4AF37]">RITUAL</span></h1>
+          <div className="flex flex-col md:flex-row gap-4 justify-center">
+            <button onClick={() => setView('shop_all')} className="bg-[#D4AF37] text-[#0B0C0C] px-8 py-4 font-sans font-bold tracking-widest hover:bg-[#b5952f] transition-colors">SHOP COLLECTION</button>
+            <button onClick={() => setView('about')} className="border border-[#F9F6F0] text-[#F9F6F0] px-8 py-4 font-sans font-bold tracking-widest hover:bg-[#F9F6F0] hover:text-[#0B0C0C] transition-colors">OUR STORY</button>
+          </div>
         </div>
       </div>
-    </div>
-  </>
-);
+
+      <div className="bg-[#0B0C0C] border-y border-gray-900 py-16">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center mb-8">
+            <p className="text-[#D4AF37] text-xs uppercase tracking-[0.2em] mb-2">Explore</p>
+            <h2 className="font-serif text-3xl md:text-4xl text-[#F9F6F0]">Shop by Series</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+            {HOME_SERIES_TILES.map((tile) => (
+              <button
+                key={tile.id}
+                type="button"
+                onClick={() => setView(tile.view)}
+                className="text-left border border-gray-800 bg-[#121212] p-6 transition-transform duration-200 md:hover:-translate-y-0.5 hover:border-[#D4AF37]/50"
+              >
+                <div className="w-8 h-px bg-[#D4AF37] mb-4"></div>
+                <h3 className="font-serif text-2xl text-[#F9F6F0] mb-3">{tile.title}</h3>
+                <p className="font-sans text-sm text-gray-400 leading-relaxed">{tile.description}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* VALUE PROPS */}
+      <div className="bg-[#F9F6F0] py-20">
+        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
+          <div className="flex flex-col items-center">
+            <div className="bg-[#0B0C0C] p-4 rounded-full mb-6"><Leaf className="text-[#D4AF37]" size={32} /></div>
+            <h3 className="font-serif text-2xl mb-3 text-[#0B0C0C]">Ethically Sourced</h3>
+            <p className="font-sans text-gray-600">Responsibly sourced partners with transparent product details.</p>
+          </div>
+          <div className="flex flex-col items-center">
+            <div className="bg-[#0B0C0C] p-4 rounded-full mb-6"><Award className="text-[#D4AF37]" size={32} /></div>
+            <h3 className="font-serif text-2xl mb-3 text-[#0B0C0C]">Small Batch Roast</h3>
+            <p className="font-sans text-gray-600">Crafted for freshness and consistency.</p>
+          </div>
+          <div className="flex flex-col items-center">
+            <div className="bg-[#0B0C0C] p-4 rounded-full mb-6"><Coffee className="text-[#D4AF37]" size={32} /></div>
+            <h3 className="font-serif text-2xl mb-3 text-[#0B0C0C]">Functional Blends</h3>
+            <p className="font-sans text-gray-600">Functional blends with transparent ingredients.</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-[#121212] border-y border-gray-800 py-10">
+        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row gap-4 md:items-center md:justify-between">
+          <div>
+            <p className="text-[#D4AF37] text-xs uppercase tracking-[0.2em] mb-2">New</p>
+            <h3 className="font-serif text-2xl text-[#F9F6F0]">Rewards App + Instant Shipping Rewards</h3>
+            <p className="text-gray-400 text-sm mt-2">Collect points and unlock discounts or free shipping faster.</p>
+          </div>
+          <button type="button" onClick={() => setView('rewards')} className="border border-[#D4AF37] text-[#D4AF37] px-6 py-3 font-sans uppercase tracking-widest hover:bg-[#D4AF37] hover:text-[#0B0C0C] transition-all">
+            Explore Rewards
+          </button>
+        </div>
+      </div>
+
+      {/* FEATURED SHOP */}
+      <div className="bg-[#0B0C0C] py-24 border-t border-gray-900">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center mb-16 motion-enter">
+            <h2 className="text-4xl md:text-5xl font-serif text-[#F9F6F0] mb-6">Curated Excellence</h2>
+            <div className="w-24 h-1 bg-[#D4AF37] mx-auto"></div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {featuredHomeProducts.map((product) => (
+              <ProductCard key={product.id} product={product} openProductDetail={openProductDetail} />
+            ))}
+          </div>
+          <div className="text-center mt-12">
+             <button onClick={() => setView('shop_all')} className="border border-[#D4AF37] text-[#D4AF37] px-8 py-3 font-sans uppercase tracking-widest hover:bg-[#D4AF37] hover:text-[#0B0C0C] transition-all">View All</button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
 
 const WholesaleView = ({ setView }) => (
   <div className="pt-32 pb-24 bg-[#F9F6F0] min-h-screen">
