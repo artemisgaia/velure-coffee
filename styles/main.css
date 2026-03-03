@@ -183,6 +183,48 @@ h2 {
   gap: 12px;
 }
 
+.stepper {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.stepper__item {
+  border: 1px solid var(--border);
+  background: #0d0f10;
+  color: var(--ink-muted);
+  border-radius: 999px;
+  min-height: 36px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.stepper__item:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.stepper__item--active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.stepper__item--done {
+  border-color: rgba(212, 175, 55, 0.7);
+  color: var(--ink);
+}
+
+.step {
+  display: none;
+}
+
+.step--active {
+  display: block;
+}
+
 .card-block {
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -372,6 +414,11 @@ select {
   background: #0d0f10;
 }
 
+input[aria-invalid="true"],
+select[aria-invalid="true"] {
+  border-color: rgba(241, 159, 154, 0.74);
+}
+
 input:disabled,
 select:disabled {
   background: #1a1d1f;
@@ -416,6 +463,66 @@ body.modal-open {
 #payment-element {
   margin-top: 8px;
   min-height: 58px;
+}
+
+.payment-review-copy {
+  margin: 0 0 8px;
+  color: var(--ink-muted);
+  font-size: 0.85rem;
+}
+
+.field-error {
+  margin-top: 6px;
+  color: #eeb2af;
+  font-size: 0.76rem;
+}
+
+.step-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.step-nav-button {
+  border-radius: 999px;
+  min-height: 46px;
+  padding: 0 14px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+
+.step-nav-button--back {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--ink-muted);
+}
+
+.step-nav-button--next {
+  border: 0;
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.step-nav-button:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.step-nav-button--next:hover:not(:disabled) {
+  color: var(--accent-ink);
+  background: #e0bb44;
+}
+
+.step-nav-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.is-hidden {
+  display: none !important;
 }
 
 .pay-button {
@@ -579,6 +686,10 @@ body.modal-open {
     justify-content: center;
     align-items: center;
     width: 100%;
+  }
+
+  .step-actions {
+    grid-template-columns: 140px minmax(0, 1fr);
   }
 
   .checkout-column {

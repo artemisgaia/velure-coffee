@@ -61,106 +61,128 @@
           </p>
 
           <form id="checkout-form" class="checkout-form" novalidate>
-            <fieldset class="card-block account-block">
-              <legend>Account (Optional)</legend>
+            <div id="checkout-stepper" class="stepper" aria-label="Checkout steps">
+              <button type="button" class="stepper__item stepper__item--active" data-step-item data-step="1">Details</button>
+              <button type="button" class="stepper__item" data-step-item data-step="2">Shipping</button>
+              <button type="button" class="stepper__item" data-step-item data-step="3">Payment</button>
+            </div>
 
-              <div class="toggle-row">
-                <input id="enable-account-auth" type="checkbox" />
-                <label for="enable-account-auth">Sign in or create account for rewards and saved orders</label>
-              </div>
+            <div id="step-details" class="step step--active" data-step="1">
+              <fieldset class="card-block account-block">
+                <legend>Account (Optional)</legend>
 
-              <p id="auth-mode-summary" class="account-summary">
-                Guest checkout active. Enable account access only if you want rewards and saved order history.
-              </p>
+                <div class="toggle-row">
+                  <input id="enable-account-auth" type="checkbox" />
+                  <label for="enable-account-auth">Sign in for rewards and saved orders</label>
+                </div>
 
-              <div id="auth-signed-in" class="hidden account-inline-row">
-                <p class="auth-copy">Signed in as <strong id="auth-email-display"></strong>. Your order will be saved to your account.</p>
-                <button id="auth-signout" class="text-button" type="button">Sign out</button>
-              </div>
+                <p id="auth-mode-summary" class="account-summary">
+                  Guest checkout is always available.
+                </p>
 
-              <button id="open-auth-modal" class="text-button hidden" type="button">
-                Open account panel
-              </button>
-            </fieldset>
+                <div id="auth-signed-in" class="hidden account-inline-row">
+                  <p class="auth-copy">Signed in as <strong id="auth-email-display"></strong>. Your order will be saved to your account.</p>
+                  <button id="auth-signout" class="text-button" type="button">Sign out</button>
+                </div>
 
-            <fieldset class="card-block">
-              <legend>Contact</legend>
+                <button id="open-auth-modal" class="text-button hidden" type="button">
+                  Open account panel
+                </button>
+              </fieldset>
 
-              <label for="customer-name">Full name</label>
-              <input id="customer-name" name="customerName" autocomplete="name" required />
+              <fieldset class="card-block">
+                <legend>Contact</legend>
 
-              <label for="customer-email">Email</label>
-              <input id="customer-email" name="customerEmail" type="email" autocomplete="email" required />
+                <label for="customer-name">Full name</label>
+                <input id="customer-name" name="customerName" autocomplete="name" required />
 
-              <div class="toggle-row">
-                <input id="enable-phone" type="checkbox" />
-                <label for="enable-phone">Add phone for delivery updates</label>
-              </div>
+                <label for="customer-email">Email</label>
+                <input id="customer-email" name="customerEmail" type="email" autocomplete="email" required />
 
-              <div id="phone-wrap" class="hidden">
-                <label for="customer-phone">Phone (optional)</label>
-                <input id="customer-phone" name="customerPhone" type="tel" inputmode="tel" autocomplete="tel" />
-              </div>
-            </fieldset>
+                <div class="toggle-row">
+                  <input id="enable-phone" type="checkbox" />
+                  <label for="enable-phone">Add phone for delivery updates</label>
+                </div>
 
-            <fieldset class="card-block">
-              <legend>Shipping</legend>
+                <div id="phone-wrap" class="hidden">
+                  <label for="customer-phone">Phone (optional)</label>
+                  <input id="customer-phone" name="customerPhone" type="tel" inputmode="tel" autocomplete="tel" />
+                </div>
+              </fieldset>
+            </div>
 
-              <label for="shipping-country">Country</label>
-              <select id="shipping-country" name="shippingCountry" required></select>
+            <div id="step-shipping" class="step" data-step="2">
+              <fieldset class="card-block">
+                <legend>Shipping</legend>
 
-              <div id="saved-address-wrap" class="hidden">
-                <label for="saved-address-select">Saved address</label>
-                <select id="saved-address-select" name="savedAddress">
-                  <option value="">Use manual entry</option>
+                <label for="shipping-country">Country</label>
+                <select id="shipping-country" name="shippingCountry" required></select>
+
+                <div id="saved-address-wrap" class="hidden">
+                  <label for="saved-address-select">Saved address</label>
+                  <select id="saved-address-select" name="savedAddress">
+                    <option value="">Use manual entry</option>
+                  </select>
+                </div>
+
+                <label for="shipping-service">Shipping service</label>
+                <select id="shipping-service" name="shippingService" required></select>
+
+                <label for="shipping-address1">Address line 1</label>
+                <input id="shipping-address1" name="shippingAddress1" autocomplete="shipping address-line1" required />
+
+                <div class="toggle-row">
+                  <input id="enable-address2" type="checkbox" />
+                  <label for="enable-address2">Add apartment, suite, unit (optional)</label>
+                </div>
+
+                <div id="address2-wrap" class="hidden">
+                  <label for="shipping-address2">Address line 2</label>
+                  <input id="shipping-address2" name="shippingAddress2" autocomplete="shipping address-line2" />
+                </div>
+
+                <div class="row-2">
+                  <div>
+                    <label for="shipping-city">City</label>
+                    <input id="shipping-city" name="shippingCity" autocomplete="shipping address-level2" required />
+                  </div>
+                  <div>
+                    <label for="shipping-region">State / Region</label>
+                    <input id="shipping-region" name="shippingRegion" autocomplete="shipping address-level1" required />
+                  </div>
+                </div>
+
+                <label for="shipping-postal" id="postal-label">ZIP code</label>
+                <input id="shipping-postal" name="shippingPostal" autocomplete="shipping postal-code" required />
+              </fieldset>
+            </div>
+
+            <div id="step-payment" class="step" data-step="3">
+              <fieldset id="discount-block" class="card-block hidden">
+                <legend>Adjustments</legend>
+                <label for="discount-code">Rewards or discount</label>
+                <select id="discount-code" name="discountCode">
+                  <option value="">No discount</option>
+                  <option value="five_off">$5 rewards credit</option>
+                  <option value="free_shipping">Free shipping reward</option>
                 </select>
-              </div>
+              </fieldset>
 
-              <label for="shipping-service">Shipping service</label>
-              <select id="shipping-service" name="shippingService" required></select>
+              <fieldset class="card-block payment-block">
+                <legend>Payment</legend>
+                <p class="payment-review-copy">Review and complete your order.</p>
+                <div id="payment-element" aria-label="Secure payment fields"></div>
+              </fieldset>
+            </div>
 
-              <label for="shipping-address1">Address line 1</label>
-              <input id="shipping-address1" name="shippingAddress1" autocomplete="shipping address-line1" required />
-
-              <div class="toggle-row">
-                <input id="enable-address2" type="checkbox" />
-                <label for="enable-address2">Add apartment, suite, unit (optional)</label>
-              </div>
-
-              <div id="address2-wrap" class="hidden">
-                <label for="shipping-address2">Address line 2</label>
-                <input id="shipping-address2" name="shippingAddress2" autocomplete="shipping address-line2" />
-              </div>
-
-              <div class="row-2">
-                <div>
-                  <label for="shipping-city">City</label>
-                  <input id="shipping-city" name="shippingCity" autocomplete="shipping address-level2" required />
-                </div>
-                <div>
-                  <label for="shipping-region">State / Region</label>
-                  <input id="shipping-region" name="shippingRegion" autocomplete="shipping address-level1" required />
-                </div>
-              </div>
-
-              <label for="shipping-postal" id="postal-label">ZIP code</label>
-              <input id="shipping-postal" name="shippingPostal" autocomplete="shipping postal-code" required />
-            </fieldset>
-
-            <fieldset id="discount-block" class="card-block hidden">
-              <legend>Adjustments</legend>
-              <label for="discount-code">Rewards or discount</label>
-              <select id="discount-code" name="discountCode">
-                <option value="">No discount</option>
-                <option value="five_off">$5 rewards credit</option>
-                <option value="free_shipping">Free shipping reward</option>
-              </select>
-            </fieldset>
-
-            <fieldset class="card-block payment-block">
-              <legend>Payment</legend>
-              <div id="payment-element" aria-label="Secure payment fields"></div>
-            </fieldset>
+            <div class="step-actions">
+              <button id="step-back" class="step-nav-button step-nav-button--back" type="button">
+                Back
+              </button>
+              <button id="step-next" class="step-nav-button step-nav-button--next" type="button">
+                Continue
+              </button>
+            </div>
 
             <button id="pay-button-desktop" class="pay-button pay-button--desktop" type="submit">
               Pay Securely

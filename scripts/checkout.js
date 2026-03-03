@@ -86,11 +86,18 @@ const state = {
   customerProfile: null,
   addresses: [],
   activeAuthTab: 'signin',
+  step: 1,
 };
 
 const dom = {
   form: document.getElementById('checkout-form'),
   notice: document.getElementById('checkout-notice'),
+  stepperItems: Array.from(document.querySelectorAll('[data-step-item]')),
+  stepDetails: document.getElementById('step-details'),
+  stepShipping: document.getElementById('step-shipping'),
+  stepPayment: document.getElementById('step-payment'),
+  stepBack: document.getElementById('step-back'),
+  stepNext: document.getElementById('step-next'),
   enableAccountAuth: document.getElementById('enable-account-auth'),
   authModeSummary: document.getElementById('auth-mode-summary'),
   openAuthModal: document.getElementById('open-auth-modal'),
@@ -152,6 +159,212 @@ const cents = (amount) => Math.round(Number(amount || 0) * 100);
 
 const money = (amount) => currencyFormatter.format(Number(amount || 0));
 const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+
+const getErrorNode = (inputEl) => {
+  if (!inputEl?.id) return null;
+  const errorId = `${inputEl.id}-error`;
+  const existing = document.getElementById(errorId);
+  if (existing) return existing;
+  const next = document.createElement('div');
+  next.id = errorId;
+  next.className = 'field-error';
+  next.setAttribute('aria-live', 'polite');
+  inputEl.insertAdjacentElement('afterend', next);
+  return next;
+};
+
+const attachDescribedBy = (inputEl, errorId) => {
+  const current = normalize(inputEl.getAttribute('aria-describedby'));
+  const tokens = current ? current.split(/\s+/).filter(Boolean) : [];
+  if (!tokens.includes(errorId)) {
+    tokens.push(errorId);
+  }
+  if (tokens.length) {
+    inputEl.setAttribute('aria-describedby', tokens.join(' '));
+  }
+};
+
+const removeDescribedBy = (inputEl, errorId) => {
+  const current = normalize(inputEl.getAttribute('aria-describedby'));
+  if (!current) return;
+  const tokens = current.split(/\s+/).filter((token) => token && token !== errorId);
+  if (tokens.length) {
+    inputEl.setAttribute('aria-describedby', tokens.join(' '));
+  } else {
+    inputEl.removeAttribute('aria-describedby');
+  }
+};
+
+const clearFieldError = (inputEl) => {
+  if (!inputEl?.id) return;
+  inputEl.removeAttribute('aria-invalid');
+  const errorId = `${inputEl.id}-error`;
+  const errorNode = document.getElementById(errorId);
+  if (errorNode) {
+    errorNode.textContent = '';
+  }
+  removeDescribedBy(inputEl, errorId);
+};
+
+const setFieldError = (inputEl, message) => {
+  if (!inputEl?.id) return;
+  const trimmedMessage = normalize(message);
+  if (!trimmedMessage) {
+    clearFieldError(inputEl);
+    return;
+  }
+  const errorNode = getErrorNode(inputEl);
+  if (!errorNode) return;
+  errorNode.textContent = trimmedMessage;
+  inputEl.setAttribute('aria-invalid', 'true');
+  attachDescribedBy(inputEl, errorNode.id);
+};
+
+const focusField = (inputEl) => {
+  if (!inputEl || typeof inputEl.focus !== 'function') return;
+  inputEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  inputEl.focus({ preventScroll: true });
+};
+
+const clearStepFieldErrors = (step) => {
+  if (step === 1) {
+    clearFieldError(dom.customerName);
+    clearFieldError(dom.customerEmail);
+    clearFieldError(dom.customerPhone);
+    return;
+  }
+
+  if (step === 2) {
+    clearFieldError(dom.shippingCountry);
+    clearFieldError(dom.shippingService);
+    clearFieldError(dom.shippingAddress1);
+    clearFieldError(dom.shippingCity);
+    clearFieldError(dom.shippingRegion);
+    clearFieldError(dom.shippingPostal);
+  }
+};
+
+const validateDetailsStep = () => {
+  clearStepFieldErrors(1);
+  let firstInvalid = null;
+
+  const name = normalize(dom.customerName.value);
+  if (name.length < 2) {
+    setFieldError(dom.customerName, 'Please enter your full name.');
+    firstInvalid = firstInvalid || dom.customerName;
+  }
+
+  const email = normalizeLower(dom.customerEmail.value);
+  if (!isValidEmail(email)) {
+    setFieldError(dom.customerEmail, 'Please enter a valid email address.');
+    firstInvalid = firstInvalid || dom.customerEmail;
+  }
+
+  const phone = normalize(dom.customerPhone.value);
+  if (dom.enablePhone.checked && phone && phone.length < 7) {
+    setFieldError(dom.customerPhone, 'Please enter a valid phone number.');
+    firstInvalid = firstInvalid || dom.customerPhone;
+  }
+
+  if (firstInvalid) {
+    focusField(firstInvalid);
+    return false;
+  }
+  return true;
+};
+
+const validateShippingStep = () => {
+  clearStepFieldErrors(2);
+  let firstInvalid = null;
+
+  if (!selectedCountry()) {
+    setFieldError(dom.shippingCountry, 'Select a shipping destination.');
+    firstInvalid = firstInvalid || dom.shippingCountry;
+  }
+
+  if (!selectedService()) {
+    setFieldError(dom.shippingService, 'Select a shipping service.');
+    firstInvalid = firstInvalid || dom.shippingService;
+  }
+
+  if (!normalize(dom.shippingAddress1.value)) {
+    setFieldError(dom.shippingAddress1, 'Address line 1 is required.');
+    firstInvalid = firstInvalid || dom.shippingAddress1;
+  }
+
+  if (!normalize(dom.shippingCity.value)) {
+    setFieldError(dom.shippingCity, 'City is required.');
+    firstInvalid = firstInvalid || dom.shippingCity;
+  }
+
+  if (!normalize(dom.shippingRegion.value)) {
+    setFieldError(dom.shippingRegion, 'State or region is required.');
+    firstInvalid = firstInvalid || dom.shippingRegion;
+  }
+
+  if (!normalize(dom.shippingPostal.value)) {
+    setFieldError(dom.shippingPostal, 'Postal code is required.');
+    firstInvalid = firstInvalid || dom.shippingPostal;
+  }
+
+  if (firstInvalid) {
+    focusField(firstInvalid);
+    return false;
+  }
+  return true;
+};
+
+const renderStepUi = () => {
+  dom.stepDetails?.classList.toggle('step--active', state.step === 1);
+  dom.stepShipping?.classList.toggle('step--active', state.step === 2);
+  dom.stepPayment?.classList.toggle('step--active', state.step === 3);
+
+  for (const item of dom.stepperItems) {
+    const itemStep = Number(item.dataset.step || '1');
+    item.classList.toggle('stepper__item--active', itemStep === state.step);
+    item.classList.toggle('stepper__item--done', itemStep < state.step);
+    item.disabled = itemStep > state.step;
+  }
+
+  const showBack = state.step > 1;
+  const showContinue = state.step < 3;
+  const showPayDesktop = state.step === 3;
+
+  if (dom.stepBack) {
+    dom.stepBack.classList.toggle('is-hidden', !showBack);
+    dom.stepBack.disabled = state.isSubmitting;
+  }
+
+  if (dom.stepNext) {
+    dom.stepNext.classList.toggle('is-hidden', !showContinue);
+    dom.stepNext.textContent = state.isSubmitting ? 'Processing...' : 'Continue';
+  }
+
+  if (dom.payDesktop) {
+    dom.payDesktop.classList.toggle('is-hidden', !showPayDesktop);
+    dom.payDesktop.textContent = state.isSubmitting ? 'Processing...' : 'Pay Securely';
+  }
+
+  if (dom.payMobile) {
+    dom.payMobile.textContent = state.isSubmitting
+      ? 'Processing...'
+      : (state.step === 3 ? 'Pay Securely' : 'Continue');
+  }
+
+  const baseDisabled = state.isSubmitting || state.lineItems.length === 0;
+  if (state.step < 3) {
+    if (dom.stepNext) dom.stepNext.disabled = baseDisabled;
+    if (dom.payMobile) dom.payMobile.disabled = baseDisabled;
+  } else if (dom.stepNext) {
+    dom.stepNext.disabled = true;
+  }
+};
+
+const setStep = (step) => {
+  const nextStep = Math.max(1, Math.min(3, Number(step) || 1));
+  state.step = nextStep;
+  renderStepUi();
+};
 
 const normalizeAuthState = (value) => {
   if (!value || typeof value !== 'object') return { ...DEFAULT_AUTH_STATE };
@@ -362,7 +575,7 @@ const applyAuthUi = () => {
     } else if (wantsAccountPanel) {
       dom.authModeSummary.textContent = 'Account panel enabled. Sign in or create your account in the popup.';
     } else {
-      dom.authModeSummary.textContent = 'Guest checkout active. Enable account access only if you want rewards and saved order history.';
+      dom.authModeSummary.textContent = 'Guest checkout is always available.';
     }
   }
 
@@ -676,13 +889,15 @@ const setPostalLabel = (countryCode) => {
 const setPayDisabled = (disabled) => {
   dom.payDesktop.disabled = disabled;
   dom.payMobile.disabled = disabled;
+  if (dom.stepNext) {
+    dom.stepNext.disabled = disabled;
+  }
 };
 
 const setSubmittingState = (isSubmitting) => {
   state.isSubmitting = isSubmitting;
   setPayDisabled(isSubmitting || state.lineItems.length === 0);
-  dom.payDesktop.textContent = isSubmitting ? 'Processing...' : 'Pay Securely';
-  dom.payMobile.textContent = isSubmitting ? 'Processing...' : 'Pay Securely';
+  renderStepUi();
 };
 
 const parseCartStorage = () => {
@@ -1066,6 +1281,9 @@ const refreshPaymentIntent = async () => {
 };
 
 const scheduleRefresh = (delayMs = 320) => {
+  if (state.step !== 3) {
+    return;
+  }
   if (state.refreshTimerId) {
     window.clearTimeout(state.refreshTimerId);
   }
@@ -1112,20 +1330,40 @@ const handlePostPaymentStatus = async (paymentIntent) => {
   setNotice('info', 'Payment update received. Please check your email for confirmation.');
 };
 
+const continueCheckoutStep = async () => {
+  if (state.step === 1) {
+    if (!validateDetailsStep()) {
+      return false;
+    }
+    setStep(2);
+    return true;
+  }
+
+  if (state.step === 2) {
+    if (!validateShippingStep()) {
+      return false;
+    }
+    setStep(3);
+    return refreshPaymentIntent();
+  }
+
+  return true;
+};
+
 const submitCheckout = async (event) => {
   event.preventDefault();
 
   if (state.isSubmitting) return;
 
+  if (state.step < 3) {
+    await continueCheckoutStep();
+    return;
+  }
+
   const constraint = getClientConstraint();
   if (constraint.blocked) {
     setNotice(constraint.type, constraint.message);
     setPayDisabled(true);
-    return;
-  }
-
-  if (!dom.form.reportValidity()) {
-    setNotice('warning', 'Please complete all required checkout fields.');
     return;
   }
 
@@ -1184,15 +1422,24 @@ const handleReturnQuery = async () => {
   }
 };
 
-const applyConstraintNotice = () => {
+const applyConstraintNotice = ({ announce = false } = {}) => {
   const constraint = getClientConstraint();
   if (constraint.blocked) {
-    setNotice(constraint.type, constraint.message);
-    setPayDisabled(true);
+    if (state.step === 3) {
+      setPayDisabled(true);
+    }
+    if (announce && state.step === 3) {
+      setNotice(constraint.type, constraint.message);
+    }
     return false;
   }
 
-  setNotice('info', 'Checkout details updated.');
+  if (state.step === 3) {
+    setPayDisabled(state.isSubmitting || state.lineItems.length === 0);
+  }
+  if (announce && state.step === 3) {
+    setNotice('info', 'Checkout details updated.');
+  }
   return true;
 };
 
@@ -1398,6 +1645,25 @@ const handleAuthSignOut = async () => {
 
 const bindEvents = () => {
   dom.form.addEventListener('submit', submitCheckout);
+  if (dom.stepNext) {
+    dom.stepNext.addEventListener('click', async () => {
+      await continueCheckoutStep();
+    });
+  }
+  if (dom.stepBack) {
+    dom.stepBack.addEventListener('click', () => {
+      if (state.step <= 1) return;
+      setStep(state.step - 1);
+    });
+  }
+  for (const item of dom.stepperItems) {
+    item.addEventListener('click', () => {
+      const targetStep = Number(item.dataset.step || '1');
+      if (!Number.isFinite(targetStep) || targetStep >= state.step) return;
+      setStep(targetStep);
+    });
+  }
+
   dom.enableAccountAuth.addEventListener('change', () => {
     if (isSignedIn()) {
       dom.enableAccountAuth.checked = false;
@@ -1446,6 +1712,7 @@ const bindEvents = () => {
     } else {
       dom.phoneWrap.classList.add('hidden');
       dom.customerPhone.value = '';
+      clearFieldError(dom.customerPhone);
     }
     scheduleRefresh(120);
   });
@@ -1472,6 +1739,8 @@ const bindEvents = () => {
   }
 
   dom.shippingCountry.addEventListener('change', () => {
+    clearFieldError(dom.shippingCountry);
+    clearFieldError(dom.shippingService);
     setPostalLabel(selectedCountry());
     populateServiceOptions();
     updateShippingEstimate();
@@ -1481,6 +1750,7 @@ const bindEvents = () => {
   });
 
   dom.shippingService.addEventListener('change', () => {
+    clearFieldError(dom.shippingService);
     updateShippingEstimate();
     estimateClientTotals();
     applyConstraintNotice();
@@ -1509,6 +1779,7 @@ const bindEvents = () => {
 
   for (const input of refreshInputs) {
     input.addEventListener('input', () => {
+      clearFieldError(input);
       if (input === dom.customerEmail || input === dom.shippingPostal) {
         scheduleRefresh(420);
       }
@@ -1557,10 +1828,8 @@ const initializeCheckout = async () => {
     return;
   }
 
+  setStep(1);
   estimateClientTotals();
-  if (!applyConstraintNotice()) {
-    return;
-  }
 
   if (!state.lineItems.length) {
     setPayDisabled(true);
@@ -1568,11 +1837,16 @@ const initializeCheckout = async () => {
     return;
   }
 
+  setPayDisabled(false);
+
   if (!normalize(dom.customerEmail.value) && state.auth.user?.email) {
     dom.customerEmail.value = state.auth.user.email;
   }
 
-  await refreshPaymentIntent();
+  const hasReturnStatus = new URLSearchParams(window.location.search).has('redirect_status');
+  if (!hasReturnStatus) {
+    setNotice('info', 'Complete your details to continue.');
+  }
 };
 
 initializeCheckout();
