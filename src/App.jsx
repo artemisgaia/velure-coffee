@@ -1505,18 +1505,9 @@ Note: General lifestyle content only.`,
   },
 ];
 
-let currentProductsCatalog = [...PRODUCTS];
-let currentBlogPostsCatalog = [...BLOG_POSTS];
-
-const getProductsCatalog = () => currentProductsCatalog;
-const setProductsCatalog = (nextProducts) => {
-  currentProductsCatalog = Array.isArray(nextProducts) && nextProducts.length ? nextProducts : [...PRODUCTS];
-};
+const getProductsCatalog = () => PRODUCTS;
 const getSubscriptionProducts = () => getProductsCatalog().filter((product) => product.subscriptionEligible);
-const getBlogPostsCatalog = () => currentBlogPostsCatalog;
-const setBlogPostsCatalog = (nextPosts) => {
-  currentBlogPostsCatalog = Array.isArray(nextPosts) && nextPosts.length ? nextPosts : [...BLOG_POSTS];
-};
+const getBlogPostsCatalog = () => BLOG_POSTS;
 const ensureArray = (value) => (Array.isArray(value) ? value : []);
 const ensureObject = (value) => (value && typeof value === 'object' && !Array.isArray(value) ? value : {});
 const normalizeSupabaseProduct = (row = {}) => {
@@ -8985,7 +8976,6 @@ const StorefrontApp = () => {
 
     return getRouteFromPath(window.location.pathname);
   });
-  const [, setCatalogRefreshKey] = useState(0);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const openCart = useCallback(() => setIsCartOpen(true), []);
   const closeCart = useCallback(() => setIsCartOpen(false), []);
@@ -9046,53 +9036,6 @@ const StorefrontApp = () => {
   }, [navigateToView]);
 
   const [shareNotice, setShareNotice] = useState('');
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const loadStorefrontContent = async () => {
-      try {
-        const [productsResponse, blogResponse] = await Promise.all([
-          fetch('/api/public-products', { credentials: 'same-origin' }),
-          fetch('/api/public-blog-posts', { credentials: 'same-origin' }),
-        ]);
-
-        if (!productsResponse.ok || !blogResponse.ok) {
-          throw new Error('Unable to refresh storefront content.');
-        }
-
-        const [productsPayload, blogPayload] = await Promise.all([
-          productsResponse.json().catch(() => null),
-          blogResponse.json().catch(() => null),
-        ]);
-
-        if (cancelled) return;
-
-        if (Array.isArray(productsPayload?.products) && productsPayload.products.length > 0) {
-          setProductsCatalog(productsPayload.products.map(normalizeSupabaseProduct));
-        } else {
-          setProductsCatalog(PRODUCTS);
-        }
-        if (Array.isArray(blogPayload?.posts) && blogPayload.posts.length > 0) {
-          setBlogPostsCatalog(blogPayload.posts.map(normalizeSupabaseBlogPost));
-        } else {
-          setBlogPostsCatalog(BLOG_POSTS);
-        }
-        setCatalogRefreshKey((previous) => previous + 1);
-      } catch (error) {
-        console.error('Storefront content refresh failed:', error);
-        if (cancelled) return;
-        setProductsCatalog(PRODUCTS);
-        setBlogPostsCatalog(BLOG_POSTS);
-        setCatalogRefreshKey((previous) => previous + 1);
-      }
-    };
-
-    loadStorefrontContent();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   useEffect(() => {
     if (!shareNotice) return undefined;
