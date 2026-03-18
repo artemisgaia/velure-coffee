@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { ShoppingBag, Menu, X, ChevronDown, Coffee, Leaf, Award, Check, Mail, MapPin, Phone, ArrowLeft, User, Share2, Link2, Star, Gift } from 'lucide-react';
 import { supabase } from './lib/supabaseClient';
-import AdminApp from './admin/AdminApp';
 import { SHIPPING_ZONES, SUPPORTED_COUNTRY_CODES } from '../shared/shipping.js';
 
 // --- BRAND ASSETS & DATA ---
@@ -1505,64 +1504,6 @@ Note: General lifestyle content only.`,
   },
 ];
 
-const getProductsCatalog = () => PRODUCTS;
-const getSubscriptionProducts = () => getProductsCatalog().filter((product) => product.subscriptionEligible);
-const getBlogPostsCatalog = () => BLOG_POSTS;
-const ensureArray = (value) => (Array.isArray(value) ? value : []);
-const ensureObject = (value) => (value && typeof value === 'object' && !Array.isArray(value) ? value : {});
-const normalizeSupabaseProduct = (row = {}) => {
-  const details = ensureObject(row.details);
-  const nutritionSpecs = ensureObject(row.nutrition_specs || row.nutritionSpecs);
-  return {
-    id: normalizeLower(row.id || ''),
-    name: typeof row.name === 'string' ? row.name : '',
-    subtitle: typeof (row.subtitle || row.tagline) === 'string' ? (row.subtitle || row.tagline) : '',
-    price: Number(row.price || 0),
-    category: typeof row.category === 'string' ? row.category : 'functional',
-    tag: typeof row.tag === 'string' ? row.tag : (ensureArray(row.badges)[0] || ''),
-    subscriptionEligible: row.subscription_eligible !== false,
-    featuredHome: Boolean(row.featured_home ?? row.is_featured ?? false),
-    images: ensureArray(row.images).filter((item) => typeof item === 'string' && item.trim()),
-    description: typeof row.description === 'string' ? row.description : '',
-    details: {
-      origin: typeof (row.origin || details.origin) === 'string' ? (row.origin || details.origin) : '',
-      roast: typeof (row.roast || details.roast) === 'string' ? (row.roast || details.roast) : '',
-      ingredients: typeof details.ingredients === 'string' ? details.ingredients : '',
-      weight: typeof details.weight === 'string' ? details.weight : (typeof nutritionSpecs.productAmount === 'string' ? nutritionSpecs.productAmount : ''),
-      format: typeof (row.format || details.format) === 'string' ? (row.format || details.format) : '',
-      series: typeof (row.series || details.series) === 'string' ? (row.series || details.series) : '',
-    },
-    nutritionSpecs,
-    ingredients: ensureArray(row.ingredients),
-    benefits: ensureArray(row.benefits),
-    badges: ensureArray(row.badges),
-    origin: typeof row.origin === 'string' ? row.origin : '',
-    roast: typeof row.roast === 'string' ? row.roast : '',
-    format: typeof row.format === 'string' ? row.format : '',
-    series: typeof row.series === 'string' ? row.series : '',
-    weight_lbs: Number(row.weight_lbs || 0),
-    is_active: Boolean(row.is_active ?? true),
-    is_featured: Boolean(row.is_featured ?? false),
-    sort_order: Number(row.sort_order || 0),
-  };
-};
-const normalizeSupabaseBlogPost = (row = {}) => ({
-  title: typeof row.title === 'string' ? row.title : '',
-  slug: typeof row.slug === 'string' ? row.slug : '',
-  metaTitle: typeof (row.meta_title || row.metaTitle) === 'string' ? (row.meta_title || row.metaTitle) : '',
-  metaDescription: typeof (row.meta_description || row.metaDescription || row.subtitle) === 'string' ? (row.meta_description || row.metaDescription || row.subtitle) : '',
-  description: typeof (row.subtitle || row.description) === 'string' ? (row.subtitle || row.description) : '',
-  publishedAt: typeof (row.published_at || row.publishedAt) === 'string' ? (row.published_at || row.publishedAt) : '',
-  readTime: `${Number(row.read_time_minutes || row.readTimeMinutes || 5)} min read`,
-  readTimeMinutes: Number(row.read_time_minutes || row.readTimeMinutes || 5),
-  tags: ensureArray(row.tags),
-  featured: Boolean(row.featured),
-  heroImage: typeof (row.featured_image || row.heroImage) === 'string' ? (row.featured_image || row.heroImage) : '',
-  supportingImages: ensureArray(row.supporting_images || row.supportingImages),
-  content: typeof (row.body || row.content) === 'string' ? (row.body || row.content) : '',
-  relatedProducts: ensureArray(row.related_products || row.relatedProducts).map((item) => typeof item === 'string' ? item : item?.productId).filter(Boolean),
-  author: typeof row.author === 'string' ? row.author : 'Joe Hart',
-});
 
 const DEFAULT_BLOG_RELATED_PRODUCT_IDS = ['fuse', 'aureo', 'onyx'];
 const BLOG_RELATED_PRODUCTS_BY_SLUG = {
@@ -1962,7 +1903,7 @@ const sanitizeBundleSelection = (value) => {
 };
 const getProductById = (productId) => {
   const normalizedProductId = normalizeLower(productId);
-  return getProductsCatalog().find((product) => product.id === normalizedProductId) || null;
+  return PRODUCTS.find((product) => product.id === normalizedProductId) || null;
 };
 const normalizeCartItems = (rawCart) => {
   if (!Array.isArray(rawCart)) return [];
@@ -2070,7 +2011,7 @@ const isTwelveOzBagProduct = (product) => {
 const isDarkRoastCoffeeProduct = (product) => isNonBundleCoffeeProduct(product) && normalizeLower(product?.details?.roast || '') === 'dark';
 const isLightRoastCoffeeProduct = (product) => isNonBundleCoffeeProduct(product) && normalizeLower(product?.details?.roast || '') === 'light';
 const getBundleSlotOptions = (bundleProductId) => {
-  const selectableProducts = getProductsCatalog().filter((candidate) => candidate.category !== 'bundles');
+  const selectableProducts = PRODUCTS.filter((candidate) => candidate.category !== 'bundles');
   const buildSlot = (key, label, helper, matcher) => ({
     key,
     label,
@@ -2118,7 +2059,7 @@ const getDefaultBundleSelections = (bundleProductId) => getBundleSlotOptions(bun
   return accumulator;
 }, {});
 
-const getBlogPostBySlug = (slug) => getBlogPostsCatalog().find((post) => post.slug === slug) || null;
+const getBlogPostBySlug = (slug) => BLOG_POSTS.find((post) => post.slug === slug) || null;
 const getProductPrimaryImage = (product) => {
   const candidate = Array.isArray(product?.images) ? product.images.find((image) => typeof image === 'string' && image.trim()) : '';
   if (candidate && (/^https?:\/\//.test(candidate) || candidate.startsWith('data:image/') || candidate.startsWith('/'))) return candidate;
@@ -2151,7 +2092,7 @@ const getRelatedProductsForBlogPost = (slug, limit = 3, explicitIds = []) => {
     : (BLOG_RELATED_PRODUCTS_BY_SLUG[slug] || DEFAULT_BLOG_RELATED_PRODUCT_IDS);
   const uniqueIds = [...new Set([...(mappedIds || []), ...DEFAULT_BLOG_RELATED_PRODUCT_IDS])];
   const resolvedProducts = uniqueIds
-    .map((productId) => getProductsCatalog().find((product) => product.id === productId))
+    .map((productId) => PRODUCTS.find((product) => product.id === productId))
     .filter(Boolean);
   return resolvedProducts.slice(0, limit);
 };
@@ -4681,7 +4622,7 @@ const CheckoutView = ({
 
   const checkoutItems = useMemo(() => getCheckoutItemsFromCart(cart)
     .map((entry) => {
-      const product = getProductsCatalog().find((item) => item.id === entry.productId);
+      const product = PRODUCTS.find((item) => item.id === entry.productId);
       if (!product) return null;
       return {
         ...entry,
@@ -5888,8 +5829,8 @@ const ShopView = ({ category, openProductDetail, setView }) => {
   const showFormatFilter = category !== 'bundles';
   const showDecafFilter = category === 'all' || category === 'single_origin';
   const showBundleTypeFilter = category === 'bundles';
-  const hasSignatureCollection = getProductsCatalog().some((product) => product.category === 'signature');
-  const hasBundlesCollection = getProductsCatalog().some((product) => product.category === 'bundles');
+  const hasSignatureCollection = PRODUCTS.some((product) => product.category === 'signature');
+  const hasBundlesCollection = PRODUCTS.some((product) => product.category === 'bundles');
 
   const getFiltersFromLocation = useCallback(() => {
     if (typeof window === 'undefined') {
@@ -5903,8 +5844,8 @@ const ShopView = ({ category, openProductDetail, setView }) => {
 
   const seriesChips = useMemo(() => ([
     { view: 'shop_all', label: 'All', enabled: true },
-    { view: 'shop_functional', label: 'Functional', enabled: getProductsCatalog().some((product) => product.category === 'functional') },
-    { view: 'shop_single_origin', label: 'Single Origin', enabled: getProductsCatalog().some((product) => product.category === 'single_origin') },
+    { view: 'shop_functional', label: 'Functional', enabled: PRODUCTS.some((product) => product.category === 'functional') },
+    { view: 'shop_single_origin', label: 'Single Origin', enabled: PRODUCTS.some((product) => product.category === 'single_origin') },
     { view: 'shop_signature', label: 'Signature', enabled: hasSignatureCollection },
     { view: 'shop_bundles', label: 'Bundles', enabled: hasBundlesCollection },
   ].filter((chip) => chip.enabled)), [hasBundlesCollection, hasSignatureCollection]);
@@ -6018,8 +5959,8 @@ const ShopView = ({ category, openProductDetail, setView }) => {
       : 'Sort • Roast • Format';
 
   const scopedProducts = category === 'all'
-    ? getProductsCatalog()
-    : getProductsCatalog().filter((product) => product.category === category);
+    ? PRODUCTS
+    : PRODUCTS.filter((product) => product.category === category);
 
   const filteredProducts = scopedProducts.filter((product) => {
     if (showDecafFilter && filters.decaf === 'decaf' && !isDecafProduct(product)) {
@@ -6380,7 +6321,7 @@ const BlogView = ({ openBlogPost }) => {
 
   const availableTags = useMemo(() => {
     const tagCounts = new Map();
-    getBlogPostsCatalog().forEach((post) => {
+    BLOG_POSTS.forEach((post) => {
       const postTags = Array.isArray(post.tags) ? post.tags : [];
       postTags.forEach((tag) => {
         if (!tag) return;
@@ -6409,7 +6350,7 @@ const BlogView = ({ openBlogPost }) => {
 
   const filteredPosts = useMemo(() => {
     const normalizedQuery = normalizeLower(searchQuery);
-    return getBlogPostsCatalog().filter((post) => {
+    return BLOG_POSTS.filter((post) => {
       if (selectedTag !== 'all') {
         const postTags = Array.isArray(post.tags) ? post.tags : [];
         if (!postTags.includes(selectedTag)) {
@@ -8128,7 +8069,7 @@ const RewardsView = ({ setView, rewardsProfile, onJoinRewards, onRedeemReward, o
 };
 
 const SubscriptionView = ({ setView, authUser }) => {
-  const subscriptionProducts = getSubscriptionProducts();
+  const subscriptionProducts = PRODUCTS.filter((product) => product.subscriptionEligible);
   const [customerName, setCustomerName] = useState('');
   const [subscriberEmail, setSubscriberEmail] = useState(authUser?.email || '');
   const [selectedProductId, setSelectedProductId] = useState(subscriptionProducts[0]?.id || 'fuse');
@@ -8582,8 +8523,8 @@ const getHomeFeaturedProducts = (products, limit = 3) => {
 };
 
 const HomeView = ({ openProductDetail, setView }) => {
-  const featuredHomeProducts = getHomeFeaturedProducts(getProductsCatalog(), 3);
-  const featuredMembershipProduct = getSubscriptionProducts()[0] || null;
+  const featuredHomeProducts = getHomeFeaturedProducts(PRODUCTS, 3);
+  const featuredMembershipProduct = PRODUCTS.filter((product) => product.subscriptionEligible)[0] || null;
   const featuredMembershipPrice = featuredMembershipProduct ? getMembershipPriceForProduct(featuredMembershipProduct) : 0;
   const foundingMemberPrice = featuredMembershipProduct ? getFoundingMemberPriceForProduct(featuredMembershipProduct) : 0;
   const [foundingEmail, setFoundingEmail] = useState('');
@@ -8981,7 +8922,7 @@ const StorefrontApp = () => {
   const closeCart = useCallback(() => setIsCartOpen(false), []);
   const currentView = route.view;
   const selectedProduct = currentView === 'product_detail'
-    ? getProductsCatalog().find((product) => product.id === route.productId) || null
+    ? PRODUCTS.find((product) => product.id === route.productId) || null
     : null;
   const selectedBlogPost = currentView === 'blog_post'
     ? getBlogPostBySlug(route.blogSlug)
@@ -9022,7 +8963,7 @@ const StorefrontApp = () => {
     try {
       if (typeof window !== 'undefined') {
         const normalizedProductId = normalizeLower(productId);
-        if (getSubscriptionProducts().some((product) => product.id === normalizedProductId)) {
+        if (PRODUCTS.filter((product) => product.subscriptionEligible).some((product) => product.id === normalizedProductId)) {
           window.localStorage.setItem(SUBSCRIPTION_SELECTION_STORAGE_KEY, normalizedProductId);
         } else {
           window.localStorage.removeItem(SUBSCRIPTION_SELECTION_STORAGE_KEY);
@@ -9869,7 +9810,7 @@ const StorefrontApp = () => {
   }, [navigateToView]);
 
   const openBlogRelatedProduct = useCallback((productId) => {
-    const product = getProductsCatalog().find((entry) => entry.id === productId);
+    const product = PRODUCTS.find((entry) => entry.id === productId);
     if (!product) return;
     openProductDetail(product);
   }, [openProductDetail]);
@@ -10508,12 +10449,4 @@ const StorefrontApp = () => {
   );
 };
 
-const App = () => {
-  if (typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')) {
-    return <AdminApp />;
-  }
-
-  return <StorefrontApp />;
-};
-
-export default App;
+export default StorefrontApp;
