@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { ShoppingBag, Menu, X, ChevronDown, Coffee, Leaf, Award, Check, Mail, MapPin, Phone, ArrowLeft, User, Share2, Link2, Star, Gift } from 'lucide-react';
-import { supabase, supabaseRest } from './lib/supabaseClient';
+import { supabase } from './lib/supabaseClient';
 import AdminApp from './admin/AdminApp';
 import { SHIPPING_ZONES, SUPPORTED_COUNTRY_CODES } from '../shared/shipping.js';
 
@@ -9052,30 +9052,39 @@ const StorefrontApp = () => {
 
     const loadStorefrontContent = async () => {
       try {
+        const [productsResponse, blogResponse] = await Promise.all([
+          fetch('/api/public-products', { credentials: 'same-origin' }),
+          fetch('/api/public-blog-posts', { credentials: 'same-origin' }),
+        ]);
+
+        if (!productsResponse.ok || !blogResponse.ok) {
+          throw new Error('Unable to refresh storefront content.');
+        }
+
         const [productsPayload, blogPayload] = await Promise.all([
-          supabaseRest.select('products', {
-            select: '*',
-            is_active: 'eq.true',
-            order: 'sort_order.asc.nullslast,name.asc',
-          }),
-          supabaseRest.select('blog_posts', {
-            select: '*',
-            status: 'eq.published',
-            order: 'published_at.desc',
-          }),
+          productsResponse.json().catch(() => null),
+          blogResponse.json().catch(() => null),
         ]);
 
         if (cancelled) return;
 
-        if (Array.isArray(productsPayload?.data) && productsPayload.data.length > 0) {
-          setProductsCatalog(productsPayload.data.map(normalizeSupabaseProduct));
+        if (Array.isArray(productsPayload?.products) && productsPayload.products.length > 0) {
+          setProductsCatalog(productsPayload.products.map(normalizeSupabaseProduct));
+        } else {
+          setProductsCatalog(PRODUCTS);
         }
-        if (Array.isArray(blogPayload?.data) && blogPayload.data.length > 0) {
-          setBlogPostsCatalog(blogPayload.data.map(normalizeSupabaseBlogPost));
+        if (Array.isArray(blogPayload?.posts) && blogPayload.posts.length > 0) {
+          setBlogPostsCatalog(blogPayload.posts.map(normalizeSupabaseBlogPost));
+        } else {
+          setBlogPostsCatalog(BLOG_POSTS);
         }
         setCatalogRefreshKey((previous) => previous + 1);
       } catch (error) {
         console.error('Storefront content refresh failed:', error);
+        if (cancelled) return;
+        setProductsCatalog(PRODUCTS);
+        setBlogPostsCatalog(BLOG_POSTS);
+        setCatalogRefreshKey((previous) => previous + 1);
       }
     };
 
