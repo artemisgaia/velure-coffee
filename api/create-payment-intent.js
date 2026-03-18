@@ -37,6 +37,25 @@ const DISCOUNT_OFFERS = {
 const normalize = (value) => (typeof value === 'string' ? value.trim() : '');
 const normalizeLower = (value) => normalize(value).toLowerCase();
 const getEnv = (name) => normalize(globalThis.process?.env?.[name] || '');
+const US_STATE_CODES = {
+  ALABAMA: 'AL', ALASKA: 'AK', ARIZONA: 'AZ', ARKANSAS: 'AR', CALIFORNIA: 'CA', COLORADO: 'CO',
+  CONNECTICUT: 'CT', DELAWARE: 'DE', FLORIDA: 'FL', GEORGIA: 'GA', HAWAII: 'HI', IDAHO: 'ID',
+  ILLINOIS: 'IL', INDIANA: 'IN', IOWA: 'IA', KANSAS: 'KS', KENTUCKY: 'KY', LOUISIANA: 'LA',
+  MAINE: 'ME', MARYLAND: 'MD', MASSACHUSETTS: 'MA', MICHIGAN: 'MI', MINNESOTA: 'MN', MISSISSIPPI: 'MS',
+  MISSOURI: 'MO', MONTANA: 'MT', NEBRASKA: 'NE', NEVADA: 'NV', 'NEW HAMPSHIRE': 'NH', 'NEW JERSEY': 'NJ',
+  'NEW MEXICO': 'NM', 'NEW YORK': 'NY', 'NORTH CAROLINA': 'NC', 'NORTH DAKOTA': 'ND', OHIO: 'OH',
+  OKLAHOMA: 'OK', OREGON: 'OR', PENNSYLVANIA: 'PA', 'RHODE ISLAND': 'RI', 'SOUTH CAROLINA': 'SC',
+  'SOUTH DAKOTA': 'SD', TENNESSEE: 'TN', TEXAS: 'TX', UTAH: 'UT', VERMONT: 'VT', VIRGINIA: 'VA',
+  WASHINGTON: 'WA', 'WEST VIRGINIA': 'WV', WISCONSIN: 'WI', WYOMING: 'WY', 'DISTRICT OF COLUMBIA': 'DC',
+};
+const normalizeRegionCode = (countryCode, regionValue) => {
+  const normalizedCountry = normalize(countryCode).toUpperCase();
+  const normalizedRegion = normalize(regionValue).toUpperCase();
+  if (!normalizedRegion) return '';
+  if (normalizedCountry !== 'US') return normalizedRegion.replace(/[^A-Z0-9]/g, '').slice(0, 12);
+  if (/^[A-Z]{2}$/.test(normalizedRegion)) return normalizedRegion;
+  return US_STATE_CODES[normalizedRegion] || '';
+};
 
 const sendJson = (res, statusCode, payload) => {
   res.statusCode = statusCode;
@@ -260,7 +279,14 @@ const evaluateConstraints = (items, shipping) => {
   return { ok: true, code: 'ok', severity: 'success', message: 'Destination is eligible for checkout.' };
 };
 
-const getTaxRate = (countryCode) => {
+const getTaxRate = (countryCode, regionValue = '') => {
+  const regionCode = normalizeRegionCode(countryCode, regionValue);
+  if (regionCode) {
+    const regionRate = Number(getEnv(`CHECKOUT_TAX_RATE_${countryCode}_${regionCode}`));
+    if (Number.isFinite(regionRate) && regionRate >= 0 && regionRate <= 1) {
+      return regionRate;
+    }
+  }
   const countryRate = Number(getEnv(`CHECKOUT_TAX_RATE_${countryCode}`));
   if (Number.isFinite(countryRate) && countryRate >= 0 && countryRate <= 1) {
     return countryRate;
@@ -311,7 +337,7 @@ const calculateTotals = (items, shipping, discountCode) => {
     shippingCents = 0;
   }
 
-  const taxRate = getTaxRate(shipping.country);
+  const taxRate = getTaxRate(shipping.country, shipping.region);
   const taxableBaseCents = Math.max(0, subtotalCents - discountCents + shippingCents);
   const taxCents = Math.max(0, Math.round(taxableBaseCents * taxRate));
   const totalCents = subtotalCents - discountCents + shippingCents + taxCents;

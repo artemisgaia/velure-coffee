@@ -43,6 +43,23 @@ const DISCOUNT_LABELS = {
   five_off: '$5 rewards credit',
   free_shipping: 'Free shipping reward',
 };
+const PROMO_CODE_ALIASES = {
+  VELURE5: 'five_off',
+  SHIPFREE: 'free_shipping',
+  FREESHIP: 'free_shipping',
+};
+const FREE_SHIPPING_THRESHOLD = 50;
+const US_STATE_CODES = {
+  ALABAMA: 'AL', ALASKA: 'AK', ARIZONA: 'AZ', ARKANSAS: 'AR', CALIFORNIA: 'CA', COLORADO: 'CO',
+  CONNECTICUT: 'CT', DELAWARE: 'DE', FLORIDA: 'FL', GEORGIA: 'GA', HAWAII: 'HI', IDAHO: 'ID',
+  ILLINOIS: 'IL', INDIANA: 'IN', IOWA: 'IA', KANSAS: 'KS', KENTUCKY: 'KY', LOUISIANA: 'LA',
+  MAINE: 'ME', MARYLAND: 'MD', MASSACHUSETTS: 'MA', MICHIGAN: 'MI', MINNESOTA: 'MN', MISSISSIPPI: 'MS',
+  MISSOURI: 'MO', MONTANA: 'MT', NEBRASKA: 'NE', NEVADA: 'NV', 'NEW HAMPSHIRE': 'NH', 'NEW JERSEY': 'NJ',
+  'NEW MEXICO': 'NM', 'NEW YORK': 'NY', 'NORTH CAROLINA': 'NC', 'NORTH DAKOTA': 'ND', OHIO: 'OH',
+  OKLAHOMA: 'OK', OREGON: 'OR', PENNSYLVANIA: 'PA', 'RHODE ISLAND': 'RI', 'SOUTH CAROLINA': 'SC',
+  'SOUTH DAKOTA': 'SD', TENNESSEE: 'TN', TEXAS: 'TX', UTAH: 'UT', VERMONT: 'VT', VIRGINIA: 'VA',
+  WASHINGTON: 'WA', 'WEST VIRGINIA': 'WV', WISCONSIN: 'WI', WYOMING: 'WY', 'DISTRICT OF COLUMBIA': 'DC',
+};
 
 const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 const AUTH_STORAGE_KEY = 'velure_auth_state_v1';
@@ -126,6 +143,9 @@ const dom = {
   enablePhone: document.getElementById('enable-phone'),
   phoneWrap: document.getElementById('phone-wrap'),
   customerPhone: document.getElementById('customer-phone'),
+  isGift: document.getElementById('is-gift'),
+  giftMessageWrap: document.getElementById('gift-message-wrap'),
+  giftMessage: document.getElementById('gift-message'),
   shippingCountry: document.getElementById('shipping-country'),
   savedAddressWrap: document.getElementById('saved-address-wrap'),
   savedAddressSelect: document.getElementById('saved-address-select'),
@@ -143,11 +163,20 @@ const dom = {
   paymentElement: document.getElementById('payment-element'),
   lineItems: document.getElementById('line-items'),
   subtotalValue: document.getElementById('subtotal-value'),
+  discountRow: document.getElementById('discount-row'),
   discountValue: document.getElementById('discount-value'),
   shippingValue: document.getElementById('shipping-value'),
   taxValue: document.getElementById('tax-value'),
+  taxNoteRow: document.getElementById('tax-note-row'),
+  taxNote: document.getElementById('tax-note'),
   totalValue: document.getElementById('total-value'),
   mobileTotalValue: document.getElementById('mobile-total-value'),
+  promoToggle: document.getElementById('promo-toggle'),
+  promoCodeWrap: document.getElementById('promo-code-wrap'),
+  promoCodeInput: document.getElementById('promo-code-input'),
+  promoApply: document.getElementById('promo-apply'),
+  promoStatus: document.getElementById('promo-status'),
+  shippingThreshold: document.getElementById('shipping-threshold'),
   shippingEstimate: document.getElementById('shipping-estimate'),
   payDesktop: document.getElementById('pay-button-desktop'),
   payMobile: document.getElementById('pay-button-mobile'),
@@ -159,6 +188,22 @@ const cents = (amount) => Math.round(Number(amount || 0) * 100);
 
 const money = (amount) => currencyFormatter.format(Number(amount || 0));
 const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+const normalizeRegionCode = (countryCode, regionValue) => {
+  const normalizedCountry = normalize(countryCode).toUpperCase();
+  const normalizedRegion = normalize(regionValue).toUpperCase();
+  if (!normalizedRegion) return '';
+  if (normalizedCountry !== 'US') return normalizedRegion.replace(/[^A-Z0-9]/g, '').slice(0, 12);
+  if (/^[A-Z]{2}$/.test(normalizedRegion)) return normalizedRegion;
+  return US_STATE_CODES[normalizedRegion] || '';
+};
+const getTypedPromoCode = () => normalizeUpper(dom.promoCodeInput?.value || '');
+function normalizeUpper(value) {
+  return normalize(value).toUpperCase();
+}
+const resolvePromoCodeAlias = (value) => {
+  const normalized = normalizeUpper(value);
+  return PROMO_CODE_ALIASES[normalized] || normalizeLower(value);
+};
 
 const getErrorNode = (inputEl) => {
   if (!inputEl?.id) return null;
@@ -530,6 +575,64 @@ const getAppliedDiscountCode = () => {
   return normalizeLower(dom.discountCode.value);
 };
 
+const setPromoStatus = (message = '', type = 'info') => {
+  if (!dom.promoStatus) return;
+  dom.promoStatus.textContent = message;
+  dom.promoStatus.style.color = type === 'error'
+    ? '#ffd7d5'
+    : (type === 'success' ? '#d2f3e2' : '#c8bfac');
+};
+
+const syncPromoUi = () => {
+  const expanded = !dom.promoCodeWrap?.classList.contains('hidden');
+  if (dom.promoToggle) {
+    dom.promoToggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+  }
+
+  const appliedCode = selectedDiscount();
+  if (dom.promoCodeInput && appliedCode) {
+    const visibleCode = appliedCode === 'five_off' ? 'VELURE5' : (appliedCode === 'free_shipping' ? 'SHIPFREE' : appliedCode.toUpperCase());
+    dom.promoCodeInput.value = visibleCode;
+  }
+
+  if (dom.promoCodeInput && !appliedCode && !expanded) {
+    dom.promoCodeInput.value = '';
+  }
+};
+
+const applyPromoCode = () => {
+  const typedCode = getTypedPromoCode();
+  if (!typedCode) {
+    dom.discountCode.value = '';
+    setPromoStatus('Enter a code to apply it.', 'error');
+    estimateClientTotals();
+    scheduleRefresh(120);
+    return;
+  }
+
+  if (!isSignedIn()) {
+    setPromoStatus('Sign in to apply rewards or promo codes.', 'error');
+    return;
+  }
+
+  const resolvedCode = resolvePromoCodeAlias(typedCode);
+  if (!DISCOUNT_LABELS[resolvedCode]) {
+    setPromoStatus('That code is not available for this account.', 'error');
+    return;
+  }
+
+  const optionExists = Array.from(dom.discountCode.options).some((option) => normalizeLower(option.value) === resolvedCode);
+  if (!optionExists) {
+    setPromoStatus('Redeem a reward in your account before applying it here.', 'error');
+    return;
+  }
+
+  dom.discountCode.value = resolvedCode;
+  setPromoStatus('Code applied.', 'success');
+  estimateClientTotals();
+  scheduleRefresh(120);
+};
+
 const setAuthModalOpen = (isOpen) => {
   if (!dom.authModal) return;
   const signedIn = isSignedIn();
@@ -595,6 +698,7 @@ const applyAuthUi = () => {
 
   if (!signedIn) {
     dom.discountCode.value = '';
+    syncPromoUi();
     if (!wantsAccountPanel) {
       setAuthModalOpen(false);
     }
@@ -614,6 +718,8 @@ const applyAuthUi = () => {
   } else {
     dom.discountCode.value = '';
   }
+
+  syncPromoUi();
 };
 
 const switchAuthTab = (tab) => {
@@ -962,17 +1068,36 @@ const renderLineItems = () => {
 const renderTotals = () => {
   dom.subtotalValue.textContent = money(state.totals.subtotal);
   dom.discountValue.textContent = money(-Math.abs(state.totals.discount));
+  dom.discountRow.classList.toggle('hidden', !(state.totals.discount > 0));
   dom.shippingValue.textContent = money(state.totals.shipping);
   dom.taxValue.textContent = money(state.totals.tax);
   dom.totalValue.textContent = money(state.totals.total);
   dom.mobileTotalValue.textContent = money(state.totals.total);
+
+  const amountToFreeShipping = Math.max(0, Number((FREE_SHIPPING_THRESHOLD - state.totals.subtotal).toFixed(2)));
+  if (dom.shippingThreshold) {
+    dom.shippingThreshold.textContent = amountToFreeShipping > 0
+      ? `Add ${money(amountToFreeShipping)} more for free shipping`
+      : 'Free shipping applied ✓';
+  }
+
+  const shouldShowTaxNote = state.totals.tax <= 0;
+  if (dom.taxNoteRow && dom.taxNote) {
+    dom.taxNoteRow.classList.toggle('hidden', !shouldShowTaxNote);
+    dom.taxNote.textContent = 'Tax calculated at checkout';
+  }
 };
 
 const selectedCountry = () => normalize(dom.shippingCountry.value).toUpperCase();
 const selectedService = () => normalizeLower(dom.shippingService.value || 'standard');
 const selectedDiscount = () => getAppliedDiscountCode();
 
-const getTaxRate = (countryCode) => {
+const getTaxRate = (countryCode, regionValue = '') => {
+  const regionCode = normalizeRegionCode(countryCode, regionValue);
+  if (regionCode) {
+    const regionRate = Number(state.checkoutConfig.taxRates?.[`${countryCode}_${regionCode}`]);
+    if (Number.isFinite(regionRate) && regionRate >= 0 && regionRate <= 1) return regionRate;
+  }
   const rate = Number(state.checkoutConfig.taxRates?.[countryCode]);
   if (Number.isFinite(rate) && rate >= 0 && rate <= 1) return rate;
   const fallback = Number(state.checkoutConfig.defaultTaxRate);
@@ -1002,7 +1127,7 @@ const estimateClientTotals = () => {
     shippingCents = 0;
   }
 
-  const taxRate = getTaxRate(country);
+  const taxRate = getTaxRate(country, normalize(dom.shippingRegion.value));
   const taxableBase = Math.max(0, subtotalCents - discountCents + shippingCents);
   const taxCents = Math.round(taxableBase * taxRate);
   const totalCents = subtotalCents - discountCents + shippingCents + taxCents;
@@ -1153,6 +1278,10 @@ const collectCheckoutPayload = () => {
       name: normalize(dom.customerName.value),
       email: normalize(dom.customerEmail.value).toLowerCase(),
       phone: dom.enablePhone.checked ? normalize(dom.customerPhone.value) : '',
+    },
+    gift: {
+      isGift: Boolean(dom.isGift?.checked),
+      message: dom.isGift?.checked ? normalize(dom.giftMessage?.value) : '',
     },
     shipping: {
       country: selectedCountry(),
@@ -1717,6 +1846,18 @@ const bindEvents = () => {
     scheduleRefresh(120);
   });
 
+  if (dom.isGift && dom.giftMessageWrap && dom.giftMessage) {
+    dom.isGift.addEventListener('change', () => {
+      if (dom.isGift.checked) {
+        dom.giftMessageWrap.classList.remove('hidden');
+        dom.giftMessage.focus();
+      } else {
+        dom.giftMessageWrap.classList.add('hidden');
+        dom.giftMessage.value = '';
+      }
+    });
+  }
+
   dom.enableAddress2.addEventListener('change', () => {
     if (dom.enableAddress2.checked) {
       dom.address2Wrap.classList.remove('hidden');
@@ -1762,9 +1903,35 @@ const bindEvents = () => {
       dom.discountCode.value = '';
       return;
     }
+    setPromoStatus('');
+    syncPromoUi();
     estimateClientTotals();
     scheduleRefresh(120);
   });
+
+  if (dom.promoToggle && dom.promoCodeWrap) {
+    dom.promoToggle.addEventListener('click', () => {
+      dom.promoCodeWrap.classList.toggle('hidden');
+      syncPromoUi();
+      if (!dom.promoCodeWrap.classList.contains('hidden') && dom.promoCodeInput) {
+        dom.promoCodeInput.focus();
+      }
+    });
+  }
+
+  if (dom.promoApply) {
+    dom.promoApply.addEventListener('click', applyPromoCode);
+  }
+
+  if (dom.promoCodeInput) {
+    dom.promoCodeInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        applyPromoCode();
+      }
+    });
+    dom.promoCodeInput.addEventListener('input', () => setPromoStatus(''));
+  }
 
   const refreshInputs = [
     dom.customerName,
@@ -1792,6 +1959,17 @@ const initializeCheckout = async () => {
   switchAuthTab('signin');
   if (dom.enableAccountAuth) {
     dom.enableAccountAuth.checked = false;
+  }
+  if (dom.promoCodeWrap) {
+    dom.promoCodeWrap.classList.add('hidden');
+  }
+  syncPromoUi();
+  setPromoStatus('');
+  if (dom.isGift) {
+    dom.isGift.checked = false;
+  }
+  if (dom.giftMessageWrap) {
+    dom.giftMessageWrap.classList.add('hidden');
   }
   setAuthModalOpen(false);
   applyAuthUi();

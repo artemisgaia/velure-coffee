@@ -129,6 +129,138 @@ const request = async (path, options = {}) => {
   return payload;
 };
 
+const requestRest = async (path, options = {}) => {
+  const { url, anonKey } = getConfig();
+  const {
+    method = 'GET',
+    body,
+    prefer,
+    headers = {},
+    returnResponse = false,
+  } = options;
+
+  const response = await fetch(`${url}${path}`, {
+    method,
+    headers: {
+      apikey: anonKey,
+      Authorization: `Bearer ${anonKey}`,
+      Accept: 'application/json',
+      ...(body ? { 'Content-Type': 'application/json' } : {}),
+      ...(prefer ? { Prefer: prefer } : {}),
+      ...headers,
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  if (!response.ok) {
+    let payload = null;
+    try {
+      payload = await response.json();
+    } catch {
+      payload = null;
+    }
+    throw new Error(parseError(payload, 'Unable to complete Supabase request.'));
+  }
+
+  if (returnResponse) {
+    return response;
+  }
+
+  if (response.status === 204) {
+    return null;
+  }
+
+  try {
+    return await response.json();
+  } catch {
+    return null;
+  }
+};
+
+const getCountFromResponse = (response) => {
+  const contentRange = response.headers.get('content-range') || '';
+  const totalSegment = contentRange.split('/')[1] || '';
+  const total = Number(totalSegment);
+  return Number.isFinite(total) ? total : 0;
+};
+
+export const supabaseRest = {
+  async select(table, query = {}, options = {}) {
+    const params = query instanceof URLSearchParams ? new URLSearchParams(query) : new URLSearchParams();
+    if (!(query instanceof URLSearchParams)) {
+      Object.entries(query).forEach(([key, value]) => {
+        if (value == null || value === '') return;
+        params.set(key, String(value));
+      });
+    }
+
+    const response = await requestRest(`/rest/v1/${table}?${params.toString()}`, {
+      method: 'GET',
+      prefer: options.count ? 'count=exact' : '',
+      returnResponse: Boolean(options.count),
+    });
+
+    if (!options.count) {
+      return {
+        data: Array.isArray(response) ? response : [],
+        count: 0,
+      };
+    }
+
+    const rows = await response.json().catch(() => []);
+    return {
+      data: Array.isArray(rows) ? rows : [],
+      count: getCountFromResponse(response),
+    };
+  },
+
+  async upsert(table, rows, conflictColumn, options = {}) {
+    const params = new URLSearchParams();
+    if (conflictColumn) params.set('on_conflict', conflictColumn);
+    params.set('select', options.select || '*');
+
+    const data = await requestRest(`/rest/v1/${table}?${params.toString()}`, {
+      method: 'POST',
+      body: rows,
+      prefer: 'resolution=merge-duplicates,return=representation',
+    });
+
+    return Array.isArray(data) ? data : [];
+  },
+
+  async update(table, filters, body, options = {}) {
+    const params = new URLSearchParams();
+    Object.entries(filters || {}).forEach(([key, value]) => {
+      if (value == null || value === '') return;
+      params.set(key, String(value));
+    });
+    if (!params.has('select')) params.set('select', options.select || '*');
+
+    const data = await requestRest(`/rest/v1/${table}?${params.toString()}`, {
+      method: 'PATCH',
+      body,
+      prefer: 'return=representation',
+    });
+
+    return Array.isArray(data) ? data : [];
+  },
+
+  async delete(table, filters) {
+    const params = new URLSearchParams();
+    Object.entries(filters || {}).forEach(([key, value]) => {
+      if (value == null || value === '') return;
+      params.set(key, String(value));
+    });
+
+    const data = await requestRest(`/rest/v1/${table}?${params.toString()}`, {
+      method: 'DELETE',
+      prefer: 'return=representation',
+    });
+
+    return Array.isArray(data) ? data : [];
+  },
+};
+
 const fetchUser = async (accessToken) => {
   if (!accessToken) return null;
   const payload = await request('/auth/v1/user', {
