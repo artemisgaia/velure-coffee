@@ -16,21 +16,6 @@ if (!globalThis[RATE_LIMIT_KEY]) {
 const normalize = (value) => (typeof value === 'string' ? value.trim() : '');
 const normalizeLower = (value) => normalize(value).toLowerCase();
 
-const getSupabaseConfig = () => {
-  const supabaseUrl = normalize(
-    globalThis.process?.env?.SUPABASE_URL
-      || globalThis.process?.env?.VITE_SUPABASE_URL
-      || '',
-  ).replace(/\/+$/, '');
-  const serviceRoleKey = normalize(globalThis.process?.env?.SUPABASE_SERVICE_ROLE_KEY || '');
-
-  if (!supabaseUrl || !serviceRoleKey) {
-    return null;
-  }
-
-  return { supabaseUrl, serviceRoleKey };
-};
-
 const parseAllowedOrigins = () => {
   const envValue = normalize(globalThis.process?.env?.FORMS_ALLOWED_ORIGINS || '');
   if (!envValue) {
@@ -228,37 +213,6 @@ const forwardToWebhook = async (submission) => {
   }
 };
 
-const insertNewsletterSubscriber = async (submission) => {
-  if (submission.formType !== 'newsletter') return;
-
-  const config = getSupabaseConfig();
-  if (!config) return;
-
-  const response = await fetch(
-    `${config.supabaseUrl}/rest/v1/newsletter_subscribers?on_conflict=email&select=email,source,created_at`,
-    {
-      method: 'POST',
-      headers: {
-        apikey: config.serviceRoleKey,
-        Authorization: `Bearer ${config.serviceRoleKey}`,
-        'Content-Type': 'application/json',
-        Prefer: 'resolution=merge-duplicates,return=representation',
-      },
-      body: JSON.stringify([
-        {
-          email: submission.email,
-          source: normalizeLower(submission.interest || 'site'),
-        },
-      ]),
-    },
-  );
-
-  if (!response.ok) {
-    const errorText = await response.text().catch(() => '');
-    throw new Error(errorText || 'Unable to save newsletter signup.');
-  }
-};
-
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') {
     res.statusCode = 204;
@@ -321,14 +275,12 @@ export default async function handler(req, res) {
 
   const submission = {
     ...validationResult.data,
-    interest: normalizeLower(parsedBody.interest || parsedBody.source || ''),
     submittedAt: new Date().toISOString(),
     ipAddress: clientIp,
     userAgent: normalize(req.headers['user-agent']),
   };
 
   try {
-    await insertNewsletterSubscriber(submission);
     await forwardToWebhook(submission);
   } catch (error) {
     console.error('Forms webhook forwarding failed:', error);

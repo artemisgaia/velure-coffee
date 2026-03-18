@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { ShoppingBag, Menu, X, ChevronDown, Coffee, Leaf, Award, Check, Mail, MapPin, Phone, ArrowLeft, User, Share2, Link2, Star, Gift } from 'lucide-react';
+import { ShoppingBag, Menu, X, ChevronDown, Coffee, Leaf, Award, Check, Mail, MapPin, Phone, ArrowLeft, User, Share2, Link2 } from 'lucide-react';
 import { supabase } from './lib/supabaseClient';
 import { SHIPPING_ZONES, SUPPORTED_COUNTRY_CODES } from '../shared/shipping.js';
 
@@ -927,111 +927,7 @@ const VELURE_STANDARD_FACTS = [
   'Cruelty Free',
 ];
 
-const SUBSCRIPTION_SELECTION_STORAGE_KEY = 'velure_selected_subscription_product_v1';
-const DEFAULT_RITUAL_MEMBERSHIP_RATE = 0.15;
-const FOUNDING_MEMBER_RATE = 0.2;
-
-const FUNCTIONAL_BENEFIT_COPY = {
-  'Lion’s Mane': 'Clarity & focus',
-  'Chaga': 'Immune support',
-  'Cordyceps': 'Energy & endurance',
-  'Hemp Protein': 'Plant-powered body & balance',
-};
-
-const PRODUCT_RITUAL_NOTES = {
-  fuse: {
-    regionLabel: 'Eastern Highlands, Papua New Guinea',
-    ritualMembershipRate: DEFAULT_RITUAL_MEMBERSHIP_RATE,
-    foundingMemberRate: FOUNDING_MEMBER_RATE,
-    functionalIngredients: ['Lion’s Mane', 'Chaga'],
-  },
-  vitality: {
-    regionLabel: 'Minas Gerais, Brazil and Chiapas, Mexico',
-    ritualMembershipRate: DEFAULT_RITUAL_MEMBERSHIP_RATE,
-    foundingMemberRate: FOUNDING_MEMBER_RATE,
-    functionalIngredients: ['Lion’s Mane', 'Chaga'],
-  },
-  onyx: {
-    regionLabel: 'Eastern Highlands, Papua New Guinea',
-    ritualMembershipRate: DEFAULT_RITUAL_MEMBERSHIP_RATE,
-    foundingMemberRate: FOUNDING_MEMBER_RATE,
-  },
-  aureo: {
-    regionLabel: 'Cerrado, Brazil',
-    ritualMembershipRate: DEFAULT_RITUAL_MEMBERSHIP_RATE,
-    foundingMemberRate: FOUNDING_MEMBER_RATE,
-  },
-  zen: {
-    regionLabel: 'Kagoshima, Japan',
-    ritualMembershipRate: DEFAULT_RITUAL_MEMBERSHIP_RATE,
-    foundingMemberRate: FOUNDING_MEMBER_RATE,
-  },
-  harvest: {
-    regionLabel: 'Minas Gerais, Brazil and Chiapas, Mexico',
-    ritualMembershipRate: DEFAULT_RITUAL_MEMBERSHIP_RATE,
-    foundingMemberRate: FOUNDING_MEMBER_RATE,
-    functionalIngredients: ['Hemp Protein'],
-  },
-};
-
-const HOME_TESTIMONIALS = [
-  {
-    name: 'Sarah M.',
-    location: 'New York, NY',
-    review: 'This has become the part of my morning I look forward to most. The cup feels smooth and polished, and the Lion’s Mane blend gives me a clear, steady kind of focus that feels natural.',
-  },
-  {
-    name: 'James K.',
-    location: 'Austin, TX',
-    review: 'I bought Velure for the flavor first, and that is what keeps me coming back. It tastes rich without feeling heavy, and the ritual membership has made my kitchen feel a little more considered every month.',
-  },
-  {
-    name: 'Priya D.',
-    location: 'London, UK',
-    review: 'The functional blend is the first coffee I have had that feels both elegant and genuinely useful. I get the comfort of a beautiful cup, but I also notice a calmer kind of energy through the morning.',
-  },
-];
-
-const GIFTING_CURATIONS = [
-  {
-    title: 'Single Bag Gift',
-    subtitle: 'For her morning ritual',
-    description: 'A full-size Velure bag in our premium packaging, chosen for mornings that deserve a more thoughtful start.',
-    ctaLabel: 'Shop Gift-Worthy Bags',
-    targetView: 'shop_single_origin',
-  },
-  {
-    title: '3-Month Ritual Membership Gift',
-    subtitle: 'The gift of intention',
-    description: 'Offer three months of a recurring ritual with a founding-member membership rate designed to feel lasting, not promotional.',
-    ctaLabel: 'Gift Ritual Membership',
-    targetView: 'subscription',
-  },
-];
-
-const getProductRitualNotes = (product) => PRODUCT_RITUAL_NOTES[normalizeLower(product?.id || '')] || {};
-const getMembershipRateForProduct = (product) => {
-  if (!product || product.category === 'bundles') return 0;
-  return Number(getProductRitualNotes(product).ritualMembershipRate || DEFAULT_RITUAL_MEMBERSHIP_RATE);
-};
-const getMembershipPriceForProduct = (product) => {
-  const rate = getMembershipRateForProduct(product);
-  if (!rate) return Number(product?.price || 0);
-  return Number(((Number(product?.price || 0)) * (1 - rate)).toFixed(2));
-};
-const getFoundingMemberPriceForProduct = (product) => {
-  const rate = Number(getProductRitualNotes(product).foundingMemberRate || FOUNDING_MEMBER_RATE);
-  return Number(((Number(product?.price || 0)) * (1 - rate)).toFixed(2));
-};
-const getProminentOriginLabel = (product) => getProductRitualNotes(product).regionLabel || product?.nutritionSpecs?.region || product?.details?.origin || '';
-const getFunctionalIngredientsForProduct = (product) => {
-  const names = getProductRitualNotes(product).functionalIngredients;
-  if (!Array.isArray(names) || names.length === 0) return [];
-  return names.map((name) => ({
-    name,
-    benefit: FUNCTIONAL_BENEFIT_COPY[name] || 'intentional daily support',
-  }));
-};
+const SUBSCRIPTION_PRODUCTS = PRODUCTS.filter((product) => product.subscriptionEligible);
 
 const BLOG_POSTS = [
   {
@@ -1040,7 +936,7 @@ const BLOG_POSTS = [
     metaTitle: 'How to Make Instant Coffee Taste Premium (5 Clean Upgrades) | Velure',
     metaDescription: 'A calm, practical guide to making instant coffee taste premium—better ratios, water temp, mixing, milk, and iced methods. No gimmicks, just ritual.',
     description: 'A calm, practical guide to making instant coffee taste premium with repeatable, clean upgrades.',
-    publishedAt: '2026-03-17',
+    publishedAt: '2026-02-23',
     readTime: '6 min read',
     tags: ['instant coffee', 'brew guide', 'ritual', 'taste'],
     featured: true,
@@ -1130,7 +1026,7 @@ Note: This article is for general information and taste guidance, not medical ad
     metaTitle: 'Lion’s Mane Coffee, Explained (Without the Hype) | Velure',
     metaDescription: 'What lion’s mane coffee is, why brands add it, what it tastes like, and what to look for on labels—calm, factual, and clean.',
     description: 'A calm, factual guide to Lion’s Mane coffee, label literacy, and what quality looks like.',
-    publishedAt: '2026-03-10',
+    publishedAt: '2026-02-23',
     readTime: '5 min read',
     tags: ['lion’s mane', 'functional coffee', 'clean label', 'ingredients'],
     featured: false,
@@ -1200,7 +1096,7 @@ Note: This article is for general information and label literacy, not medical ad
     metaTitle: 'Chaga Coffee, Explained (A Clean, Grounded Guide) | Velure',
     metaDescription: 'A simple guide to chaga coffee: what chaga is, what it tastes like, why it is used, and how to choose clean blends without gimmicks.',
     description: 'A grounded guide to chaga coffee, taste profile, and clean formulation standards.',
-    publishedAt: '2026-03-03',
+    publishedAt: '2026-02-23',
     readTime: '5 min read',
     tags: ['chaga', 'functional coffee', 'clean label', 'ingredients'],
     featured: false,
@@ -1277,7 +1173,7 @@ Note: This article is general information and label literacy, not medical advice
     metaTitle: 'Clean Label Coffee: What It Means (and What to Avoid) | Velure',
     metaDescription: 'Clean label, explained: what to look for in coffee + functional blends, how to spot filler ingredients, and how transparency builds trust.',
     description: 'How to evaluate clean-label coffee and functional blends with practical, no-hype criteria.',
-    publishedAt: '2026-02-24',
+    publishedAt: '2026-02-23',
     readTime: '7 min read',
     tags: ['clean label', 'transparency', 'ingredients', 'functional coffee'],
     featured: true,
@@ -1363,7 +1259,7 @@ Note: General information only. For personal health questions, consult a qualifi
     metaTitle: 'Hot vs Iced Instant Coffee: Best Methods + Ratios | Velure',
     metaDescription: 'Make instant coffee taste premium hot or iced. The right dissolve method, ratio guidance, and a calm routine you can repeat daily.',
     description: 'Better hot and iced instant methods with clean ratios and no gimmicks.',
-    publishedAt: '2026-02-17',
+    publishedAt: '2026-02-23',
     readTime: '5 min read',
     tags: ['instant coffee', 'iced coffee', 'brew guide', 'ritual'],
     featured: false,
@@ -1434,7 +1330,7 @@ Note: General information and taste guidance only.`,
     metaTitle: 'A 5-Minute Morning Coffee Ritual (Simple + Calm) | Velure',
     metaDescription: 'A calm 5-minute coffee ritual: setup, brew, breath, and repeat. Designed for consistency—premium simplicity, not performance.',
     description: 'A practical five-minute ritual that keeps your mornings calm, premium, and repeatable.',
-    publishedAt: '2026-02-10',
+    publishedAt: '2026-02-23',
     readTime: '5 min read',
     tags: ['ritual', 'morning routine', 'coffee', 'mindful habits'],
     featured: true,
@@ -1504,7 +1400,6 @@ Note: General lifestyle content only.`,
   },
 ];
 
-
 const DEFAULT_BLOG_RELATED_PRODUCT_IDS = ['fuse', 'aureo', 'onyx'];
 const BLOG_RELATED_PRODUCTS_BY_SLUG = {
   'make-instant-coffee-taste-premium': ['fuse', 'onyx'],
@@ -1572,7 +1467,7 @@ Depending on your state/country, you may have rights to:
 - Request deletion or correction.
 - Opt out of certain targeted advertising or sharing activities.
 - Appeal certain privacy decisions where required.
-To submit a request, contact: concierge@velurecoffee.com.
+To submit a request, contact: concierge@velureritual.com.
 
 9. Marketing Choices
 You can unsubscribe from marketing emails at any time by using the unsubscribe link in the email or by contacting us directly.
@@ -1588,7 +1483,7 @@ We may update this policy periodically. Changes are effective when posted with a
 
 13. Contact
 Velure Coffee Co.
-Email: concierge@velurecoffee.com`,
+Email: concierge@velureritual.com`,
   terms: `Last Updated: February 8, 2026
 
 These Terms of Service ("Terms") govern your use of the Velure Coffee website and related services. By using our site, you agree to these Terms.
@@ -1642,7 +1537,7 @@ These Terms are governed by the laws of the State of California, without regard 
 We may update these Terms at any time. Updated Terms are effective when posted.
 
 16. Contact
-Questions about these Terms: concierge@velurecoffee.com`,
+Questions about these Terms: concierge@velureritual.com`,
   shippingReturns: `Last Updated: February 13, 2026
 
 1. Shipping Coverage
@@ -1655,7 +1550,7 @@ Velure ships to the contiguous United States (48 states), Canada, and selected i
 - Zone 3: Australia, Bulgaria, Croatia, Cyprus, Czech Republic, Estonia, Hungary, Indonesia, Latvia, Lithuania, Macau SAR, New Zealand, Philippines, Poland, Romania, Slovakia, Slovenia, South Korea, Thailand, Vietnam
 
 3. Destinations Not Currently Available
-- Spain is not currently available.
+- Spain is temporarily unavailable.
 - Alaska and Hawaii are not available at this time.
 - APO/FPO/DPO military addresses are not available at this time.
 
@@ -1688,7 +1583,7 @@ For international deliveries, import duties, taxes, and customs fees may apply a
 Please verify your shipping address before placing an order. We are not responsible for delays or losses caused by incorrect addresses provided at checkout.
 
 9. Damaged or Missing Items
-If your order arrives damaged or incomplete, contact concierge@velurecoffee.com within 7 days of delivery with photos and order details.
+If your order arrives damaged or incomplete, contact concierge@velureritual.com within 7 days of delivery with photos and order details.
 
 10. Return Eligibility
 Unopened products in original condition may be returned within 30 days of delivery unless marked final sale.
@@ -1697,7 +1592,7 @@ Unopened products in original condition may be returned within 30 days of delive
 For food safety reasons, opened consumable products are generally non-returnable unless defective or required by applicable law.
 
 12. Return Process
-Email concierge@velurecoffee.com with your order number and reason for return. If approved, we will provide return instructions.
+Email concierge@velureritual.com with your order number and reason for return. If approved, we will provide return instructions.
 
 13. Refund Timing
 Approved refunds are issued to the original payment method after returned items are received and inspected. Processing time may vary by payment provider.
@@ -2060,16 +1955,11 @@ const getDefaultBundleSelections = (bundleProductId) => getBundleSlotOptions(bun
 }, {});
 
 const getBlogPostBySlug = (slug) => BLOG_POSTS.find((post) => post.slug === slug) || null;
-const getProductPrimaryImage = (product) => {
-  const candidate = Array.isArray(product?.images) ? product.images.find((image) => typeof image === 'string' && image.trim()) : '';
-  if (candidate && (/^https?:\/\//.test(candidate) || candidate.startsWith('data:image/') || candidate.startsWith('/'))) return candidate;
-  return DEFAULT_SHARE_IMAGE_URL;
-};
 const getBlogImage = (src) => {
   if (typeof src !== 'string') return DEFAULT_SHARE_IMAGE_URL;
   const trimmed = src.trim();
   if (!trimmed) return DEFAULT_SHARE_IMAGE_URL;
-  if (trimmed.startsWith('/') || trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('data:image/')) {
+  if (trimmed.startsWith('/') || trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
     return trimmed;
   }
   return DEFAULT_SHARE_IMAGE_URL;
@@ -2080,16 +1970,8 @@ const handleBlogImageError = (event) => {
   event.currentTarget.dataset.fallbackApplied = 'true';
   event.currentTarget.src = DEFAULT_SHARE_IMAGE_URL;
 };
-const handleProductImageError = (event) => {
-  if (!event?.currentTarget) return;
-  if (event.currentTarget.dataset.fallbackApplied === 'true') return;
-  event.currentTarget.dataset.fallbackApplied = 'true';
-  event.currentTarget.src = DEFAULT_SHARE_IMAGE_URL;
-};
-const getRelatedProductsForBlogPost = (slug, limit = 3, explicitIds = []) => {
-  const mappedIds = Array.isArray(explicitIds) && explicitIds.length
-    ? explicitIds
-    : (BLOG_RELATED_PRODUCTS_BY_SLUG[slug] || DEFAULT_BLOG_RELATED_PRODUCT_IDS);
+const getRelatedProductsForBlogPost = (slug, limit = 3) => {
+  const mappedIds = BLOG_RELATED_PRODUCTS_BY_SLUG[slug] || DEFAULT_BLOG_RELATED_PRODUCT_IDS;
   const uniqueIds = [...new Set([...(mappedIds || []), ...DEFAULT_BLOG_RELATED_PRODUCT_IDS])];
   const resolvedProducts = uniqueIds
     .map((productId) => PRODUCTS.find((product) => product.id === productId))
@@ -2102,6 +1984,16 @@ const getRouteFromPath = (pathname) => {
   const productMatch = normalizedPathname.match(/^\/products\/([^/]+)$/);
   if (productMatch) {
     const productId = decodeURIComponent(productMatch[1]);
+    const hasProduct = PRODUCTS.some((product) => product.id === productId);
+
+    if (!hasProduct) {
+      return {
+        view: 'shop_all',
+        productId: null,
+        blogSlug: null,
+      };
+    }
+
     return {
       view: 'product_detail',
       productId,
@@ -2112,10 +2004,11 @@ const getRouteFromPath = (pathname) => {
   const blogPostMatch = normalizedPathname.match(/^\/blog\/([^/]+)$/);
   if (blogPostMatch) {
     const blogSlug = decodeURIComponent(blogPostMatch[1]);
+    const hasPost = Boolean(getBlogPostBySlug(blogSlug));
     return {
-      view: 'blog_post',
+      view: hasPost ? 'blog_post' : 'blog',
       productId: null,
-      blogSlug,
+      blogSlug: hasPost ? blogSlug : null,
     };
   }
 
@@ -2630,11 +2523,10 @@ const ProductCard = ({ product, openProductDetail }) => (
   >
     <div className="relative overflow-hidden bg-[#1A1A1A] aspect-[4/5] mb-6">
       <img
-        src={getProductPrimaryImage(product)}
+        src={product.images[0]}
         alt={`${product.name} product image`}
         loading="lazy"
         decoding="async"
-        onError={handleProductImageError}
         className="absolute inset-0 w-full h-full object-cover motion-card-image"
       />
       <div className="absolute top-4 left-4 bg-[#D4AF37] text-[#0B0C0C] text-xs font-bold px-3 py-1 uppercase tracking-wider">{product.tag}</div>
@@ -2656,8 +2548,8 @@ const ProductDetailView = ({
   product,
   addToCart,
   onBack,
-  onOpenSubscription,
   isCartOpen,
+  isInCart,
   onShareProduct,
   onCopyProductLink,
   authUser,
@@ -2669,7 +2561,6 @@ const ProductDetailView = ({
   const galleryTouchStartXRef = useRef(null);
   const [mainImageIndex, setMainImageIndex] = useState(0);
   const [qty, setQty] = useState(1);
-  const [purchaseOption, setPurchaseOption] = useState('one-time');
   const [openAccordion, setOpenAccordion] = useState('');
   const [bundleSelections, setBundleSelections] = useState(() => getDefaultBundleSelections(product.id));
   const [bundlePreviewProduct, setBundlePreviewProduct] = useState(null);
@@ -2696,14 +2587,6 @@ const ProductDetailView = ({
   const categoryLabel = CATEGORY_LABELS[product.category] || product.category.replace('_', ' ');
   const mainImage = product.images[mainImageIndex] || product.images[0];
   const isBundleProduct = product.category === 'bundles';
-  const hasMembershipOption = !isBundleProduct;
-  const membershipRate = getMembershipRateForProduct(product);
-  const membershipPercent = Math.round(membershipRate * 100);
-  const membershipPrice = getMembershipPriceForProduct(product);
-  const foundingMemberPrice = getFoundingMemberPriceForProduct(product);
-  const foundingMemberPercent = Math.round((getProductRitualNotes(product).foundingMemberRate || FOUNDING_MEMBER_RATE) * 100);
-  const prominentOrigin = getProminentOriginLabel(product);
-  const functionalIngredients = getFunctionalIngredientsForProduct(product);
   const bundleSlots = useMemo(
     () => (isBundleProduct ? getBundleSlotOptions(product.id) : []),
     [isBundleProduct, product.id],
@@ -2798,10 +2681,6 @@ const ProductDetailView = ({
   useEffect(() => {
     window.scrollTo(0,0);
   }, [product.id]);
-
-  useEffect(() => {
-    setPurchaseOption('one-time');
-  }, [isBundleProduct, product.id, product.subscriptionEligible]);
 
   useEffect(() => {
     const root = pdpRootRef.current;
@@ -2936,14 +2815,6 @@ const ProductDetailView = ({
     }
   };
 
-  const handlePrimaryAction = useCallback(() => {
-    if (hasMembershipOption && purchaseOption === 'membership') {
-      onOpenSubscription(product.id);
-      return;
-    }
-    handleAddToCart();
-  }, [handleAddToCart, hasMembershipOption, onOpenSubscription, product.id, purchaseOption]);
-
   const renderQuantitySelector = ({ compact = false, idPrefix = 'qty' } = {}) => (
     <div className={`inline-flex items-center border border-gray-700 ${compact ? 'h-11' : 'h-12'}`}>
       <button
@@ -3025,93 +2896,15 @@ const ProductDetailView = ({
           {/* Info Section */}
           <div className="lg:sticky lg:top-28 self-start">
             <span className="text-[#D4AF37] font-sans tracking-[0.2em] text-xs uppercase mb-2 block">{categoryLabel}</span>
-            {prominentOrigin && (
-              <p className="text-sm uppercase tracking-[0.24em] text-gray-500 mb-3">{prominentOrigin}</p>
-            )}
             <h1 className="text-4xl md:text-6xl font-serif text-[#F9F6F0] mb-4">{product.name}</h1>
-            <p className="text-lg md:text-xl text-gray-400 font-sans mb-4">{product.subtitle}</p>
-            <div className="flex flex-wrap items-center gap-3 mb-6">
-              <div className="flex items-center gap-1 text-[#D4AF37]" aria-label={`${reviewsState.stats.count} reviews`}>
-                {Array.from({ length: 5 }).map((_, index) => {
-                  const isFilled = index < Math.round(reviewsState.stats.averageRating || 0);
-                  return <Star key={index} size={14} fill={isFilled ? 'currentColor' : 'none'} className={isFilled ? '' : 'text-gray-600'} />;
-                })}
-              </div>
-              <p className="text-sm text-gray-400">
-                {reviewsState.stats.count > 0
-                  ? `${reviewsState.stats.averageRating.toFixed(1)} • ${reviewsState.stats.count} review${reviewsState.stats.count === 1 ? '' : 's'}`
-                  : '0 reviews'}
-              </p>
-            </div>
-            <div className="flex flex-col gap-2 mb-4 border-b border-gray-800 pb-6">
-              <span className="text-3xl font-serif text-[#D4AF37]">
-                ${((hasMembershipOption && purchaseOption === 'membership') ? membershipPrice : product.price).toFixed(2)}
-              </span>
-              {hasMembershipOption && (
-                <div className="space-y-3 pt-2">
-                  <div className="grid grid-cols-1 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setPurchaseOption('one-time')}
-                      className={`w-full text-left border px-4 py-4 transition-colors ${purchaseOption === 'one-time' ? 'border-gray-500 bg-[#141414]' : 'border-gray-800 hover:border-gray-600'}`}
-                      aria-pressed={purchaseOption === 'one-time'}
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <p className="font-serif text-2xl text-[#F9F6F0]">One-time purchase</p>
-                          <p className="text-sm text-gray-400 mt-1">A single delivery for the current ritual.</p>
-                        </div>
-                        <p className="text-lg text-[#F9F6F0]">${product.price.toFixed(2)}</p>
-                      </div>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPurchaseOption('membership')}
-                      className={`w-full text-left border px-4 py-4 transition-colors ${purchaseOption === 'membership' ? 'border-[#D4AF37] bg-[#14110a] shadow-[0_0_0_1px_rgba(212,175,55,0.18)]' : 'border-[#D4AF37]/30 hover:border-[#D4AF37]/55'}`}
-                      aria-pressed={purchaseOption === 'membership'}
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <p className="font-serif text-2xl text-[#F9F6F0]">Ritual Membership</p>
-                          <p className="text-sm text-gray-400 mt-1">Cancel anytime. Ships every 4 weeks.</p>
-                        </div>
-                        <div className="text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <p className="text-lg text-[#D4AF37]">${membershipPrice.toFixed(2)}</p>
-                            <span className="border border-[#D4AF37]/45 bg-[#1a1408] px-2 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#D4AF37]">
-                              Save 15%
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </button>
-                  </div>
-                </div>
-              )}
+            <p className="text-lg md:text-xl text-gray-400 font-sans mb-6">{product.subtitle}</p>
+            <div className="flex items-center gap-4 mb-4 border-b border-gray-800 pb-6">
+              <span className="text-3xl font-serif text-[#D4AF37]">${product.price.toFixed(2)}</span>
             </div>
             <p className="flex items-center gap-2 text-xs text-gray-400 mb-6">
               <Check size={14} className="text-[#D4AF37]" />
               Free shipping over $50
             </p>
-
-            {functionalIngredients.length > 0 && (
-              <div className="flex flex-wrap gap-3 mb-8">
-                {functionalIngredients.map((ingredient) => (
-                  <div key={ingredient.name} className="flex min-w-[220px] flex-1 items-center gap-3 border border-[#D4AF37]/25 bg-[#141414] px-4 py-4">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-full border border-[#D4AF37]/30 bg-[#1a1a1a]">
-                      {ingredient.name === 'Lion’s Mane' ? <Leaf size={18} className="text-[#D4AF37]" /> : null}
-                      {ingredient.name === 'Chaga' ? <Award size={18} className="text-[#D4AF37]" /> : null}
-                      {ingredient.name === 'Cordyceps' ? <Coffee size={18} className="text-[#D4AF37]" /> : null}
-                      {ingredient.name === 'Hemp Protein' ? <Leaf size={18} className="text-[#D4AF37]" /> : null}
-                    </div>
-                    <div>
-                      <p className="font-serif text-xl text-[#F9F6F0]">{ingredient.name}</p>
-                      <p className="text-sm text-gray-400 mt-1">{ingredient.benefit}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
 
             <div className="hidden md:block mb-8">
               <div className="flex items-center justify-between gap-4 mb-3">
@@ -3137,15 +2930,13 @@ const ProductDetailView = ({
                 </button>
               </div>
               <button
-                onClick={handlePrimaryAction}
+                onClick={() => handleAddToCart()}
                 disabled={isBundleProduct && !isBundleSelectionComplete}
                 className={`w-full bg-[#D4AF37] text-[#0B0C0C] py-4 font-sans font-bold tracking-widest uppercase transition-colors ${(isBundleProduct && !isBundleSelectionComplete) ? 'opacity-60 cursor-not-allowed' : 'hover:bg-[#b5952f]'}`}
               >
                 {(isBundleProduct && !isBundleSelectionComplete)
                   ? 'Select Bundle Items'
-                  : (hasMembershipOption && purchaseOption === 'membership')
-                    ? `Begin Ritual Membership — $${(membershipPrice * qty).toFixed(2)}`
-                    : `Add to Cart — $${(product.price * qty).toFixed(2)}`}
+                  : `${isInCart ? 'Add Another' : 'Add to Cart'} — $${(product.price * qty).toFixed(2)}`}
               </button>
             </div>
 
@@ -3171,29 +2962,6 @@ const ProductDetailView = ({
             <p className="text-gray-300 font-sans leading-relaxed mb-8 whitespace-pre-line">
               {product.description}
             </p>
-
-            {hasMembershipOption && (
-              <section className="border border-[#D4AF37]/35 bg-[linear-gradient(135deg,rgba(212,175,55,0.12),rgba(11,12,12,0.96))] p-6 mb-8">
-                <p className="text-[11px] uppercase tracking-[0.24em] text-[#D4AF37] mb-2">Founding Member</p>
-                <h3 className="font-serif text-3xl text-[#F9F6F0] mb-3">Be one of the first 50.</h3>
-                <p className="text-gray-300 leading-relaxed mb-4">
-                  Get your first Ritual Membership bag at {foundingMemberPercent}% off and lock in that price forever.
-                </p>
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-t border-[#D4AF37]/20 pt-4">
-                  <div>
-                    <p className="text-xs uppercase tracking-widest text-gray-500">Founding Member rate</p>
-                    <p className="font-serif text-3xl text-[#D4AF37]">${foundingMemberPrice.toFixed(2)}</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => onOpenSubscription(product.id)}
-                    className="border border-[#D4AF37] text-[#D4AF37] px-5 py-3 text-xs font-bold uppercase tracking-[0.18em] hover:bg-[#D4AF37] hover:text-[#0B0C0C] transition-colors"
-                  >
-                    Claim Founding Rate
-                  </button>
-                </div>
-              </section>
-            )}
 
             {isBundleProduct && (
               <div className="bg-[#151515] p-6 mb-8 border border-gray-800">
@@ -3395,7 +3163,7 @@ const ProductDetailView = ({
                         <p className="text-sm text-gray-300 mb-4">
                           {reviewsState.stats.count > 0
                             ? `${reviewsState.stats.averageRating.toFixed(1)} / 5 (${reviewsState.stats.count} review${reviewsState.stats.count > 1 ? 's' : ''})`
-                            : 'Be the first to review this ritual.'}
+                            : 'No verified reviews yet.'}
                         </p>
 
                         {reviewsState.items.length > 0 && (
@@ -3413,20 +3181,6 @@ const ProductDetailView = ({
                                 <p className="text-sm text-gray-300 mt-2">{review.comment}</p>
                               </article>
                             ))}
-                          </div>
-                        )}
-
-                        {reviewsState.items.length === 0 && (
-                          <div className="border border-gray-700 bg-[#111111] p-4 mb-6">
-                            <div className="flex items-center gap-1 text-[#D4AF37] mb-3" aria-hidden="true">
-                              {Array.from({ length: 5 }).map((_, index) => (
-                                <Star key={index} size={14} />
-                              ))}
-                            </div>
-                            <p className="text-sm text-[#F9F6F0]">Be the first to review</p>
-                            <p className="text-sm text-gray-400 mt-2">
-                              Share how this ritual tastes, how it fits your morning, and what you notice in the cup once your order arrives.
-                            </p>
                           </div>
                         )}
                       </>
@@ -3548,48 +3302,17 @@ const ProductDetailView = ({
         style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 0.75rem)' }}
       >
         <div className="max-w-7xl mx-auto space-y-3">
-          {hasMembershipOption && (
-            <div>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setPurchaseOption('one-time')}
-                  className={`h-11 border text-[11px] font-bold uppercase tracking-wider ${purchaseOption === 'one-time' ? 'border-gray-500 text-[#F9F6F0]' : 'border-gray-800 text-gray-400'}`}
-                  aria-pressed={purchaseOption === 'one-time'}
-                >
-                  One-time
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPurchaseOption('membership')}
-                  className={`h-11 border text-[11px] font-bold uppercase tracking-wider ${purchaseOption === 'membership' ? 'border-[#D4AF37] text-[#D4AF37] bg-[#14110a]' : 'border-[#D4AF37]/30 text-gray-300'}`}
-                  aria-pressed={purchaseOption === 'membership'}
-                >
-                  Ritual Membership
-                </button>
-              </div>
-              {purchaseOption === 'membership' && (
-                <p className="mt-2 text-[11px] text-gray-400">Cancel anytime. Ships every 4 weeks.</p>
-              )}
-            </div>
-          )}
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <p className="text-xs text-gray-400 uppercase tracking-wider truncate">{product.name}</p>
-              <p className="text-lg font-serif text-[#D4AF37]">
-                ${((hasMembershipOption && purchaseOption === 'membership') ? membershipPrice : product.price).toFixed(2)}
-              </p>
+              <p className="text-lg font-serif text-[#D4AF37]">${product.price.toFixed(2)}</p>
             </div>
             <button
-              onClick={handlePrimaryAction}
+              onClick={() => handleAddToCart()}
               disabled={isBundleProduct && !isBundleSelectionComplete}
               className={`bg-[#D4AF37] text-[#0B0C0C] px-4 py-3 text-sm font-bold tracking-widest uppercase whitespace-nowrap transition-colors ${(isBundleProduct && !isBundleSelectionComplete) ? 'opacity-60 cursor-not-allowed' : 'hover:bg-[#b5952f]'}`}
             >
-              {(isBundleProduct && !isBundleSelectionComplete)
-                ? 'Select Items'
-                : (hasMembershipOption && purchaseOption === 'membership')
-                  ? 'Begin Membership'
-                  : 'Add to Cart'}
+              {(isBundleProduct && !isBundleSelectionComplete) ? 'Select Items' : (isInCart ? 'Add Another' : 'Add to Cart')}
             </button>
           </div>
           <div className="flex items-center gap-2">
@@ -6495,15 +6218,6 @@ const BlogView = ({ openBlogPost }) => {
 
 const renderBlogContent = (content) => {
   if (typeof content !== 'string') return null;
-  const trimmedContent = content.trim();
-  if (/^\s*</.test(trimmedContent) && /<\/?[a-z][\s\S]*>/i.test(trimmedContent)) {
-    return (
-      <div
-        className="prose prose-slate max-w-none prose-p:text-gray-700 prose-p:leading-8 prose-h2:font-serif prose-h2:text-3xl prose-h2:text-[#0B0C0C] prose-strong:text-[#0B0C0C]"
-        dangerouslySetInnerHTML={{ __html: trimmedContent }}
-      />
-    );
-  }
 
   const nodes = [];
   const lines = content.split('\n');
@@ -6629,10 +6343,10 @@ const RitualLetterInline = ({ contextKey = 'journal' }) => {
   };
 
   return (
-    <div className="mt-12 border border-gray-800 bg-[#111111] p-6 md:p-8">
+    <div className="mt-12 border border-gray-300 bg-white p-6">
       <p className="text-[10px] uppercase tracking-[0.22em] text-[#D4AF37] mb-2">The Ritual Letter</p>
-      <h3 className="font-serif text-2xl text-[#F9F6F0] mb-2">Weekly notes from Velure</h3>
-      <p className="text-sm text-gray-400 mb-5">Practical brew guides, calm product updates, and clean-label reads.</p>
+      <h3 className="font-serif text-2xl text-[#0B0C0C] mb-2">Weekly notes from Velure</h3>
+      <p className="text-sm text-gray-600 mb-4">Practical brew guides, calm product updates, and clean-label reads.</p>
       <form onSubmit={handleSubmit} noValidate>
         <div className="flex flex-col sm:flex-row gap-2">
           <label htmlFor={`ritual-letter-${contextKey}`} className="sr-only">Email</label>
@@ -6642,12 +6356,12 @@ const RitualLetterInline = ({ contextKey = 'journal' }) => {
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             placeholder="you@example.com"
-            className="flex-1 border border-gray-700 bg-[#0B0C0C] px-4 py-3 text-sm text-[#F9F6F0] outline-none focus:border-[#D4AF37]"
+            className="flex-1 border border-gray-300 bg-[#F9F6F0] px-4 py-3 text-sm outline-none focus:border-[#D4AF37]"
           />
           <button
             type="submit"
             disabled={isSubmitting}
-            className={`px-5 py-3 text-xs font-bold uppercase tracking-wider ${isSubmitting ? 'bg-[#b5952f]/60 text-[#0B0C0C] cursor-not-allowed' : 'bg-[#D4AF37] text-[#0B0C0C] hover:bg-[#b5952f]'}`}
+            className={`px-5 py-3 text-xs font-bold uppercase tracking-wider ${isSubmitting ? 'bg-[#b5952f]/60 text-[#0B0C0C] cursor-not-allowed' : 'bg-[#0B0C0C] text-[#D4AF37] hover:bg-[#1d1d1d]'}`}
           >
             {isSubmitting ? 'Joining...' : 'Join'}
           </button>
@@ -6662,7 +6376,7 @@ const RitualLetterInline = ({ contextKey = 'journal' }) => {
           aria-hidden="true"
         />
         {status.message && (
-          <p className={`mt-3 text-xs ${status.type === 'error' ? 'text-red-400' : 'text-green-400'}`} role="status">
+          <p className={`mt-3 text-xs ${status.type === 'error' ? 'text-red-600' : 'text-green-700'}`} role="status">
             {status.message}
           </p>
         )}
@@ -6672,7 +6386,7 @@ const RitualLetterInline = ({ contextKey = 'journal' }) => {
 };
 
 const BlogPostView = ({ post, onBackToBlog, onOpenProduct, onShopAll }) => {
-  const relatedProducts = useMemo(() => getRelatedProductsForBlogPost(post.slug, 3, post.relatedProducts), [post.relatedProducts, post.slug]);
+  const relatedProducts = useMemo(() => getRelatedProductsForBlogPost(post.slug), [post.slug]);
 
   return (
     <div className="pt-32 pb-24 bg-[#F9F6F0] min-h-screen">
@@ -6777,12 +6491,6 @@ const AboutView = ({ setView }) => (
         <p className="text-gray-700 text-base md:text-lg max-w-3xl leading-relaxed">
           Velure started with a simple intention: make coffee feel premium without overcomplicating the ritual. We focus on clear product details, consistent cup quality, and a composed experience from first browse to checkout.
         </p>
-        <div className="max-w-3xl mt-6">
-          <p className="text-gray-700 text-base md:text-lg leading-relaxed">
-            Velure started with a simple frustration. I&apos;d spent years reaching for coffee that either tasted extraordinary or supported how I wanted to feel — but never both. I wanted something that respected the ritual: a cup that was genuinely single-origin, functionally considered, and worth slowing down for. So I built it. Velure is my answer to a morning that doesn&apos;t compromise — crafted for people who take what they put in their body as seriously as how it tastes.
-          </p>
-          <p className="text-[13px] text-[#0B0C0C]/55 mt-4">Joe Hart, Founder</p>
-        </div>
       </section>
 
       <section className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -6832,100 +6540,6 @@ const TextView = ({ title, content }) => (
     </div>
   </div>
 );
-
-const ShippingReturnsView = () => {
-  const blocks = LEGAL_CONTENT.shippingReturns.split('\n\n');
-  const lastUpdated = blocks[0] || '';
-  const parsedSections = [];
-
-  blocks.slice(1).forEach((block) => {
-    const lines = block.split('\n');
-    const heading = lines[0] || '';
-    const match = heading.match(/^(\d+)\.\s(.+)$/);
-
-    if (match) {
-      parsedSections.push({
-        number: match[1],
-        title: match[2],
-        body: lines.slice(1).join('\n'),
-        subSections: [],
-      });
-      return;
-    }
-
-    const previousSection = parsedSections[parsedSections.length - 1];
-    if (!previousSection) return;
-
-    const suffix = String.fromCharCode(97 + previousSection.subSections.length);
-    previousSection.subSections.push({
-      number: `${previousSection.number}${suffix}`,
-      title: heading.replace(/:$/, ''),
-      body: lines.slice(1).join('\n'),
-    });
-  });
-
-  const sections = parsedSections.map((section) => ({
-    ...section,
-    id: `shipping-returns-section-${section.number}`,
-  }));
-
-  return (
-    <div className="pt-32 pb-24 bg-[#0B0C0C] min-h-screen text-[#F9F6F0]">
-      <div className="max-w-6xl mx-auto px-6">
-        <section className="mb-12 border-b border-gray-800 pb-10">
-          <p className="text-xs uppercase tracking-[0.2em] text-[#D4AF37] mb-3">Shipping &amp; Returns</p>
-          <h1 className="text-4xl md:text-5xl font-serif text-[#F9F6F0] mb-4">Shipping &amp; Returns Policy</h1>
-          <p className="text-sm text-gray-500">{lastUpdated}</p>
-        </section>
-
-        <section className="grid grid-cols-1 gap-5">
-          {sections.map((section) => (
-            <article
-              key={`${section.number}-${section.title}`}
-              id={section.id}
-              className="border border-gray-800 bg-[#141414] p-6 md:p-7 scroll-mt-36"
-            >
-              <div className="flex flex-col md:flex-row md:items-start gap-4 md:gap-6">
-                <div className="flex-shrink-0">
-                  <span className="inline-flex min-w-[52px] justify-center border border-[#D4AF37]/35 bg-[#18140c] px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-[#D4AF37]">
-                    {section.number}
-                  </span>
-                </div>
-                <div className="min-w-0">
-                  <h2 className="font-serif text-2xl text-[#F9F6F0] mb-4">{section.title}</h2>
-                  <div className="whitespace-pre-line text-gray-300 leading-relaxed">
-                    {section.body}
-                  </div>
-                  {Array.isArray(section.subSections) && section.subSections.length > 0 && (
-                    <div className="mt-6 space-y-4">
-                      {section.subSections.map((subSection) => (
-                        <div key={`${subSection.number}-${subSection.title}`} className="border-t border-gray-800 pt-5">
-                          <div className="flex flex-col md:flex-row md:items-start gap-3 md:gap-5">
-                            <div className="flex-shrink-0">
-                              <span className="inline-flex min-w-[52px] justify-center border border-[#D4AF37]/25 bg-[#15110a] px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-[#D4AF37]">
-                                {subSection.number}
-                              </span>
-                            </div>
-                            <div className="min-w-0">
-                              <h3 className="font-serif text-xl text-[#F9F6F0] mb-3">{subSection.title}</h3>
-                              <div className="whitespace-pre-line text-gray-300 leading-relaxed">
-                                {subSection.body}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </article>
-          ))}
-        </section>
-      </div>
-    </div>
-  );
-};
 
 const ContactView = () => {
   const [formState, setFormState] = useState({
@@ -6994,7 +6608,7 @@ const ContactView = () => {
           <div className="space-y-6">
             <div className="flex items-center gap-4">
               <Mail className="text-[#D4AF37]" />
-              <span className="text-[#0B0C0C]">concierge@velurecoffee.com</span>
+              <span className="text-[#0B0C0C]">concierge@velureritual.com</span>
             </div>
             <div className="flex items-center gap-4">
               <Phone className="text-[#D4AF37]" />
@@ -7837,31 +7451,14 @@ const RewardsView = ({ setView, rewardsProfile, onJoinRewards, onRedeemReward, o
   if (!authUser) {
     return (
       <div className="pt-32 pb-24 bg-[#0B0C0C] min-h-screen text-[#F9F6F0]">
-        <div className="max-w-5xl mx-auto px-6">
+        <div className="max-w-3xl mx-auto px-6">
           <h1 className="text-5xl font-serif mb-4">Velure Rewards App</h1>
           <p className="text-gray-300 text-lg mb-8">
-            Earn something meaningful each time you return to the ritual.
+            Rewards are account-linked and only available to signed-in customers.
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
-            <div className="bg-[#151515] border border-gray-800 p-6">
-              <p className="text-xs uppercase tracking-widest text-gray-500 mb-2">Earn</p>
-              <p className="font-serif text-3xl text-[#D4AF37]">5 points per $1</p>
-              <p className="text-sm text-gray-400 mt-3">Every order builds toward something worth using on the next one.</p>
-            </div>
-            <div className="bg-[#151515] border border-gray-800 p-6">
-              <p className="text-xs uppercase tracking-widest text-gray-500 mb-2">Redeem</p>
-              <p className="font-serif text-3xl text-[#D4AF37]">Perks that travel</p>
-              <p className="text-sm text-gray-400 mt-3">Redeem for discounts and free shipping when you are ready to use them.</p>
-            </div>
-            <div className="bg-[#151515] border border-gray-800 p-6">
-              <p className="text-xs uppercase tracking-widest text-gray-500 mb-2">Join</p>
-              <p className="font-serif text-3xl text-[#D4AF37]">Free at checkout</p>
-              <p className="text-sm text-gray-400 mt-3">Create your account once, and let each order start earning automatically.</p>
-            </div>
-          </div>
           <div className="bg-[#151515] border border-gray-800 p-6">
             <p className="text-sm text-gray-300 mb-5">
-              Sign in or create an account to unlock points, saved history, and rewards that follow your daily ritual.
+              Sign in or create an account to unlock points, redemptions, and saved rewards history.
             </p>
             <div className="flex flex-wrap gap-3">
               <button
@@ -8069,7 +7666,7 @@ const RewardsView = ({ setView, rewardsProfile, onJoinRewards, onRedeemReward, o
 };
 
 const SubscriptionView = ({ setView, authUser }) => {
-  const subscriptionProducts = PRODUCTS.filter((product) => product.subscriptionEligible);
+  const subscriptionProducts = SUBSCRIPTION_PRODUCTS;
   const [customerName, setCustomerName] = useState('');
   const [subscriberEmail, setSubscriberEmail] = useState(authUser?.email || '');
   const [selectedProductId, setSelectedProductId] = useState(subscriptionProducts[0]?.id || 'fuse');
@@ -8097,19 +7694,6 @@ const SubscriptionView = ({ setView, authUser }) => {
     }
   }, []);
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    try {
-      const storedProductId = normalizeLower(window.localStorage.getItem(SUBSCRIPTION_SELECTION_STORAGE_KEY));
-      if (storedProductId && subscriptionProducts.some((product) => product.id === storedProductId)) {
-        setSelectedProductId(storedProductId);
-      }
-      window.localStorage.removeItem(SUBSCRIPTION_SELECTION_STORAGE_KEY);
-    } catch {
-      // ignore storage access errors
-    }
-  }, [subscriptionProducts]);
-
   const selectedProduct = subscriptionProducts.find((product) => product.id === selectedProductId) || subscriptionProducts[0];
   useEffect(() => {
     if (!subscriptionProducts.length) return;
@@ -8118,9 +7702,7 @@ const SubscriptionView = ({ setView, authUser }) => {
     }
   }, [selectedProductId, subscriptionProducts]);
   const basePrice = Number(selectedProduct?.price || 0);
-  const membershipRate = getMembershipRateForProduct(selectedProduct);
-  const membershipPercent = Math.round(membershipRate * 100);
-  const estimatedMonthly = Number((basePrice * quantity * (1 - membershipRate)).toFixed(2));
+  const estimatedMonthly = Number((basePrice * quantity * 0.85).toFixed(2));
   const regularMonthly = Number((basePrice * quantity).toFixed(2));
 
   const handleStartSubscription = async () => {
@@ -8184,7 +7766,7 @@ const SubscriptionView = ({ setView, authUser }) => {
     <div className="pt-28 pb-24 bg-[#0B0C0C] min-h-screen text-[#F9F6F0]">
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
         <h1 className="text-4xl sm:text-5xl font-serif text-[#F9F6F0] mb-4">
-          Build Your <span className="text-[#D4AF37] italic">Ritual Membership</span>
+          Build Your <span className="text-[#D4AF37] italic">Velure Subscription</span>
         </h1>
         <p className="text-gray-300 text-base sm:text-lg mb-8 max-w-3xl">
           Choose your blend, choose your quantity, and lock in recurring deliveries with encrypted Stripe checkout.
@@ -8242,14 +7824,8 @@ const SubscriptionView = ({ setView, authUser }) => {
                     className={`text-left border p-4 transition-colors ${isSelected ? 'border-[#D4AF37] bg-[#0B0C0C]' : 'border-gray-700 hover:border-[#D4AF37]'}`}
                     aria-pressed={isSelected}
                   >
-                    {normalizeLower(product.id) === 'zen' && (
-                      <span className="inline-flex border border-gray-600 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-gray-300 mb-3">
-                        Matcha
-                      </span>
-                    )}
                     <p className="font-serif text-2xl text-[#F9F6F0]">{product.name}</p>
                     <p className="text-xs text-gray-400 mt-1">{product.subtitle}</p>
-                    <p className="text-xs uppercase tracking-widest text-gray-500 mt-3">{getProminentOriginLabel(product)}</p>
                     <p className="text-sm text-[#D4AF37] mt-3">${product.price.toFixed(2)} one-time retail</p>
                   </button>
                 );
@@ -8313,14 +7889,8 @@ const SubscriptionView = ({ setView, authUser }) => {
 
             <div className="mt-5 border border-gray-700 p-4 bg-[#0B0C0C]">
               <p className="text-xs uppercase tracking-widest text-gray-500 mb-2">Estimated Monthly</p>
-              <div className="flex flex-wrap items-center gap-3">
-                <p className="font-serif text-4xl text-[#D4AF37]">${estimatedMonthly.toFixed(2)}</p>
-                <span className="border border-[#D4AF37]/45 bg-[#1a1408] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#D4AF37]">
-                  Save 15%
-                </span>
-              </div>
-              <p className="text-xs text-gray-400 mt-2">Regular ${regularMonthly.toFixed(2)} • Ritual Membership {membershipPercent}% preferred pricing</p>
-              <p className="text-xs text-gray-400 mt-2">Cancel anytime. Ships every 4 weeks.</p>
+              <p className="font-serif text-4xl text-[#D4AF37]">${estimatedMonthly.toFixed(2)}</p>
+              <p className="text-xs text-gray-400 mt-2">Regular ${regularMonthly.toFixed(2)} • Subscription savings applied at checkout</p>
               <p className="text-xs text-gray-500 mt-2">
                 Secure payment by Stripe. Card details are encrypted and never stored on Velure servers.
               </p>
@@ -8398,7 +7968,7 @@ const Footer = ({ setView }) => {
       <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
         <div>
           <h2 className="font-serif text-2xl font-bold mb-6">VELURE</h2>
-          <p className="text-gray-500 text-sm leading-relaxed">Luxury functional coffee. Single-origin beans, adaptogenic blends, crafted for the daily ritual.</p>
+          <p className="text-gray-500 text-sm leading-relaxed">Small batch, artisan coffee sourced with intention and roasted for the discerning palate.</p>
         </div>
         <div>
           <h3 className="text-[#D4AF37] text-xs font-bold uppercase tracking-widest mb-6">Shop</h3>
@@ -8524,54 +8094,6 @@ const getHomeFeaturedProducts = (products, limit = 3) => {
 
 const HomeView = ({ openProductDetail, setView }) => {
   const featuredHomeProducts = getHomeFeaturedProducts(PRODUCTS, 3);
-  const featuredMembershipProduct = PRODUCTS.filter((product) => product.subscriptionEligible)[0] || null;
-  const featuredMembershipPrice = featuredMembershipProduct ? getMembershipPriceForProduct(featuredMembershipProduct) : 0;
-  const foundingMemberPrice = featuredMembershipProduct ? getFoundingMemberPriceForProduct(featuredMembershipProduct) : 0;
-  const [foundingEmail, setFoundingEmail] = useState('');
-  const [foundingStatus, setFoundingStatus] = useState({ type: 'idle', message: '' });
-  const [ritualEmail, setRitualEmail] = useState('');
-  const [ritualEmailStatus, setRitualEmailStatus] = useState({ type: 'idle', message: '' });
-
-  const handleFoundingMemberSubmit = async (event) => {
-    event.preventDefault();
-    const normalizedEmail = foundingEmail.trim().toLowerCase();
-    if (!normalizedEmail || !isValidEmail(normalizedEmail)) {
-      setFoundingStatus({ type: 'error', message: 'Enter a valid email to reserve your Founding Member note.' });
-      return;
-    }
-
-    try {
-      await submitFormPayload('newsletter', {
-        email: normalizedEmail,
-        interest: 'founding_member',
-      });
-      trackEvent('generate_lead', { lead_type: 'founding_member' });
-      setFoundingStatus({ type: 'success', message: 'Your Founding Member note is reserved.' });
-      setFoundingEmail('');
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unable to reserve your Founding Member note right now.';
-      setFoundingStatus({ type: 'error', message });
-    }
-  };
-
-  const handleRitualEmailSubmit = async (event) => {
-    event.preventDefault();
-    const normalizedEmail = ritualEmail.trim().toLowerCase();
-    if (!normalizedEmail || !isValidEmail(normalizedEmail)) {
-      setRitualEmailStatus({ type: 'error', message: 'Enter a valid email address.' });
-      return;
-    }
-
-    try {
-      await submitFormPayload('newsletter', { email: normalizedEmail, interest: 'join_the_ritual' });
-      trackEvent('generate_lead', { lead_type: 'newsletter_home_midpage' });
-      setRitualEmailStatus({ type: 'success', message: 'You are on the list.' });
-      setRitualEmail('');
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unable to join right now.';
-      setRitualEmailStatus({ type: 'error', message });
-    }
-  };
 
   return (
     <>
@@ -8586,9 +8108,6 @@ const HomeView = ({ openProductDetail, setView }) => {
         <div className="relative z-20 text-center px-4 max-w-4xl mx-auto motion-enter">
           <p className="text-[#D4AF37] font-sans tracking-[0.3em] text-sm md:text-base mb-6 uppercase">The Standard of Smooth</p>
           <h1 className="text-5xl md:text-7xl lg:text-8xl font-serif text-[#F9F6F0] mb-8 leading-tight">ELEVATE THE <br /><span className="italic text-[#D4AF37]">RITUAL</span></h1>
-          <p className="text-base md:text-xl text-gray-300 max-w-2xl mx-auto mb-8">
-            Single-origin coffee with Lion&apos;s Mane, Chaga &amp; Cordyceps.
-          </p>
           <div className="flex flex-col md:flex-row gap-4 justify-center">
             <button onClick={() => setView('shop_all')} className="bg-[#D4AF37] text-[#0B0C0C] px-8 py-4 font-sans font-bold tracking-widest hover:bg-[#b5952f] transition-colors">SHOP COLLECTION</button>
             <button onClick={() => setView('about')} className="border border-[#F9F6F0] text-[#F9F6F0] px-8 py-4 font-sans font-bold tracking-widest hover:bg-[#F9F6F0] hover:text-[#0B0C0C] transition-colors">OUR STORY</button>
@@ -8619,84 +8138,13 @@ const HomeView = ({ openProductDetail, setView }) => {
         </div>
       </div>
 
-      <div className="bg-[#0F0F0F] border-y border-[#2A2418] py-16">
-        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 xl:grid-cols-[1.1fr_0.9fr] gap-8 items-center">
-          <div>
-            <p className="text-[#D4AF37] text-xs uppercase tracking-[0.24em] mb-3">Founding Member</p>
-            <h2 className="font-serif text-4xl md:text-5xl text-[#F9F6F0] leading-tight mb-4">
-              Be one of the first 50.
-            </h2>
-            <p className="text-lg text-gray-300 max-w-2xl leading-relaxed mb-5">
-              Get your first Ritual Membership bag at 20% off and lock in that price forever.
-            </p>
-            {featuredMembershipProduct && (
-              <div className="flex flex-wrap items-center gap-6 mb-6">
-                <div>
-                  <p className="text-xs uppercase tracking-widest text-gray-500">Featured ritual</p>
-                  <p className="font-serif text-2xl text-[#F9F6F0]">{featuredMembershipProduct.name}</p>
-                  <p className="text-sm text-gray-400">{getProminentOriginLabel(featuredMembershipProduct)}</p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-widest text-gray-500">Founding rate</p>
-                  <p className="font-serif text-3xl text-[#D4AF37]">${foundingMemberPrice.toFixed(2)}</p>
-                  <p className="text-xs text-gray-500">Ongoing Ritual Membership ${featuredMembershipPrice.toFixed(2)} every 4 weeks</p>
-                </div>
-              </div>
-            )}
-            <div className="flex flex-col sm:flex-row gap-3">
-              <button
-                type="button"
-                onClick={() => setView('subscription')}
-                className="bg-[#D4AF37] text-[#0B0C0C] px-8 py-4 font-sans font-bold tracking-widest hover:bg-[#b5952f] transition-colors"
-              >
-                Claim Founding Rate
-              </button>
-              <button
-                type="button"
-                onClick={() => featuredMembershipProduct && openProductDetail(featuredMembershipProduct)}
-                className="border border-[#D4AF37] text-[#D4AF37] px-8 py-4 font-sans font-bold tracking-widest hover:bg-[#D4AF37] hover:text-[#0B0C0C] transition-colors"
-              >
-                View Ritual
-              </button>
-            </div>
-          </div>
-
-          <div className="border border-[#D4AF37]/30 bg-[linear-gradient(160deg,rgba(212,175,55,0.10),rgba(18,18,18,0.96))] p-6 md:p-8">
-            <p className="text-xs uppercase tracking-[0.22em] text-[#D4AF37] mb-3">Reserve the note</p>
-            <h3 className="font-serif text-3xl text-[#F9F6F0] mb-3">A quieter way in.</h3>
-            <p className="text-gray-300 leading-relaxed mb-5">
-              Leave your email for the Founding Member invitation, or step directly into Ritual Membership now.
-            </p>
-            <form onSubmit={handleFoundingMemberSubmit} className="space-y-3">
-              <label htmlFor="founding-email" className="sr-only">Email address</label>
-              <input
-                id="founding-email"
-                type="email"
-                value={foundingEmail}
-                onChange={(event) => setFoundingEmail(event.target.value)}
-                placeholder="you@example.com"
-                className="w-full border border-[#D4AF37]/30 bg-[#0B0C0C] px-4 py-4 text-[#F9F6F0] outline-none focus:border-[#D4AF37]"
-              />
-              <button type="submit" className="w-full border border-[#F9F6F0] text-[#F9F6F0] px-6 py-4 font-sans font-bold tracking-widest hover:bg-[#F9F6F0] hover:text-[#0B0C0C] transition-colors">
-                Reserve Founding Invitation
-              </button>
-            </form>
-            {foundingStatus.message && (
-              <p className={`mt-3 text-sm ${foundingStatus.type === 'error' ? 'text-red-400' : 'text-green-400'}`} role="status">
-                {foundingStatus.message}
-              </p>
-            )}
-          </div>
-        </div>
-      </div>
-
       {/* VALUE PROPS */}
       <div className="bg-[#F9F6F0] py-20">
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
           <div className="flex flex-col items-center">
             <div className="bg-[#0B0C0C] p-4 rounded-full mb-6"><Leaf className="text-[#D4AF37]" size={32} /></div>
             <h3 className="font-serif text-2xl mb-3 text-[#0B0C0C]">Ethically Sourced</h3>
-            <p className="font-sans text-gray-600">Transparent origin details with a composed, traceable cup profile.</p>
+            <p className="font-sans text-gray-600">Responsibly sourced partners with transparent product details.</p>
           </div>
           <div className="flex flex-col items-center">
             <div className="bg-[#0B0C0C] p-4 rounded-full mb-6"><Award className="text-[#D4AF37]" size={32} /></div>
@@ -8707,29 +8155,6 @@ const HomeView = ({ openProductDetail, setView }) => {
             <div className="bg-[#0B0C0C] p-4 rounded-full mb-6"><Coffee className="text-[#D4AF37]" size={32} /></div>
             <h3 className="font-serif text-2xl mb-3 text-[#0B0C0C]">Functional Blends</h3>
             <p className="font-sans text-gray-600">Functional blends with transparent ingredients.</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-[#111111] py-20 border-y border-gray-900">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-10">
-            <div>
-              <p className="text-[#D4AF37] text-xs uppercase tracking-[0.24em] mb-3">Functional Composition</p>
-              <h2 className="font-serif text-4xl md:text-5xl text-[#F9F6F0]">Named ingredients. Quiet benefits.</h2>
-            </div>
-            <p className="max-w-2xl text-gray-400 leading-relaxed">
-              Functional ritual should read with clarity. Velure names each ingredient directly and keeps the language warm, restrained, and easy to return to.
-            </p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {['Lion’s Mane', 'Chaga', 'Cordyceps'].map((name) => (
-              <div key={name} className="border border-[#D4AF37]/20 bg-[#151515] p-6">
-                <p className="text-[11px] uppercase tracking-[0.24em] text-[#D4AF37] mb-2">Ingredient</p>
-                <h3 className="font-serif text-3xl text-[#F9F6F0] mb-3">{name}</h3>
-                <p className="text-base text-gray-300">{FUNCTIONAL_BENEFIT_COPY[name]}</p>
-              </div>
-            ))}
           </div>
         </div>
       </div>
@@ -8762,103 +8187,6 @@ const HomeView = ({ openProductDetail, setView }) => {
           <div className="text-center mt-12">
              <button onClick={() => setView('shop_all')} className="border border-[#D4AF37] text-[#D4AF37] px-8 py-3 font-sans uppercase tracking-widest hover:bg-[#D4AF37] hover:text-[#0B0C0C] transition-all">View All</button>
           </div>
-        </div>
-      </div>
-
-      <div className="bg-[#F5F0E6] py-20">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-5 mb-10">
-            <div>
-              <p className="text-[#8A6B25] text-xs uppercase tracking-[0.24em] mb-3">Gift The Ritual</p>
-              <h2 className="font-serif text-4xl md:text-5xl text-[#0B0C0C]">Luxury, ready to give.</h2>
-            </div>
-            <p className="max-w-2xl text-gray-700 leading-relaxed">
-              Curated for occasion, composed for mornings. Velure gifting is built around intention, not excess.
-            </p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {GIFTING_CURATIONS.map((bundle) => (
-              <section key={bundle.title} className="border border-[#D8C7A3] bg-white p-6 md:p-8">
-                <div className="flex items-center gap-3 mb-4">
-                  <Gift size={18} className="text-[#8A6B25]" />
-                  <p className="text-xs uppercase tracking-[0.22em] text-[#8A6B25]">{bundle.subtitle}</p>
-                </div>
-                <h3 className="font-serif text-3xl text-[#0B0C0C] mb-3">{bundle.title}</h3>
-                <p className="text-gray-700 leading-relaxed mb-6">{bundle.description}</p>
-                <button
-                  type="button"
-                  onClick={() => setView(bundle.targetView)}
-                  className="border border-[#0B0C0C] text-[#0B0C0C] px-6 py-3 font-sans font-bold tracking-widest hover:bg-[#0B0C0C] hover:text-[#F9F6F0] transition-colors"
-                >
-                  {bundle.ctaLabel}
-                </button>
-              </section>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-[#0B0C0C] py-20 border-t border-gray-900">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-10">
-            <p className="text-[#D4AF37] text-xs uppercase tracking-[0.24em] mb-3">Testimonials</p>
-            <h2 className="font-serif text-4xl md:text-5xl text-[#F9F6F0]">Voices from the ritual</h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {HOME_TESTIMONIALS.map((item) => (
-              <article key={`${item.name}-${item.location}`} className="border border-gray-800 bg-[#141414] p-6 min-h-[260px] flex flex-col">
-                <div className="flex items-center gap-1 text-[#D4AF37] mb-5" aria-hidden="true">
-                  {Array.from({ length: 5 }).map((_, starIndex) => (
-                    <Star key={starIndex} size={14} fill="currentColor" />
-                  ))}
-                </div>
-                <p className="text-gray-300 leading-relaxed flex-1 text-[15px]">{item.review}</p>
-                <div className="mt-6 pt-5 border-t border-gray-800">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <h3 className="font-serif text-2xl text-[#F9F6F0]">{item.name}</h3>
-                      <p className="text-sm text-gray-500 mt-1">{item.location}</p>
-                    </div>
-                    <span className="text-[11px] uppercase tracking-[0.18em] text-gray-500">Verified buyer</span>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-[#090909] py-20 border-t border-gray-900">
-        <div className="max-w-4xl mx-auto px-6 text-center">
-          <p className="text-[#D4AF37] text-xs uppercase tracking-[0.24em] mb-3">Join the Ritual</p>
-          <h2 className="font-serif text-4xl md:text-5xl text-[#F9F6F0] mb-4">Join the Ritual</h2>
-          <p className="text-gray-400 max-w-2xl mx-auto mb-8">
-            Be the first to know about new blends and exclusive drops.
-          </p>
-          <form onSubmit={handleRitualEmailSubmit} className="max-w-2xl mx-auto">
-            <div className="flex flex-col sm:flex-row gap-3">
-              <label htmlFor="ritual-email" className="sr-only">Email address</label>
-              <input
-                id="ritual-email"
-                type="email"
-                value={ritualEmail}
-                onChange={(event) => setRitualEmail(event.target.value)}
-                placeholder="you@example.com"
-                className="flex-1 border border-gray-700 bg-[#111111] px-5 py-4 text-[#F9F6F0] outline-none focus:border-[#D4AF37]"
-              />
-              <button
-                type="submit"
-                className="bg-[#D4AF37] text-[#0B0C0C] px-8 py-4 font-sans font-bold tracking-widest hover:bg-[#b5952f] transition-colors"
-              >
-                Join
-              </button>
-            </div>
-            {ritualEmailStatus.message && (
-              <p className={`mt-4 text-sm ${ritualEmailStatus.type === 'error' ? 'text-red-400' : 'text-green-400'}`} role="status">
-                {ritualEmailStatus.message}
-              </p>
-            )}
-          </form>
         </div>
       </div>
     </>
@@ -8909,7 +8237,7 @@ const WholesaleView = ({ setView }) => (
 
 // --- MAIN APP COMPONENT ---
 
-const StorefrontApp = () => {
+const App = () => {
   const [route, setRoute] = useState(() => {
     if (typeof window === 'undefined') {
       return { view: 'home', productId: null, blogSlug: null };
@@ -8957,23 +8285,6 @@ const StorefrontApp = () => {
   const setView = useCallback((view) => {
     trackEvent('navigation_click', { destination: view });
     navigateToView(view);
-  }, [navigateToView]);
-
-  const openSubscriptionForProduct = useCallback((productId) => {
-    try {
-      if (typeof window !== 'undefined') {
-        const normalizedProductId = normalizeLower(productId);
-        if (PRODUCTS.filter((product) => product.subscriptionEligible).some((product) => product.id === normalizedProductId)) {
-          window.localStorage.setItem(SUBSCRIPTION_SELECTION_STORAGE_KEY, normalizedProductId);
-        } else {
-          window.localStorage.removeItem(SUBSCRIPTION_SELECTION_STORAGE_KEY);
-        }
-      }
-    } catch {
-      // ignore storage access errors
-    }
-    trackEvent('navigation_click', { destination: 'subscription', product_id: normalizeLower(productId) || undefined });
-    navigateToView('subscription');
   }, [navigateToView]);
 
   const [shareNotice, setShareNotice] = useState('');
@@ -9491,11 +8802,11 @@ const StorefrontApp = () => {
 
     const viewMeta = {
       home: {
-        title: 'Velure Coffee | Elevate the Ritual',
+        title: 'Velure | Luxury Functional & Single-Origin Coffee',
         description: 'Elevate your ritual with Velure. Premium coffee, functional blends, and ceremonial matcha.',
       },
       shop_all: {
-        title: 'Velure Coffee | Shop All',
+        title: 'All Collections | Velure Coffee',
         description: 'Browse all Velure coffee collections, including functional blends, signature blends, and single-origin favorites.',
       },
       shop_functional: {
@@ -9511,11 +8822,11 @@ const StorefrontApp = () => {
         description: 'Discover Velure single-origin coffee with distinct regional profiles and premium quality.',
       },
       shop_bundles: {
-        title: 'Velure Coffee | Bundle Sets',
+        title: 'Bundle Sets | Velure Coffee',
         description: 'Shop curated Velure bundle sets for bright, dark, and starter coffee rituals.',
       },
       blog: {
-        title: 'Velure Coffee | Journal',
+        title: 'Journal | Velure Coffee',
         description: 'Calm, factual coffee guides on Lion’s Mane blends, clean-label coffee, and brewing better cups.',
       },
       blog_post: {
@@ -9530,12 +8841,8 @@ const StorefrontApp = () => {
         title: 'Rewards App | Velure Coffee',
         description: 'Earn points, unlock discounts, and redeem free-shipping rewards with the Velure rewards flow.',
       },
-      about: {
-        title: 'Velure Coffee | Our Story',
-        description: 'Learn why Velure was started and how we shape a calmer, more intentional coffee ritual.',
-      },
       subscription: {
-        title: 'Velure Coffee | Ritual Membership',
+        title: 'Subscription | Velure Coffee',
         description: 'Subscribe to Velure for recurring coffee deliveries and members-only perks.',
       },
       wholesale: {
@@ -10267,8 +9574,8 @@ const StorefrontApp = () => {
           product={selectedProduct} 
           addToCart={addToCart} 
           onBack={() => setView('shop_all')}
-          onOpenSubscription={openSubscriptionForProduct}
           isCartOpen={isCartOpen}
+          isInCart={cart.some((item) => item.productId === selectedProduct.id)}
           onShareProduct={handleShareProduct}
           onCopyProductLink={handleCopyProductLink}
           authUser={authState.user}
@@ -10370,7 +9677,7 @@ const StorefrontApp = () => {
       );
 
       case 'shipping_returns': return (
-        <ShippingReturnsView />
+        <TextView title="Shipping & Returns Policy" content={LEGAL_CONTENT.shippingReturns} />
       );
 
       case 'rewards_terms': return (
@@ -10449,4 +9756,4 @@ const StorefrontApp = () => {
   );
 };
 
-export default StorefrontApp;
+export default App;

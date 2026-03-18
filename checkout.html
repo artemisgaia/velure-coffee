@@ -109,22 +109,6 @@
                   <input id="customer-phone" name="customerPhone" type="tel" inputmode="tel" autocomplete="tel" />
                 </div>
               </fieldset>
-
-              <fieldset class="card-block">
-                <legend>Gift The Ritual</legend>
-
-                <div class="toggle-row">
-                  <input id="is-gift" type="checkbox" />
-                  <label for="is-gift">This is a gift</label>
-                </div>
-
-                <p class="account-summary">For her morning ritual. For a thoughtful arrival. For the gift of intention.</p>
-
-                <div id="gift-message-wrap" class="hidden">
-                  <label for="gift-message">Gift message (optional)</label>
-                  <textarea id="gift-message" name="giftMessage" rows="4" maxlength="240" placeholder="Add a short note to accompany the ritual."></textarea>
-                </div>
-              </fieldset>
             </div>
 
             <div id="step-shipping" class="step" data-step="2">
@@ -218,28 +202,12 @@
 
           <dl class="totals" aria-label="Order totals">
             <div><dt>Subtotal</dt><dd id="subtotal-value">$0.00</dd></div>
-            <div id="discount-row" class="hidden"><dt>Discount</dt><dd id="discount-value">$0.00</dd></div>
+            <div><dt>Discount</dt><dd id="discount-value">$0.00</dd></div>
             <div><dt>Shipping</dt><dd id="shipping-value">$0.00</dd></div>
             <div><dt>Tax</dt><dd id="tax-value">$0.00</dd></div>
-            <div id="tax-note-row" class="totals-note hidden"><dt></dt><dd id="tax-note">Tax calculated at checkout</dd></div>
             <div class="total"><dt>Total</dt><dd id="total-value">$0.00</dd></div>
           </dl>
 
-          <div class="summary-tools">
-            <button id="promo-toggle" class="summary-link-button" type="button" aria-expanded="false" aria-controls="promo-code-wrap">
-              Have a promo code?
-            </button>
-            <div id="promo-code-wrap" class="hidden">
-              <label for="promo-code-input">Promo code</label>
-              <div class="promo-code-row">
-                <input id="promo-code-input" name="promoCodeInput" type="text" autocomplete="off" placeholder="Enter code" />
-                <button id="promo-apply" class="text-button text-button--inline" type="button">Apply</button>
-              </div>
-              <p id="promo-status" class="promo-status" role="status" aria-live="polite"></p>
-            </div>
-          </div>
-
-          <p id="shipping-threshold" class="shipping-threshold">Add $50.00 more for free shipping</p>
           <p id="shipping-estimate" class="shipping-estimate">Shipping estimate will appear once destination is selected.</p>
           <p class="policy-copy">
             By placing your order, you agree to Velure shipping and returns policies. Destination and package-weight rates are shown before payment.

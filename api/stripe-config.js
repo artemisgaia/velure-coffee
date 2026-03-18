@@ -3,11 +3,6 @@ import { DEFAULT_SHIPPING_COUNTRY_ORDER, SHIPPING_ZONES } from '../shared/shippi
 const normalize = (value) => (typeof value === 'string' ? value.trim() : '');
 const normalizeLower = (value) => normalize(value).toLowerCase();
 const getEnv = (name) => normalize(globalThis.process?.env?.[name] || '');
-const US_STATE_CODES = [
-  'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA', 'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA',
-  'ME', 'MD', 'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ', 'NM', 'NY', 'NC', 'ND', 'OH', 'OK',
-  'OR', 'PA', 'RI', 'SC', 'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY', 'DC',
-];
 
 const sendJson = (res, statusCode, payload) => {
   res.statusCode = statusCode;
@@ -61,12 +56,6 @@ const parseTaxConfig = () => {
       result[code] = rate;
     }
   }
-  for (const stateCode of US_STATE_CODES) {
-    const rate = Number(getEnv(`CHECKOUT_TAX_RATE_US_${stateCode}`));
-    if (Number.isFinite(rate) && rate >= 0 && rate <= 1) {
-      result[`US_${stateCode}`] = rate;
-    }
-  }
   return result;
 };
 
@@ -116,6 +105,6 @@ export default async function handler(req, res) {
     taxRates: parseTaxConfig(),
     defaultTaxRate: parseDefaultTaxRate(),
     quoteMessage: '',
-    unsupportedMessage: 'This destination is not currently available for shipping. Spain is not currently available.',
+    unsupportedMessage: 'This destination is not currently available for shipping. Spain is temporarily unavailable.',
   });
 }
