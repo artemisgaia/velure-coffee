@@ -1619,7 +1619,6 @@ Note: General lifestyle content only.`,
       { productId: 'fuse', blurb: 'FUSE — the functional instant, 15% mushrooms.' },
     ],
   },
-,
   {
     title: "Mushroom Coffee and Anxiety: Will It Make Things Better or Worse?",
     slug: "mushroom-coffee-anxiety",
@@ -8795,7 +8794,7 @@ const HomeView = ({ openProductDetail, setView }) => {
   return (
     <>
       {/* HERO */}
-      <div className="relative min-h-[100svh] w-full flex items-center justify-center overflow-hidden bg-[#0B0C0C]">
+      <div className="relative min-h-[90svh] md:min-h-[100svh] w-full flex items-center justify-center overflow-hidden bg-[#0B0C0C]">
         <div className="absolute inset-0 bg-gradient-to-b from-black/70 to-[#0B0C0C] z-10"></div>
         <div
           className="absolute inset-0 z-0 opacity-40 bg-cover bg-center"
@@ -8825,7 +8824,7 @@ const HomeView = ({ openProductDetail, setView }) => {
       {/* SOCIAL PROOF BAR */}
       <div className="bg-[#D4AF37]/10 border-y border-[#D4AF37]/20 py-6">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 text-center">
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center justify-center gap-x-8 gap-y-4 text-center">
             <div>
               <p className="text-[#D4AF37] text-2xl font-serif font-bold">4.9 ★</p>
               <p className="text-gray-400 text-xs mt-0.5">Average Rating</p>
