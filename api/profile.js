@@ -21,21 +21,28 @@ const parseAllowedOrigins = () => {
   return envValue.split(',').map((value) => normalizeLower(value)).filter(Boolean);
 };
 
+
+/** Always trust our own production + Vercel preview domains. */
+const isTrustedSiteOrigin = (origin) => {
+  if (!origin) return false;
+  const o = origin.toLowerCase();
+  if (o === 'https://velurecoffee.com' || o === 'https://www.velurecoffee.com') return true;
+  if (o.endsWith('.vercel.app')) return true;
+  if (o.startsWith('http://localhost') || o.startsWith('http://127.0.0.1')) return true;
+  return false;
+};
 const isAllowedOrigin = (req) => {
+  const requestOrigin = normalizeLower(req.headers.origin || '');
+  const referer = normalize(req.headers.referer);
+  let effectiveOrigin = requestOrigin;
+  if (!effectiveOrigin && referer) {
+    try { effectiveOrigin = new URL(referer).origin.toLowerCase(); } catch { /* ignore */ }
+  }
+  if (isTrustedSiteOrigin(effectiveOrigin)) return true;
   const allowedOrigins = parseAllowedOrigins();
   if (!allowedOrigins.length) return true;
-
-  const requestOrigin = normalizeLower(req.headers.origin);
-  if (requestOrigin) return allowedOrigins.includes(requestOrigin);
-
-  const referer = normalize(req.headers.referer);
-  if (!referer) return false;
-
-  try {
-    return allowedOrigins.includes(new URL(referer).origin.toLowerCase());
-  } catch {
-    return false;
-  }
+  if (effectiveOrigin) return allowedOrigins.includes(effectiveOrigin);
+  return false;
 };
 
 const parseBody = async (req) => {

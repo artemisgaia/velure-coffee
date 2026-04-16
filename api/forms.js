@@ -88,6 +88,16 @@ const getClientIp = (req) => {
   return req.socket?.remoteAddress || 'unknown';
 };
 
+
+/** Always trust our own production + Vercel preview domains. */
+const isTrustedSiteOrigin = (origin) => {
+  if (!origin) return false;
+  const o = origin.toLowerCase();
+  if (o === 'https://velurecoffee.com' || o === 'https://www.velurecoffee.com') return true;
+  if (o.endsWith('.vercel.app')) return true;
+  if (o.startsWith('http://localhost') || o.startsWith('http://127.0.0.1')) return true;
+  return false;
+};
 const isAllowedOrigin = (req) => {
   const allowedOrigins = parseAllowedOrigins();
   if (!allowedOrigins.length) {
