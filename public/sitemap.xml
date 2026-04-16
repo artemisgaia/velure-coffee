@@ -1,183 +1,270 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+
+  <!-- HOMEPAGE -->
   <url>
-    <loc>https://velure-coffee.vercel.app/</loc>
-    <lastmod>2026-02-13</lastmod>
+    <loc>https://velurecoffee.com/</loc>
+    <lastmod>2026-04-16</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
+
+  <!-- COLLECTIONS -->
   <url>
-    <loc>https://velure-coffee.vercel.app/collections</loc>
-    <lastmod>2026-02-13</lastmod>
+    <loc>https://velurecoffee.com/collections</loc>
+    <lastmod>2026-04-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://velure-coffee.vercel.app/collections/functional</loc>
-    <lastmod>2026-02-13</lastmod>
+    <loc>https://velurecoffee.com/collections/functional</loc>
+    <lastmod>2026-04-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://velurecoffee.com/collections/single-origin</loc>
+    <lastmod>2026-04-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <!-- BLOG -->
+  <url>
+    <loc>https://velurecoffee.com/blog</loc>
+    <lastmod>2026-04-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://velure-coffee.vercel.app/collections/single-origin</loc>
-    <lastmod>2026-02-13</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <loc>https://velurecoffee.com/blog/make-instant-coffee-taste-premium</loc>
+    <lastmod>2026-04-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://velure-coffee.vercel.app/blog</loc>
-    <lastmod>2026-02-23</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <loc>https://velurecoffee.com/blog/lions-mane-coffee-explained</loc>
+    <lastmod>2026-04-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://velure-coffee.vercel.app/blog/make-instant-coffee-taste-premium</loc>
-    <lastmod>2026-02-23</lastmod>
+    <loc>https://velurecoffee.com/blog/chaga-coffee-explained</loc>
+    <lastmod>2026-04-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://velurecoffee.com/blog/clean-label-functional-coffee</loc>
+    <lastmod>2026-04-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://velurecoffee.com/blog/hot-vs-iced-instant-coffee</loc>
+    <lastmod>2026-04-16</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://velure-coffee.vercel.app/blog/lions-mane-coffee-explained</loc>
-    <lastmod>2026-02-23</lastmod>
+    <loc>https://velurecoffee.com/blog/5-minute-morning-coffee-ritual</loc>
+    <lastmod>2026-04-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- KEY PAGES -->
+  <url>
+    <loc>https://velurecoffee.com/about</loc>
+    <lastmod>2026-04-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://velurecoffee.com/sourcing</loc>
+    <lastmod>2026-04-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://velurecoffee.com/subscription</loc>
+    <lastmod>2026-04-16</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://velure-coffee.vercel.app/blog/chaga-coffee-explained</loc>
-    <lastmod>2026-02-23</lastmod>
+    <loc>https://velurecoffee.com/rewards</loc>
+    <lastmod>2026-04-16</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.65</priority>
   </url>
   <url>
-    <loc>https://velure-coffee.vercel.app/blog/clean-label-functional-coffee</loc>
-    <lastmod>2026-02-23</lastmod>
+    <loc>https://velurecoffee.com/wholesale</loc>
+    <lastmod>2026-04-16</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.65</priority>
   </url>
   <url>
-    <loc>https://velure-coffee.vercel.app/blog/hot-vs-iced-instant-coffee</loc>
-    <lastmod>2026-02-23</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://velure-coffee.vercel.app/blog/5-minute-morning-coffee-ritual</loc>
-    <lastmod>2026-02-23</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://velure-coffee.vercel.app/rewards</loc>
-    <lastmod>2026-02-13</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://velure-coffee.vercel.app/about</loc>
-    <lastmod>2026-02-13</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://velure-coffee.vercel.app/sourcing</loc>
-    <lastmod>2026-02-13</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://velure-coffee.vercel.app/wholesale</loc>
-    <lastmod>2026-02-13</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://velure-coffee.vercel.app/subscription</loc>
-    <lastmod>2026-02-13</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://velure-coffee.vercel.app/contact</loc>
-    <lastmod>2026-02-13</lastmod>
+    <loc>https://velurecoffee.com/contact</loc>
+    <lastmod>2026-04-16</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://velure-coffee.vercel.app/account</loc>
-    <lastmod>2026-02-13</lastmod>
+    <loc>https://velurecoffee.com/shipping-returns</loc>
+    <lastmod>2026-04-16</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
+    <priority>0.55</priority>
   </url>
   <url>
-    <loc>https://velure-coffee.vercel.app/privacy</loc>
-    <lastmod>2026-02-13</lastmod>
+    <loc>https://velurecoffee.com/privacy</loc>
+    <lastmod>2026-04-16</lastmod>
     <changefreq>yearly</changefreq>
-    <priority>0.4</priority>
+    <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://velure-coffee.vercel.app/terms</loc>
-    <lastmod>2026-02-13</lastmod>
+    <loc>https://velurecoffee.com/terms</loc>
+    <lastmod>2026-04-16</lastmod>
     <changefreq>yearly</changefreq>
-    <priority>0.4</priority>
+    <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://velure-coffee.vercel.app/shipping-returns</loc>
-    <lastmod>2026-02-13</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://velure-coffee.vercel.app/rewards-terms</loc>
-    <lastmod>2026-02-13</lastmod>
+    <loc>https://velurecoffee.com/subscription-terms</loc>
+    <lastmod>2026-04-16</lastmod>
     <changefreq>yearly</changefreq>
-    <priority>0.4</priority>
+    <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://velure-coffee.vercel.app/subscription-terms</loc>
-    <lastmod>2026-02-13</lastmod>
+    <loc>https://velurecoffee.com/rewards-terms</loc>
+    <lastmod>2026-04-16</lastmod>
     <changefreq>yearly</changefreq>
-    <priority>0.4</priority>
+    <priority>0.3</priority>
   </url>
+
+  <!-- PRODUCT PAGES — ALL 18 -->
+  <!-- Functional Series -->
   <url>
-    <loc>https://velure-coffee.vercel.app/checkout.html</loc>
-    <lastmod>2026-02-13</lastmod>
+    <loc>https://velurecoffee.com/products/fuse</loc>
+    <lastmod>2026-04-16</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.9</priority>
+    <image:image>
+      <image:loc>https://res.cloudinary.com/dfygdydcj/image/upload/v1767266284/fuse_product.jpg</image:loc>
+      <image:title>FUSE — Mushroom Instant Coffee with Lion's Mane and Chaga</image:title>
+    </image:image>
   </url>
   <url>
-    <loc>https://velure-coffee.vercel.app/products/fuse</loc>
-    <lastmod>2026-02-13</lastmod>
+    <loc>https://velurecoffee.com/products/vitality</loc>
+    <lastmod>2026-04-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://velurecoffee.com/products/harvest</loc>
+    <lastmod>2026-04-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <!-- Matcha -->
+  <url>
+    <loc>https://velurecoffee.com/products/zen</loc>
+    <lastmod>2026-04-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <!-- Instant -->
+  <url>
+    <loc>https://velurecoffee.com/products/onyx</loc>
+    <lastmod>2026-04-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <!-- Reserve Single-Origin -->
+  <url>
+    <loc>https://velurecoffee.com/products/aureo</loc>
+    <lastmod>2026-04-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://velure-coffee.vercel.app/products/zen</loc>
-    <lastmod>2026-02-13</lastmod>
+    <loc>https://velurecoffee.com/products/sable</loc>
+    <lastmod>2026-04-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://velure-coffee.vercel.app/products/onyx</loc>
-    <lastmod>2026-02-13</lastmod>
+    <loc>https://velurecoffee.com/products/drift</loc>
+    <lastmod>2026-04-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://velure-coffee.vercel.app/products/vitality</loc>
-    <lastmod>2026-02-13</lastmod>
+    <loc>https://velurecoffee.com/products/nougat</loc>
+    <lastmod>2026-04-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://velure-coffee.vercel.app/products/harvest</loc>
-    <lastmod>2026-02-13</lastmod>
+    <loc>https://velurecoffee.com/products/praline</loc>
+    <lastmod>2026-04-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://velure-coffee.vercel.app/products/aureo</loc>
-    <lastmod>2026-02-13</lastmod>
+    <loc>https://velurecoffee.com/products/citra</loc>
+    <lastmod>2026-04-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
+  <url>
+    <loc>https://velurecoffee.com/products/zest</loc>
+    <lastmod>2026-04-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://velurecoffee.com/products/ember</loc>
+    <lastmod>2026-04-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://velurecoffee.com/products/forge</loc>
+    <lastmod>2026-04-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Decaf -->
+  <url>
+    <loc>https://velurecoffee.com/products/forest</loc>
+    <lastmod>2026-04-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://velurecoffee.com/products/grove</loc>
+    <lastmod>2026-04-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+
+  <!-- Guatemala -->
+  <url>
+    <loc>https://velurecoffee.com/products/cerise</loc>
+    <lastmod>2026-04-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://velurecoffee.com/products/cacao</loc>
+    <lastmod>2026-04-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+
 </urlset>

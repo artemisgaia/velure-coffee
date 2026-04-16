@@ -1,5 +1,14 @@
 {
+  "cleanUrls": true,
   "rewrites": [
+    {
+      "source": "/sitemap.xml",
+      "destination": "/api/sitemap"
+    },
+    {
+      "source": "/api/og-image",
+      "destination": "/api/og-image"
+    },
     {
       "source": "/checkout",
       "destination": "/checkout.html"

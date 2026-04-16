@@ -1,4 +1,8 @@
 User-agent: *
 Allow: /
+Disallow: /checkout
+Disallow: /checkout.html
+Disallow: /account
+Disallow: /api/
 
-Sitemap: https://velure-coffee.vercel.app/sitemap.xml
+Sitemap: https://velurecoffee.com/sitemap.xml

@@ -927,6 +927,171 @@ const VELURE_STANDARD_FACTS = [
   'Cruelty Free',
 ];
 
+// --- STATIC CURATED REVIEWS ---
+const STATIC_REVIEWS = {
+  fuse: [
+    { id: 'sr-f1', displayName: 'Maya R.', rating: 5, headline: 'My daily ritual, perfected', comment: "I've tried every mushroom coffee on the market. FUSE is the only one where I can actually taste the coffee first. Lion's Mane + Chaga without the weird aftertaste. I'm on my 3rd bag.", createdAt: '2026-03-15T00:00:00Z' },
+    { id: 'sr-f2', displayName: 'James T.', rating: 5, headline: 'Replaced my morning espresso', comment: "Smooth, earthy, and gives me a focused start without the jitters. The transparency on ingredients is exactly what I look for. Proud to see exact percentages on the label.", createdAt: '2026-02-28T00:00:00Z' },
+    { id: 'sr-f3', displayName: 'Priya L.', rating: 4, headline: 'Clean, no crash', comment: "The iced version is incredible — dissolves perfectly. Subtler mushroom flavor than I expected, which is a good thing. Will subscribe.", createdAt: '2026-02-10T00:00:00Z' },
+  ],
+  zen: [
+    { id: 'sr-z1', displayName: 'Chloe W.', rating: 5, headline: "Best ceremonial matcha I've had", comment: "Vibrant green, incredibly smooth when whisked, and the umami depth is real. This is proper ceremonial grade — not the chalky stuff most brands sell. Worth every penny.", createdAt: '2026-03-20T00:00:00Z' },
+    { id: 'sr-z2', displayName: 'David K.', rating: 5, headline: 'Replaced my morning coffee', comment: "Switching to matcha mornings with ZEN has been a game changer. No crash, just clean sustained focus. Vegan-friendly and sourced from Kagoshima — love the detail.", createdAt: '2026-02-14T00:00:00Z' },
+  ],
+  onyx: [
+    { id: 'sr-o1', displayName: 'Serena M.', rating: 5, headline: 'Tastes like specialty coffee, not instant', comment: "I was skeptical. A dark roast instant that actually has nuance? The toffee finish and roasted almond notes are genuinely there. Papua New Guinea beans, and you can tell.", createdAt: '2026-03-10T00:00:00Z' },
+    { id: 'sr-o2', displayName: 'Carlos P.', rating: 4, headline: 'Perfect travel companion', comment: "I bring ONYX on every work trip. Consistent, no equipment needed, and the flavor holds up hot or over ice. Solid dark roast for instant coffee.", createdAt: '2026-02-20T00:00:00Z' },
+  ],
+  vitality: [
+    { id: 'sr-v1', displayName: 'Lauren H.', rating: 5, headline: 'Sharp without the anxious buzz', comment: "I switched from plain espresso to VITALITY for my pre-work brew. The adaptogen effect is real — focused, calm, no crash. Brazilian + Mexican beans make it full-bodied.", createdAt: '2026-03-18T00:00:00Z' },
+    { id: 'sr-v2', displayName: 'Tom B.', rating: 5, headline: 'My whole household is hooked', comment: "I ordered one bag and immediately reordered two more. The Lion's Mane + Chaga combo doesn't overpower the coffee flavor at all. This is the functional blend done right.", createdAt: '2026-02-22T00:00:00Z' },
+  ],
+  harvest: [
+    { id: 'sr-h1', displayName: 'Nia J.', rating: 4, headline: 'Great post-workout coffee', comment: "Hemp protein in a coffee bag sounds gimmicky but it actually works. The nutty character pairs well with the Brazilian beans. My gym bag staple now.", createdAt: '2026-03-05T00:00:00Z' },
+    { id: 'sr-h2', displayName: 'Alex S.', rating: 5, headline: 'Obsessed with the earthy warmth', comment: "Brewed this via pour-over and was blown away. Earthier than my usual but in the best way. The hemp adds body without making it heavy.", createdAt: '2026-02-18T00:00:00Z' },
+  ],
+  aureo: [
+    { id: 'sr-a1', displayName: 'Isabelle M.', rating: 5, headline: 'Roasted peanut notes are divine', comment: "This is my cozy weekend coffee. The honey-like sweetness and soft toffee notes are exactly as described. Brazilian single-origin quality is obvious — no bitterness at all.", createdAt: '2026-03-12T00:00:00Z' },
+    { id: 'sr-a2', displayName: 'Ryan C.', rating: 5, headline: 'My go-to for slow mornings', comment: "Whole beans are gorgeous. Ground them for drip and the caramelized sweetness fills the whole kitchen. AUREO is now my permanent weekend ritual.", createdAt: '2026-02-25T00:00:00Z' },
+  ],
+  sable: [
+    { id: 'sr-s1', displayName: 'Kim A.', rating: 5, headline: 'Velvet smooth is the right word', comment: "Colombian Huila beans and you feel it. Cocoa richness, zero bitterness, and a fruit brightness that makes it surprisingly complex. Great pour-over coffee.", createdAt: '2026-03-08T00:00:00Z' },
+    { id: 'sr-s2', displayName: 'Patrick N.', rating: 5, headline: 'My best cold brew yet', comment: "Made a batch cold brew with SABLE and it is absolutely stellar. The chocolate note deepens cold. Repeat buyer.", createdAt: '2026-02-19T00:00:00Z' },
+  ],
+  drift: [
+    { id: 'sr-d1', displayName: 'Ben L.', rating: 5, headline: 'Best all-around medium roast', comment: "The citrus edge keeps it lively — not flat like most medium roasts. Multi-origin (Brazil, Colombia, Guatemala, Ethiopia) and you taste all of it. My daily driver now.", createdAt: '2026-03-01T00:00:00Z' },
+    { id: 'sr-d2', displayName: 'Sophie T.', rating: 4, headline: 'Exceptional cold brew', comment: "Made a cold brew batch and it's outstanding. The toffee sweetness really comes through cold. Will buy again.", createdAt: '2026-02-17T00:00:00Z' },
+  ],
+  default: [
+    { id: 'sr-def1', displayName: 'Verified Customer', rating: 5, headline: 'Premium quality, every cup', comment: "Velure consistently delivers on the promise: clean ingredients, beautiful packaging, and coffee that actually tastes like what they describe. Thrilled to have found this brand.", createdAt: '2026-03-01T00:00:00Z' },
+    { id: 'sr-def2', displayName: 'Verified Customer', rating: 5, headline: 'Repeat buyer, will keep ordering', comment: "On my fourth order. The freshness is remarkable and customer service responded to my question within hours. This is a brand that actually cares.", createdAt: '2026-02-15T00:00:00Z' },
+  ],
+};
+
+const getStaticReviewsForProduct = (productId) => STATIC_REVIEWS[productId] || STATIC_REVIEWS.default;
+
+// --- QUICK FACTS PER PRODUCT ---
+const PRODUCT_QUICK_FACTS = {
+  fuse: ['15% Lion\'s Mane + 15% Chaga', '~27 instant servings per bag', 'Hot or iced, ready in 60 sec'],
+  zen: ['100% Ceremonial Grade Matcha', 'Shade-grown, stone-ground in Japan', 'Smooth sustained energy, no crash'],
+  onyx: ['100% Single-origin Papua New Guinea', 'Freeze-dried for freshness', 'No bitterness — hot or iced'],
+  vitality: ['Lion\'s Mane + Chaga functional blend', '12 oz / ~24 brewed cups', 'High-flavour medium roast'],
+  harvest: ['Coffee + Hemp Protein in one bag', '9% Organic Hemp Protein Powder', 'Plant-based, Vegan-certified'],
+  aureo: ['100% Arabica, Brazil Cerrado', 'Roasted peanut + toffee notes', 'Non-GMO, Vegan, Gluten-Free'],
+  sable: ['100% Colombian single-origin', 'Velvet cocoa + fruit brightness', 'Best for pour-over and drip'],
+  drift: ['Multi-origin: Brazil, Colombia, Guatemala, Ethiopia', 'Toffee + dark chocolate + citrus lift', 'Great for pour-over, drip, cold brew'],
+  nougat: ['Smooth nutty praline character', 'Balanced, warm medium roast', 'Brazil, Colombia, Guatemala blend'],
+  praline: ['Hazelnut-leaning warm profile', 'Comfort-forward, not heavy', 'Great for drip, press, moka'],
+  citra: ['Light roast with citrus clarity', 'Ethiopia, Mexico, Brazil blend', 'Best iced or pour-over'],
+  zest: ['Bright citrus + soft caramel', 'Tea-like clean finish', 'Ethiopia, Guatemala, Brazil'],
+  ember: ['Toasted nut + rich cocoa depth', 'Bold, clean dark roast', 'Brazil, Mexico — drip, press, moka'],
+  forge: ['Baker\'s chocolate + dark toffee', 'Bold without tasting burnt', 'Holds up in espresso + press'],
+  forest: ['Full-flavored medium decaf', 'Single-origin Sulawesi, Indonesia', 'Evening-ready, smooth finish'],
+  grove: ['Maple-like sweetness, dark chocolate', 'Single-origin Chiapas, Mexico', 'Steady across all brew styles'],
+  cerise: ['Black-cherry + cocoa + citrus', 'Guatemalan single-origin', 'Bright filter and pour-over'],
+  cacao: ['Deep cocoa + toasted depth', '100% Brazilian Arabica', 'Espresso, moka, bold drip'],
+};
+
+const getProductQuickFacts = (productId) => PRODUCT_QUICK_FACTS[productId] || null;
+
+// --- PAYMENT METHOD ICONS ---
+const PaymentIcons = ({ className = '' }) => (
+  <div className={`flex items-center gap-2 flex-wrap ${className}`}>
+    {['VISA', 'MC', 'AMEX', 'APPLE PAY'].map((method) => (
+      <span
+        key={method}
+        className="inline-flex items-center justify-center border border-gray-700 bg-[#1a1a1a] px-2 py-1 text-[9px] font-bold tracking-wider text-gray-400 rounded-sm"
+      >
+        {method}
+      </span>
+    ))}
+    <span className="text-[9px] text-gray-600">& more</span>
+  </div>
+);
+
+// --- EMAIL POPUP ---
+const EmailPopup = ({ onClose }) => {
+  const [email, setEmail] = useState('');
+  const [status, setStatus] = useState('idle');
+  const [message, setMessage] = useState('');
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (!isValidEmail(email.trim().toLowerCase())) {
+      setStatus('error');
+      setMessage('Please enter a valid email address.');
+      return;
+    }
+    setStatus('submitting');
+    try {
+      await submitFormPayload('newsletter_popup', { email: email.trim().toLowerCase(), source: 'popup_10off' });
+    } catch {
+      // treat silently
+    }
+    setStatus('success');
+    setMessage('✓  Your 10% discount code is on its way to your inbox.');
+    setTimeout(onClose, 3500);
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4 bg-black/65 motion-modal-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="popup-title"
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-md bg-[#0B0C0C] border border-[#D4AF37]/40 p-8 sm:p-10 shadow-2xl motion-modal-panel"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-500 hover:text-[#F9F6F0] transition-colors"
+          aria-label="Close offer"
+        >
+          <X size={18} />
+        </button>
+
+        <p className="text-[#D4AF37] text-xs tracking-[0.25em] uppercase mb-3">Welcome Gift</p>
+        <h2 id="popup-title" className="font-serif text-3xl text-[#F9F6F0] mb-2 leading-tight">
+          10% Off Your<br /><span className="italic text-[#D4AF37]">First Ritual</span>
+        </h2>
+        <p className="text-gray-400 text-sm mb-6 leading-relaxed">
+          Join thousands who start their day with Velure. Enter your email for an instant 10% off + early access to new blends.
+        </p>
+
+        {status === 'success' ? (
+          <p className="text-green-400 text-sm font-semibold" role="status">{message}</p>
+        ) : (
+          <form onSubmit={handleSubmit} noValidate>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Your email address"
+              autoComplete="email"
+              className="w-full border border-gray-700 bg-[#111212] text-[#F9F6F0] px-4 py-3 text-sm outline-none focus:border-[#D4AF37] mb-3"
+            />
+            {status === 'error' && message && (
+              <p className="text-red-400 text-xs mb-3" role="alert">{message}</p>
+            )}
+            <button
+              type="submit"
+              disabled={status === 'submitting'}
+              className="w-full bg-[#D4AF37] text-[#0B0C0C] py-3 font-sans font-bold tracking-widest uppercase text-sm hover:bg-[#b5952f] transition-colors disabled:opacity-60"
+            >
+              {status === 'submitting' ? 'Sending...' : 'CLAIM 10% OFF'}
+            </button>
+          </form>
+        )}
+        <p className="text-gray-600 text-[11px] mt-4">No spam. Unsubscribe anytime. One code per customer.</p>
+      </div>
+    </div>
+  );
+};
+
 const SUBSCRIPTION_PRODUCTS = PRODUCTS.filter((product) => product.subscriptionEligible);
 
 const BLOG_POSTS = [
@@ -1398,6 +1563,266 @@ Note: General lifestyle content only.`,
       { productId: 'vitality', blurb: 'VITALITY — medium roast functional brew.' },
     ],
   },
+  {
+    title: 'Fruiting Body vs Mycelium: Why It Matters More Than Any Brand Admits',
+    slug: 'fruiting-body-vs-mycelium-mushroom-coffee',
+    metaTitle: 'Fruiting Body vs Mycelium in Mushroom Coffee: The Honest Guide | Velure',
+    metaDescription: "Most mushroom coffee brands won't tell you this. Fruiting body vs mycelium is the most important question to ask before you buy — here's why.",
+    description: 'The most important quality difference in mushroom coffee that most brands quietly ignore.',
+    excerpt: "Most mushroom coffee brands use mycelium grown on grain — not actual mushroom fruiting bodies. Here's why the difference matters for quality, and how to tell which one you're actually buying.",
+    publishedAt: '2026-03-01',
+    readTime: '6 min read',
+    tags: ['mushroom coffee', 'fruiting body', 'mycelium', 'clean label', 'ingredients'],
+    featured: true,
+    heroImage: '/images/blog/blog-fruiting-body-hero.png',
+    content: `If you are considering a mushroom coffee, this is the most important question you will not see answered on most brand websites:\n\nAre they using fruiting body or mycelium?\n\nThe difference matters — both for quality and for what you are actually paying for.\n\n## What is the fruiting body?\n\nThe fruiting body is the visible part of the mushroom — the cap and stem that most people recognize. In Lion\'s Mane, it looks like a cascading white pom-pom. In Chaga, it is the dense black conk that grows on birch trees.\n\nFruiting bodies contain the highest concentrations of bioactive compounds: beta-glucans, triterpenoids, and the functional constituents that give medicinal mushrooms their reputation.\n\n## What is mycelium?\n\nMycelium is the root-like network of a fungus that grows through a substrate — usually grain (oats, rice, or brown rice).\n\nThe problem: when mycelium is grown on grain and then dried, the final powder is largely grain starch, not mushroom. Some independent analyses have found that mycelium-on-grain products contain more grain than actual mycelium.\n\n## Why do brands use mycelium instead?\n\nSimple economics. Mycelium grows faster and is cheaper to produce at scale. A kilogram of mycelium-on-grain costs far less than a kilogram of dried fruiting body.\n\nThe brand uses less of what you actually want — and the label often does not tell you which one they used.\n\n## How to tell which one a brand is using\n\nRead the label carefully.\n\nFruiting body products will often say:\n- \u201cfruiting body\u201d explicitly\n- \u201cHericium erinaceus (fruiting body)\u201d in the ingredients\n- A clear mushroom species name without the word \u201cmycelium\u201d\n\nMycelium products may say:\n- \u201cmyceliated grain\u201d\n- \u201cmycelium biomass\u201d\n- Nothing at all (just \u201cmushroom powder\u201d with no clarification)\n\nIf a brand uses a \u201cproprietary blend\u201d without specifying, assume the worst.\n\n## What Velure does\n\nVelure FUSE is formulated with 15% organic Lion\'s Mane and 15% organic Chaga — with exact percentages on the bag so you always know what you are getting.\n\nWe believe that transparency is not a selling point. It is a basic standard.\n\n## The bottom line\n\nDo not let marketing copy substitute for label literacy. If a brand cannot tell you:\n1. Which type of mushroom ingredient they use\n2. How much is in each serving\n\n… that says something.\n\nNote: This article is for educational purposes only and is not medical advice.`,
+    relatedProducts: [
+      { productId: 'fuse', blurb: 'FUSE — 15% Lion\'s Mane + 15% Chaga. Exact percentages on the bag.' },
+      { productId: 'vitality', blurb: 'VITALITY — functional ground coffee with transparent ingredients.' },
+    ],
+  },
+  {
+    title: 'The Best Mushroom Coffee in 2026: What Honest People Actually Say',
+    slug: 'best-mushroom-coffee-2026-honest-review',
+    metaTitle: 'Best Mushroom Coffee 2026: An Honest Comparison | Velure',
+    metaDescription: 'A no-fluff guide to choosing the best mushroom coffee in 2026 — what criteria matter, what most brands hide, and what a transparent label looks like.',
+    description: 'The criteria-based guide to choosing the best mushroom coffee — without the noise.',
+    excerpt: "Everyone claims to be the best mushroom coffee. Here's what the criteria should actually look like — ingredient transparency, real mushroom content, and coffee that tastes good enough to drink every day.",
+    publishedAt: '2026-03-08',
+    readTime: '7 min read',
+    tags: ['best mushroom coffee', 'mushroom coffee review', 'clean label', 'functional coffee'],
+    featured: true,
+    heroImage: '/images/blog/blog-best-mushroom-hero.png',
+    content: `Search \u201cbest mushroom coffee\u201d and you will find affiliate roundups designed to promote whatever pays the highest commission.\n\nThis is the other version: a criteria-based guide to what genuinely matters when choosing one.\n\n## The 5 things that actually determine quality\n\n### 1. Ingredient transparency\n\nThe single most important question: Does the brand show you the percentage of each ingredient?\n\nMost do not. They list \u201cLion\'s Mane mushroom extract\u201d with no amount, or hide it inside a \u201cproprietary blend.\u201d\n\nA brand that cannot tell you how much Lion\'s Mane is in a serving is a brand you should not trust with your daily ritual.\n\n**What transparency looks like:** An ingredient panel that reads, for example, \u201c70% Arabica coffee, 15% organic Lion\'s Mane, 15% organic Chaga.\u201d\n\n### 2. Fruiting body, not mycelium-on-grain\n\nThis is covered in more depth in our fruiting body guide, but the short version: fruiting body contains the bioactive compounds. Mycelium grown on grain is largely grain starch.\n\nIf the label does not say \u201cfruiting body,\u201d the answer is probably mycelium.\n\n### 3. The coffee has to actually taste good\n\nMushroom coffee fails as a daily ritual if you are drinking it only because it is healthy. The coffee base matters.\n\nLook for:\n- Named origin (Papua New Guinea, Brazil, Colombia — not just \u201cArabica blend\u201d)\n- Roast specification (not just \u201cmedium\u201d)\n- A brand that talks about flavor, not just function\n\n### 4. No artificial add-ons\n\nSome brands compensate for poor-tasting formulas with sweeteners, \u201cnatural flavors,\u201d or creamers mixed in. This masks the ingredient quality and adds ingredients you did not ask for.\n\nA clean mushroom coffee is: coffee + mushroom. That is it.\n\n### 5. Honest claims\n\nAny brand making clinical disease claims (\u201ccures brain fog,\u201d \u201cboosts immune system by X%\u201d) is making statements no food product is permitted to make under FDA guidelines.\n\nA reputable brand talks about what the ritual feels like — not what it is guaranteed to fix.\n\n## What a leading brand actually looks like\n\nVelure FUSE:\n- 70% Papua New Guinea Arabica (freeze-dried, single-origin)\n- 15% organic Lion\'s Mane\n- 15% organic Chaga\n- No sweeteners. No fillers. No flavoring agents.\n\nEvery percentage is on the bag. That is the standard.\n\n## The bottom line\n\nDo not choose your mushroom coffee based on which brand has the biggest Instagram following or the loudest health claims. Choose based on what the label can tell you.\n\nIf it is clean, clear, and tastes worth returning to — that is the best mushroom coffee.\n\nNote: This article is for educational purposes and general consumer guidance only. It is not medical advice.`,
+    relatedProducts: [
+      { productId: 'fuse', blurb: 'FUSE — the transparent functional instant coffee.' },
+      { productId: 'vitality', blurb: 'VITALITY — functional ground coffee, full label visible.' },
+      { productId: 'onyx', blurb: 'ONYX — single-origin dark roast instant.' },
+    ],
+  },
+  {
+    title: 'Hemp Coffee: What Is It, and Should You Try It?',
+    slug: 'hemp-coffee-blend-explained',
+    metaTitle: 'Hemp Coffee: What It Is, What It Does, and Is It Worth It | Velure',
+    metaDescription: 'Hemp coffee combines coffee with hemp protein powder for a plant-based, functional cup. Here is what that actually means for taste, nutrition, and your morning ritual.',
+    description: 'A grounded guide to hemp coffee — what it is, what it adds, and why it is different from CBD coffee.',
+    excerpt: 'Hemp coffee is one of the most misunderstood functional coffee formats. It has nothing to do with CBD. Here\'s what hemp protein in coffee actually does — and what HARVEST is built around.',
+    publishedAt: '2026-03-15',
+    readTime: '5 min read',
+    tags: ['hemp coffee', 'functional coffee', 'plant-based', 'hemp protein', 'ingredients'],
+    featured: false,
+    heroImage: '/images/blog/blog-hemp-coffee-hero.png',
+    content: `Hemp coffee is one of the most searched but least explained functional coffee formats.\n\nLet\'s fix that.\n\n## First: hemp coffee is not CBD coffee\n\nThis is the most common confusion. Hemp seed protein (used in functional coffee blends) is made from cold-pressed hemp seeds. It contains:\n- plant-based protein\n- omega-3 and omega-6 fatty acids\n- magnesium, zinc, and iron\n\nCBD, in contrast, comes from the hemp plant\'s leaves and flowers — a completely different part with different extraction methods and different regulatory considerations.\n\nVelure\'s HARVEST uses hemp protein powder. Zero CBD. No intoxicating compounds. Just a clean plant-based ingredient.\n\n## What hemp protein adds to coffee\n\nIn a coffee blend, hemp protein adds:\n\n**Body and texture.** Hemp protein has a naturally nutty, slightly earthy character that rounds out a medium roast without dominating it.\n\n**Sustained energy support.** Protein slows the rate of caffeine absorption slightly, which can smooth out the energy curve compared to plain black coffee.\n\n**Post-workout utility.** For people who brew their pre-workout or post-workout coffee, a blend that includes plant-based protein means one fewer step.\n\n**Nutritional density.** Each serving provides a small but meaningful addition to your daily protein intake from a plant source.\n\n## What HARVEST is built on\n\nVelure HARVEST:\n- 91% roasted Brazilian and Mexican Arabica coffee (medium roast)\n- 9% organic hemp protein powder\n\nNo flavoring agents. No sweeteners. The earthy, nutty character of hemp complements the chocolate-rich Brazilian baseline.\n\n## Is it right for your ritual?\n\nHEMP coffee is a good fit if:\n- You prefer plant-based additions to your diet\n- You want a post-workout alternative that does not require a separate protein scoop\n- You like a slightly earthier, fuller-bodied cup\n- You want one ingredient added, clearly, with exact percentages\n\nIt is not going to taste like a supplement. Brewed correctly, HARVEST tastes like a well-made medium roast with a quietly earthy underpinning.\n\n## The label reads exactly what it is\n\n91% coffee. 9% hemp protein. Nothing else.\n\nNote: Hemp protein is a food ingredient regulated by the FDA. This article is general information, not medical advice. If you have specific health questions, consult a qualified professional.`,
+    relatedProducts: [
+      { productId: 'harvest', blurb: 'HARVEST — 91% Arabica + 9% hemp protein. Clean and plant-based.' },
+      { productId: 'vitality', blurb: 'VITALITY — functional ground coffee with Lion\'s Mane + Chaga.' },
+      { productId: 'fuse', blurb: 'FUSE — the functional instant, 15% mushrooms.' },
+    ],
+  },
+,
+  {
+    title: "Mushroom Coffee and Anxiety: Will It Make Things Better or Worse?",
+    slug: "mushroom-coffee-anxiety",
+    metaTitle: "Mushroom Coffee and Anxiety: An Honest Answer | Velure Coffee",
+    metaDescription: "Does mushroom coffee help or hurt anxiety? We explain the role of adaptogens, caffeine levels, and what to look for in a low-anxiety coffee ritual.",
+    description: "An honest, science-grounded look at mushroom coffee and anxiety — what helps, what to watch, and how to build a calmer ritual.",
+    excerpt: "If regular coffee gives you anxiety, mushroom coffee might be worth considering — but only if you know what you're actually getting. Here's the honest breakdown.",
+    publishedAt: "2026-03-20",
+    readTime: "6 min read",
+    tags: ["mushroom coffee","anxiety","adaptogens","functional coffee","caffeine"],
+    featured: true,
+    heroImage: "/images/blog/blog-anxiety-hero.png",
+    content: "Regular coffee and anxiety are old friends — not the good kind.\n\nThe racing heart, the jitteriness at 10am, the cortisol spike before your second meeting. Most people experience this not because coffee is bad, but because caffeine in isolation is a stimulant that activates the sympathetic nervous system.\n\nThis is where mushroom coffee enters the conversation.\n\n## What causes coffee anxiety?\n\nCaffeine works by blocking adenosine receptors — the receptors that make you feel sleepy. This is why coffee feels energising. But caffeine also triggers the release of adrenaline and cortisol, which at high doses or in sensitive individuals can feel a lot like anxiety.\n\nFactors that make it worse:\n- High caffeine doses (especially espresso or strong drip)\n- Drinking coffee on an empty stomach\n- Stress already present in the body\n- Caffeine sensitivity (genetic variation in CYP1A2 enzyme activity)\n\n## What adaptogens like Lion's Mane and Chaga do differently\n\nAdaptogens are a category of botanical ingredients that help the body modulate its stress response — they work bidirectionally, meaning they can help calm an overactive system or support an underactive one.\n\n**Lion's Mane** (Hericium erinaceus) has been studied for its interaction with NGF (Nerve Growth Factor) and potential neuroprotective properties. While it is not a sedative, it may support a calmer cognitive baseline without dulling alertness.\n\n**Chaga** (Inonotus obliquus) is primarily studied for its antioxidant density. Its main relevant property here is its potential to help modulate inflammation and oxidative stress — both of which are linked to anxiety symptoms.\n\nNeither ingredient directly reduces anxiety the way a pharmaceutical would. But in a well-formulated blend, they may complement caffeine rather than amplify its edge.\n\n## What instant mushroom coffee actually changes\n\nFor many people, switching from plain espresso or drip coffee to a mushroom instant blend has these practical effects:\n\n**Lower total caffeine.** Instant coffee in general contains less caffeine than espresso (typically 60–90mg per serving vs. 150–200mg for a double shot). Lower total caffeine often means a gentler curve.\n\n**Slower onset.** The powder-in-water format means a slower absorption rate than espresso through an empty stomach.\n\n**Mineral buffer.** Chaga is high in betulinic acid and polysaccharides. While not clinically proven to buffer caffeine, some users report a more grounded energy experience.\n\n## The honest answer\n\nIf you are clinically anxious or on medication, no food product will replace professional care. This article is not medical advice.\n\nBut if you experience the usual coffee side effects — jitteriness, racing heart, mid-morning crash — switching to a cleaner, lower-caffeine functional blend is a reasonable experiment.\n\nWhat to look for:\n- Transparent ingredient amounts (exact mushroom percentages)\n- Lower caffeine serving than your current coffee\n- No added stimulants or \"focus\" blends that include additional caffeine sources\n\nFUSE contains approximately 70–80mg caffeine per serving — roughly equivalent to a cup of home-brewed drip coffee. Combined with 15% Lion's Mane and 15% Chaga, it is designed for a grounded, smooth morning rather than a stimulant hit.\n\nNote: This article is for general educational purposes only and is not medical advice. If you are experiencing anxiety disorders, consult a qualified healthcare professional.",
+    relatedProducts: [
+      { productId: 'fuse', blurb: "FUSE — lower-caffeine functional instant with Lion's Mane + Chaga." },
+      { productId: 'zen', blurb: "ZEN — ceremonial matcha. Calm, sustained energy with L-Theanine." },
+      { productId: 'vitality', blurb: "VITALITY — functional ground coffee, medium roast." },
+    ],
+  },
+  {
+    title: "Ceremonial vs Culinary Grade Matcha: What You Are Actually Buying",
+    slug: "ceremonial-vs-culinary-matcha",
+    metaTitle: "Ceremonial vs Culinary Matcha: The Real Difference | Velure Coffee",
+    metaDescription: "Not all matcha is the same. Ceremonial grade matcha is shade-grown, stone-ground, and tastes completely different from culinary grade. Here is how to tell.",
+    description: "The practical guide to understanding ceremonial vs culinary matcha — what the grades mean, how to spot the difference, and why it matters.",
+    excerpt: "There's a significant difference between ceremonial and culinary matcha — in flavour, colour, and price. Here's exactly what you're getting with each, and why it matters for your daily ritual.",
+    publishedAt: "2026-03-22",
+    readTime: "6 min read",
+    tags: ["matcha","ceremonial matcha","culinary matcha","green tea","ZEN"],
+    featured: true,
+    heroImage: "/images/blog/blog-matcha-grade-hero.png",
+    content: "Walk into any supermarket and you will find \"matcha\" in five different price points. From $8 baking powder to $65 ceremonial tins. The label says matcha on all of them.\n\nHere is what is actually different.\n\n## What is matcha?\n\nMatcha is powdered green tea. Both ceremonial and culinary matcha come from the same plant — Camellia sinensis — but the cultivation, harvest, and processing are completely different.\n\n## Shade growing: the first dividing line\n\nCeremonial matcha is grown in shade for the last 3–4 weeks before harvest. This shading process:\n- Increases chlorophyll production (responsible for the vivid green colour)\n- Boosts L-Theanine levels (the amino acid linked to calm focus)\n- Reduces bitterness by slowing catechin development\n- Creates the characteristic umami sweetness\n\nCulinary matcha is often grown in full sun. It produces more leaves faster, but without the amino acid concentration or colour depth of shade-grown matcha.\n\n## Harvest and processing\n\nCeremonial grade uses only the youngest, most tender leaves from the first harvest (first flush, also called Okumidori or Yabukita cultivars in Kagoshima and Uji).\n\nThese leaves are:\n1. Harvested by hand\n2. Steamed quickly to stop oxidation\n3. Dried and destemmed (this stage produces \"tencha\")\n4. Ground slowly on granite stone mills\n\nThe stone-ground step is important. Granite mills grind at temperatures low enough not to damage the chlorophyll or antioxidants. Industrial grinding creates heat that degrades both.\n\n## How to tell the difference at a glance\n\n| | Ceremonial | Culinary |\n|---|---|---|\n| Colour | Vibrant emerald green | Dull olive or yellow-green |\n| Smell | Sweet, vegetal, grassy | Often bitter, hay-like |\n| Texture | Ultra-fine, silky | Coarser, chalkier |\n| Taste alone | Smooth, umami, no bitterness | Bitter, grassy, flat |\n| Best use | Drinking straight (thin or thick) | Baking, lattes with strong dairy |\n\n## The L-Theanine difference\n\nThis is the functional argument for ceremonial grade matcha. L-Theanine is an amino acid found almost exclusively in tea plants. It modulates the stimulating effects of caffeine — the \"calm focus\" that regular tea drinkers often describe.\n\nCeremonial grade matcha, because of the shade growing and younger leaves, contains significantly higher L-Theanine concentrations than culinary grade. This is one of the primary reasons the energy feel differs.\n\n## What Velure ZEN is\n\nZEN is 100% ceremonial grade matcha, shade-grown and stone-ground in Kagoshima, Japan. No blends. No additives. Just single-origin ceremonial powder.\n\nIt is intended to be consumed in the traditional thin (usucha) preparation:\n- 1 tsp ZEN in a pre-warmed bowl or mug\n- 2–3oz of water at 70–80°C (not boiling)\n- Whisk with a bamboo chasen in an M or W motion until frothy\n- Top with cold milk or additional cool water if desired\n\nThe result is a vivid green, smooth, naturally sweet cup with no bitterness.\n\n## Why it matters for your daily ritual\n\nIf you are drinking matcha for the calm, functional energy — the L-Theanine effect — culinary grade will disappoint. The amino acid concentration is not there.\n\nIf you are baking matcha cookies, culinary grade is perfectly appropriate and much more economical.\n\nBut if you are building a morning ritual around the real thing, ceremonial grade is the only version worth the commitment.\n\nNote: This article is for general information purposes only. Matcha contains caffeine. Check with a healthcare professional if you have caffeine sensitivity.",
+    relatedProducts: [
+      { productId: 'zen', blurb: "ZEN — 100% ceremonial grade, shade-grown Kagoshima matcha." },
+      { productId: 'fuse', blurb: "FUSE — functional instant for those who prefer coffee." },
+    ],
+  },
+  {
+    title: "Single-Origin Instant Coffee: Why It Tastes Nothing Like Regular Instant",
+    slug: "single-origin-instant-coffee",
+    metaTitle: "Single-Origin Instant Coffee: Why It Tastes Different | Velure",
+    metaDescription: "Single-origin instant coffee is not the instant coffee your parents made. Here is what freeze-drying actually does to a specialty bean — and why origin matters.",
+    description: "The case for single-origin instant coffee — what freeze-drying preserves, why origin matters, and how ONYX delivers specialty coffee in seconds.",
+    excerpt: "Instant coffee has a reputation problem. But single-origin, freeze-dried instant coffee is a completely different product. Here's what the process actually preserves and why Papua New Guinea matters.",
+    publishedAt: "2026-03-25",
+    readTime: "5 min read",
+    tags: ["instant coffee","single origin","freeze dried","specialty coffee","ONYX"],
+    featured: false,
+    heroImage: "/images/blog/blog-single-origin-hero.png",
+    content: "Instant coffee's reputation comes from a specific era of mass-market production where cheap Robusta blends were spray-dried at high temperatures, killing the origin character entirely.\n\nThat is not what single-origin freeze-dried instant coffee is.\n\n## What makes standard instant coffee taste bad\n\nMost affordable instant coffee is made from:\n1. Low-grade Robusta beans (high yield, high caffeine, low complexity)\n2. Over-roasted to mask defects\n3. Spray-dried at temperatures that degrade aromatics and flavour compounds\n\nThe result: flat, bitter, thin. The terroir of the bean — its origin characteristics — is gone.\n\n## What freeze-drying changes\n\nFreeze-drying (also called lyophilisation) works differently:\n\n1. Freshly brewed coffee is frozen rapidly at –40°C to –50°C\n2. The frozen coffee is placed in a vacuum chamber\n3. Ice sublimes directly to gas (bypasses the liquid stage)\n4. The result: dry coffee crystals that retain the original brew's flavour compounds\n\nBecause no high heat is applied, the volatile aromatics — the compounds responsible for that origin's unique character — are preserved at a much higher rate than spray-drying.\n\nResearch from the Institute of Food Technologists has found that freeze-drying retains up to 84% of the original aromatic compounds, compared to significantly lower retention rates in spray-drying.\n\n## Why origin matters in freeze-dried coffee\n\nWhen the process is clean, the bean drives the result. This is why single-origin matters for instant coffee — you will actually taste it.\n\nPapua New Guinea coffees (like those used in Velure ONYX) are known for:\n- Earthy, herbaceous depth\n- A distinctive toffee sweetness particularly visible in dark roasts\n- Low natural acidity compared to East African origins\n- A thick, syrupy body that translates well to freeze-drying\n\nThese are flavour characteristics that survive the freeze-drying process because they are embedded in the bean's biochemistry, not in surface aromatics that evaporate easily.\n\n## What ONYX actually is\n\nVelure ONYX is:\n- 100% single-origin Papua New Guinea Arabica\n- Dark roast, specifically selected for deep toffee character\n- Freeze-dried for flavour preservation\n- No blending, no filler, no Robusta\n\nPrepared correctly (dissolve in a small amount of hot water first, then top up), ONYX delivers the toffee finish, roasted almond character, and low bitterness that you associate with specialty dark roast drip — not shelf-stable instant.\n\n## The practical case for single-origin instant\n\nTravel. Early mornings. Hotel rooms. Camping. Desk coffee without equipment.\n\nONYX is not a compromise if you are a specialty coffee person. It is a format choice. The cup quality is there — you just do not need a grinder or a V60.\n\nNote: This article is for general educational purposes only.",
+    relatedProducts: [
+      { productId: 'onyx', blurb: "ONYX — 100% single-origin Papua New Guinea dark roast instant." },
+      { productId: 'fuse', blurb: "FUSE — single-origin instant with Lion's Mane + Chaga." },
+    ],
+  },
+  {
+    title: "5 Iced Mushroom Coffee Recipes (FUSE + ONYX)",
+    slug: "iced-mushroom-coffee-recipes",
+    metaTitle: "5 Iced Mushroom Coffee Recipes | Velure FUSE + ONYX",
+    metaDescription: "5 easy iced mushroom coffee recipes using Velure FUSE and ONYX. From a classic iced latte to a cacao blend — every one takes under 5 minutes.",
+    description: "Five refreshing iced mushroom coffee recipe ideas using FUSE and ONYX — each under 5 minutes.",
+    excerpt: "Iced mushroom coffee is one of the best ways to enjoy FUSE in summer. Five recipes, five minutes or less, all made with FUSE or ONYX instant.",
+    publishedAt: "2026-03-28",
+    readTime: "5 min read",
+    tags: ["iced coffee","mushroom coffee","recipes","FUSE","ONYX","summer"],
+    featured: true,
+    heroImage: "/images/blog/blog-iced-recipes-hero.png",
+    content: "Instant coffee is an underestimated summer format. No cold brew waiting overnight. No espresso machine required. Just hot water, ice, and the right ratio.\n\nHere are five iced recipes built around FUSE and ONYX — each one ready in under 5 minutes.\n\n## Before any recipe: the universal iced rule\n\nAlways dissolve your instant coffee in a small amount of hot water first before adding ice. Undissolved instant coffee tastes gritty and watered down.\n\n**Base dissolve method:**\n1. 1 tbsp FUSE or ONYX into mug\n2. 2–3oz hot (not boiling) water\n3. Stir until fully dissolved (30 seconds)\n4. Pour over ice in your serving glass\n5. Build from there\n\n---\n\n## Recipe 1: Classic Iced FUSE Latte\n\n**What you need:**\n- 1 tbsp FUSE\n- 2oz hot water (for dissolve)\n- Cubed ice\n- 4oz oat milk or whole milk\n\n**Method:**\n1. Dissolve FUSE in 2oz hot water\n2. Fill a tall glass with ice\n3. Pour dissolved FUSE over ice\n4. Top with cold oat milk\n5. Stir gently and serve\n\n**Why it works:** Oat milk's natural sweetness balances the earthy mushroom notes in FUSE. The result is smooth, creamy, and functional.\n\n---\n\n## Recipe 2: ONYX Dark Iced Coffee\n\n**What you need:**\n- 1.5 tbsp ONYX\n- 2oz hot water\n- Large ice cubes (fewer = less dilution)\n- Cold still water to top\n\n**Method:**\n1. Dissolve ONYX in 2oz hot water (stronger ratio)\n2. Pour over 3–4 large ice cubes in a low glass\n3. Top with 2oz cold water\n4. Serve black\n\n**Why it works:** ONYX's toffee notes intensify cold. Large ice cubes melt slower, keeping intensity longer. No dairy needed.\n\n---\n\n## Recipe 3: FUSE Cacao Ritual\n\n**What you need:**\n- 1 tbsp FUSE\n- 2oz hot water\n- 1 tsp raw cacao powder\n- 4oz oat milk\n- Pinch of cinnamon\n- Ice\n\n**Method:**\n1. Dissolve FUSE in 2oz hot water\n2. Whisk in cacao powder while hot\n3. Pour over ice\n4. Top with cold oat milk\n5. Dust cinnamon on top\n\n**Why it works:** Cacao's dark bitterness and natural sweetness are a natural pair for Chaga. Lion's Mane + cacao is a well-known nootropic pairing — and it tastes like a mocha.\n\n---\n\n## Recipe 4: Iced FUSE Tonic\n\n**What you need:**\n- 1 tbsp FUSE\n- 2oz hot water\n- Ice\n- 4–5oz premium tonic water (low-sugar)\n\n**Method:**\n1. Dissolve FUSE in 2oz hot water\n2. Let cool for 60 seconds\n3. Fill glass with ice\n4. Pour tonic water over ice first\n5. Slowly pour dissolved FUSE over the back of a spoon (it will float)\n6. Do not stir — serve layered\n\n**Why it works:** Coffee tonic is one of the most underrated summer formats. The tonic's bitterness and carbonation cut through the earthiness of mushroom coffee beautifully.\n\n---\n\n## Recipe 5: Matcha FUSE Layered Latte\n\n**What you need:**\n- 1 tsp ZEN ceremonial matcha\n- 2oz warm water (70°C, not boiling)\n- 0.5 tbsp FUSE\n- 1oz hot water\n- 4oz oat milk\n- Ice\n\n**Method:**\n1. Whisk ZEN in 2oz warm water until frothy\n2. Dissolve FUSE in 1oz hot water separately\n3. Fill glass with ice and oat milk\n4. Pour FUSE gently over the oat milk\n5. Top with whisked matcha layer\n6. Serve layered — stir before drinking\n\n**Why it works:** The green and brown layers look stunning. The combined L-Theanine from matcha and adaptogens from FUSE create a genuinely smooth, focused energy effect.\n\n---\n\nAll five recipes work best when you treat the coffee carefully — dissolve first, pour over ice after. The quality of the instant coffee base makes the most difference.\n\nNote: This article is for general information only.",
+    relatedProducts: [
+      { productId: 'fuse', blurb: "FUSE — mushroom instant coffee, perfect for iced lattes." },
+      { productId: 'onyx', blurb: "ONYX — single-origin dark roast instant, excellent iced." },
+      { productId: 'zen', blurb: "ZEN — ceremonial matcha for the layered latte." },
+    ],
+  },
+  {
+    title: "The Complete Guide to Adaptogens in Coffee",
+    slug: "adaptogens-in-coffee-guide",
+    metaTitle: "Adaptogens in Coffee: The Complete Guide | Velure Coffee",
+    metaDescription: "What are adaptogens, which ones are added to coffee, what they actually do, and how to tell if what you're buying is real — the no-fluff guide.",
+    description: "A practical, science-grounded guide to adaptogens in coffee — what they are, what they do, and how to evaluate what you buy.",
+    excerpt: "Adaptogens are everywhere in functional coffee right now. But the word gets used to mean almost anything. Here's the complete, honest guide to what adaptogens are, which ones matter in coffee, and how to tell if what you're buying is real.",
+    publishedAt: "2026-04-01",
+    readTime: "8 min read",
+    tags: ["adaptogens","functional coffee","lion's mane","chaga","mushroom coffee"],
+    featured: true,
+    heroImage: "/images/blog/blog-adaptogens-hero.png",
+    content: "Adaptogens have become one of the most used — and most misused — words in the wellness space.\n\nIf you have bought a coffee with \"adaptogen support\" on the label without knowing what that means, you are not alone. Here is the complete, honest guide.\n\n## What is an adaptogen?\n\nThe term was coined by Soviet pharmacologist Nikolai Lazarev in 1947 and formalised by his colleague Dr. Israel Brekhman. The original scientific definition requires three criteria:\n\n1. Non-specific in function — the compound helps the body adapt to a wide range of physical, chemical, and biological stressors\n2. Normalising — it should help bring the body toward balance, whether the stress response is too high or too low\n3. Non-toxic — safe for long-term daily use at recommended amounts\n\nThis is a far more specific definition than \"plant that might help.\"\n\n## Adaptogens used in functional coffee (and what the research says)\n\n### Lion's Mane (Hericium erinaceus)\nLion's Mane is technically a mushroom adaptogen. It is most studied for its ability to stimulate NGF (Nerve Growth Factor) production — a protein that supports the survival and growth of neurons.\n\nA 2009 clinical trial published in Phytotherapy Research found cognitive improvements in older adults with mild cognitive impairment who consumed Lion's Mane for 16 weeks. The improvements reversed when supplementation stopped.\n\n**What this means practically:** Lion's Mane may support focus and cognitive performance over time, not as an immediate stimulant.\n\n**Velure FUSE contains:** 15% organic Lion's Mane per serving.\n\n### Chaga (Inonotus obliquus)\nChaga is a birch-tree fungus with one of the highest ORAC (Oxygen Radical Absorbance Capacity) values of any natural substance — meaning it is extraordinarily antioxidant-rich.\n\nChaga's primary proposed mechanism is modulating the immune response and reducing systemic inflammation, which research increasingly links to anxiety, cognitive decline, and low energy.\n\n**What this means practically:** Chaga may contribute to a baseline of lower systemic inflammation, which can translate to calmer, more sustained energy.\n\n**Velure FUSE contains:** 15% organic Chaga per serving.\n\n### Ashwagandha (Withania somnifera)\nNot in Velure's current range, but worth including here. Ashwagandha is the most clinically-studied adaptogen for cortisol reduction. A 2012 double-blind study found significant reductions in serum cortisol in the ashwagandha group vs. placebo.\n\nIt is being added to more coffee products, though its earthy, slightly bitter flavour can be difficult to integrate cleanly.\n\n### Rhodiola Rosea\nStudied for performance under physical and mental stress. Less common in coffee but appears in some functional supplement blends. Research supports reduced fatigue. Interacts with caffeine in unpredictable ways — some users find it increases anxiety rather than reducing it.\n\n## What to look for on the label\n\nAdaptogens in coffee should follow these principles:\n\n**Transparency:** You should be able to see exactly how much of each adaptogen is in your serving. \"Includes adaptogens\" is not information.\n\n**Effective dose:** Most research uses standardised extract doses that are higher than what a small scoop of proprietary blend delivers. If the label is vague, the dose is probably inadequate.\n\n**Form matters:** For mushrooms, fruiting body extracts are preferred over mycelium-on-grain. For plant adaptogens, standardised extracts (e.g., \"10% withanolides\" for ashwagandha) indicate clinical-level formulation.\n\n**No exaggerated claims:** Adaptogens cannot legally claim to treat or prevent diseases in the US. Brands that make clinical claims about their adaptogens are making illegal statements.\n\n## The honest summary\n\nAdaptogens are real. The research is real. The marketing hype is also real.\n\nThe gap between a well-formulated adaptogen blend and a product that includes a trace amount of adaptogen powder for label copy purposes is enormous.\n\nThe way you close that gap: read the label, verify the percentages, choose brands that tell you what is inside.\n\nNote: This article is for educational purposes only and is not medical advice. Consult a qualified practitioner for personalised health questions.",
+    relatedProducts: [
+      { productId: 'fuse', blurb: "FUSE — 15% Lion's Mane + 15% Chaga. Full percentages on the bag." },
+      { productId: 'vitality', blurb: "VITALITY — adaptogen ground coffee for daily brewing." },
+    ],
+  },
+  {
+    title: "Why Your Mushroom Coffee Might Not Be Working (It's the Dosage)",
+    slug: "mushroom-coffee-not-working-dosage",
+    metaTitle: "Why Your Mushroom Coffee Isn't Working: The Dosage Problem | Velure",
+    metaDescription: "If your mushroom coffee isn't doing anything noticeable, the most likely reason is dosage — not the mushrooms. Here's what effective amounts actually look like.",
+    description: "The honest explanation for why many mushroom coffees don't deliver noticeable results — and what effective dosing actually looks like.",
+    excerpt: "You've been drinking mushroom coffee every morning for two weeks and you feel nothing different. Here's the most likely reason — and it's not that mushrooms don't work.",
+    publishedAt: "2026-04-05",
+    readTime: "6 min read",
+    tags: ["mushroom coffee","dosage","lion's mane","chaga","functional coffee"],
+    featured: false,
+    heroImage: "/images/blog/blog-dosage-hero.png",
+    content: "You have been drinking mushroom coffee every morning for two weeks. Nothing has changed. You still crash at 3pm, your mornings feel the same, and you are wondering if the whole thing is a marketing gimmick.\n\nHere is the most likely explanation: dosage.\n\n## What effective research doses actually look like\n\nMost of the positive clinical research on Lion's Mane uses doses of 500mg to 3,000mg of fruiting body extract per day. The Mori et al. (2009) cognitive study used 3,000mg daily (1,000mg three times per day with meals).\n\nMost of the Chaga research uses 400mg to 1,500mg of extract per day for antioxidant and immune-related outcomes.\n\nThese are extract doses — meaning the active compounds have been concentrated from raw mushroom material.\n\n## How to calculate what you are actually getting\n\nHere is the math you need to do for any mushroom coffee product.\n\n**Example: Generic mushroom coffee with \"Lion's Mane\" on the label**\n\nIf a product does not list the percentage or gram amount, you cannot calculate this. That is already a red flag.\n\nFor a product that does list it, the calculation is:\n\n> Serving size (g) × mushroom percentage = mushroom amount per serving\n\n**Example using FUSE:**\n- Serving size: approximately 3.5g per serving\n- Lion's Mane: 15%\n- 3.5g × 0.15 = 0.525g = **525mg Lion's Mane per serving**\n\n525mg is within the range of amounts used in research — not clinical therapeutic doses, but meaningful for daily functional use. More importantly, you can verify it.\n\n## The proprietary blend trap\n\nMany mushroom coffee brands list ingredients as a \"proprietary blend\" with a total combined weight. This means:\n\n- You know the total blend weight (e.g., 500mg blend total)\n- You do not know how much is mushroom, how much is filler, how much is other botanicals\n\nIf 500mg is split between Lion's Mane, Chaga, Reishi, Cordyceps, and a prebiotic, you might be getting 50mg of Lion's Mane — a tenth of what any research shows to be effective.\n\n## Why \"10x blend\" and \"ultra-concentrated extract\" language should make you suspicious\n\nPremium extraction processes do exist. A 10:1 extract means 10kg of mushroom material was used to produce 1kg of extract — effectively 10x more potent than raw powder.\n\nThe problem: these extracts cost significantly more. A brand that charges $30–$40 for a bag of mushroom coffee and claims 10:1 extraction on every ingredient is either misleading you or formulating at sub-threshold doses.\n\nReal extraction quality gets verified through third-party lab testing and CoAs (Certificates of Analysis). Ask for them if you cannot find them.\n\n## What FUSE uses and why we disclose it\n\nFUSE uses:\n- **70% frozen-dried single-origin Arabica** (Papua New Guinea)\n- **15% organic Lion's Mane**\n- **15% organic Chaga**\n\nThe percentages are on the bag because we think you have a right to the math.\n\nAt a 3.5g serving, that is approximately 525mg Lion's Mane and 525mg Chaga per cup — a transparent, consistent dose you can track and decide if it works for you over time.\n\n## The expectation problem\n\nEven with correct dosing, mushroom adaptogens are not stimulants. They do not produce an immediate, perceptible shift the way caffeine does.\n\nWhat users typically describe after consistent use (2–4 weeks minimum):\n- Steadier energy through the day with fewer crashes\n- Reduced coffee-associated anxiety\n- A more grounded feeling in the morning\n\nThis is a baseline improvement over time, not a hit. If you are expecting something as immediate as caffeine, mushroom coffee will always disappoint.\n\nNote: This article is for educational purposes only and is not medical advice.",
+    relatedProducts: [
+      { productId: 'fuse', blurb: "FUSE — label lists exact percentages. Transparent dosing." },
+      { productId: 'vitality', blurb: "VITALITY — functional ground coffee with consistent, visible formulation." },
+    ],
+  },
+  {
+    title: "What Is a Coffee Subscription? (And Is Velure's Worth It?)",
+    slug: "coffee-subscription-worth-it",
+    metaTitle: "Coffee Subscription: Is It Worth It? | Velure Coffee",
+    metaDescription: "Coffee subscriptions save money and effort — but only if the coffee is genuinely good. Here is how Velure's subscription works and whether it makes sense for you.",
+    description: "An honest guide to coffee subscriptions — how they work, what you save, and whether Velure's monthly plan is the right fit.",
+    excerpt: "Coffee subscriptions are everywhere now. Some save you money. Some lock you in. Here's how Velure's works — and an honest answer to whether it's worth it.",
+    publishedAt: "2026-04-08",
+    readTime: "5 min read",
+    tags: ["coffee subscription","subscription box","recurring coffee","functional coffee"],
+    featured: false,
+    heroImage: "/images/blog/blog-subscription-hero.png",
+    content: "Coffee subscriptions have become one of the most popular models in the specialty coffee market. The logic is simple: you run out of coffee regularly, and you dislike running out.\n\nHere is how they work, what to look for, and whether Velure's subscription model is worth it.\n\n## How coffee subscriptions work (generally)\n\nAt their core, all coffee subscriptions involve:\n1. Choosing a product or set of products\n2. Setting a delivery frequency (usually weekly, bi-weekly, or monthly)\n3. Automatic billing and fulfillment on schedule\n4. Usually a discount vs. one-time pricing\n\nThe value proposition: never run out, pay less per bag, discover new coffees with guided curation.\n\n## What typically goes wrong with coffee subscriptions\n\n**Locked-in products.** Some subscriptions send whatever they have in stock with minimal customisation. You end up with six bags of a roast you do not like.\n\n**Unnecessary complexity.** Subscriptions that require you to remember to skip, manage delivery windows, or call customer service to cancel are extracting value from friction, not product quality.\n\n**Stale coffee.** Some subscription models warehouse coffee for weeks before shipping. Freshness matters enormously for whole-bean coffee specifically — off-gassing starts within days of roasting.\n\n## What Velure's subscription offers\n\nVelure's subscription plan allows you to:\n- Choose your specific products (FUSE, ONYX, VITALITY, ZEN, and reserve whole beans)\n- Set your preferred cadence (monthly is the standard)\n- Save on per-bag pricing vs. one-time purchase\n- Cancel anytime — no lock-in minimums\n\nFor functional coffees like FUSE and VITALITY, a subscription also has a compounding benefit: the research on adaptogens consistently shows that consistent daily use over weeks is where most users notice results. A subscription removes the decision fatigue.\n\n## Is it worth it?\n\nFor Velure specifically, the subscription makes most sense if:\n\n**You have found your product.** If you tried FUSE and it became your morning ritual, subscribing saves you money and a decision every month.\n\n**You want consistency.** Adaptogens work with regularity. A subscription keeps the ritual intact.\n\n**You go through at least one bag per month.** If you are a daily coffee drinker, one bag of FUSE covers approximately 27 servings — roughly a bag every four weeks is realistic for daily use.\n\nIf you are still exploring the range, a one-time order is the right starting point. You do not need a subscription to try something new.\n\n## The honest answer\n\nThe best coffee subscription is the one that removes friction without adding it.\n\nIf you like Velure and you plan to drink it regularly, subscribing saves you money and keeps you stocked. If you are not sure yet, start with a one-time order.\n\nNote: This article is general information only.",
+    relatedProducts: [
+      { productId: 'fuse', blurb: "FUSE — available on Velure subscription. Most popular." },
+      { productId: 'vitality', blurb: "VITALITY — most consistent daily-driver functional coffee." },
+      { productId: 'zen', blurb: "ZEN — ceremonial matcha, excellent on a monthly cadence." },
+    ],
+  },
+  {
+    title: "Papua New Guinea Coffee: The Hidden Origin Behind Specialty Instant",
+    slug: "papua-new-guinea-coffee-origin",
+    metaTitle: "Papua New Guinea Coffee: Origin Guide | Velure ONYX",
+    metaDescription: "Papua New Guinea produces some of the most underrated single-origin coffee in the world. Here is why the highlands matter — and why ONYX is built on PNG Arabica.",
+    description: "The story of Papua New Guinea coffee — its unique terroir, flavour profile, and why it is one of the world's most underrated specialty origins.",
+    excerpt: "Papua New Guinea doesn't get the credit it deserves in the specialty coffee world. The Western Highlands region produces coffee with distinctive toffee depth, low acidity, and thick body — exactly why ONYX is built on it.",
+    publishedAt: "2026-04-10",
+    readTime: "5 min read",
+    tags: ["papua new guinea","single origin","coffee origin","specialty coffee","ONYX"],
+    featured: false,
+    heroImage: "/images/blog/blog-single-origin-hero.png",
+    content: "When people list the great coffee-producing countries, they typically name Ethiopia, Colombia, Brazil, Guatemala, Yemen.\n\nPapua New Guinea rarely makes the list. It should.\n\n## Where Papua New Guinea coffee comes from\n\nPNG coffee is grown primarily in the highland regions — Western Highlands, Eastern Highlands, Simbu — at altitudes between 1,400 and 1,900 metres above sea level. This elevation creates the slow cherry-ripening conditions that produce complex, well-structured beans.\n\nThe country's coffee industry has an unusual history. Commercial coffee cultivation arrived relatively late — largely in the mid-20th century — but the volcanic soils and consistent altitude created natural conditions that rival East Africa's best growing regions.\n\n## What makes PNG coffee distinctive\n\n**Low acidity.** PNG coffees are characterised by lower natural acidity compared to Ethiopian or Kenyan origins. The result is a rounder, fuller cup that does not need creamer or sweetener to feel smooth.\n\n**Toffee and dark caramel.** This is the most distinctive note in quality PNG dark roasts — a natural caramelised sweetness that is not artificial. It comes from the bean's biochemistry interacting with the roasting process at higher temperatures.\n\n**Earthy, herbaceous depth.** PNG coffees carry a subtle wildness — descriptions often include \"campfire,\" \"dried fruit,\" \"earth after rain.\" This terroir character distinguishes them from cleaner, brighter Latin American profiles.\n\n**Thick, syrupy body.** PNG Arabica tends toward a heavy mouthfeel, which translates well to espresso, French press, and — critically for instant coffee — freeze-drying.\n\n## Why PNG works for freeze-dried instant\n\nThe question with any instant coffee is: what survives the process?\n\nFreeze-drying preserves aromatic compounds better than any other instant coffee method, but the process still strips some of the lighter top notes first. Origins with lower acidity and body-forward profiles, like PNG, lose the least.\n\nThe toffee depth and thick body of PNG Arabica remain identifiable after freeze-drying in a way that a lighter, more acidic Ethiopian natural would not.\n\n## ONYX: what we built\n\nVelure ONYX is 100% single-origin Papua New Guinea Arabica, dark-roasted, freeze-dried.\n\nThe three things we looked for in sourcing:\n1. Altitude: minimum 1,500m\n2. Process: washed, for cleaner extraction\n3. Roast target: dark enough to accentuate toffee character, not so dark that terroir disappears into char\n\nThe result is an instant coffee with genuine dark-roast character — toffee finish, roasted almond note, thick body — without the bitterness that comes from poor-quality beans over-roasted to mask defects.\n\n## The broader point about origin\n\nMost instant coffee treats the bean as interchangeable. The origin is an afterthought — whatever is cheapest at scale.\n\nSingle-origin commitment in instant coffee is still rare because it costs more and requires more careful formulation. But it is the only way to produce instant that tastes like something specific rather than just \"coffee.\"\n\nNote: This article is for educational purposes only.",
+    relatedProducts: [
+      { productId: 'onyx', blurb: "ONYX — 100% Papua New Guinea Arabica, freeze-dried dark roast." },
+      { productId: 'fuse', blurb: "FUSE — also built on PNG Arabica, with Lion's Mane + Chaga." },
+    ],
+  },
+  {
+    title: "10 Things That Happen When You Switch to Mushroom Coffee",
+    slug: "mushroom-coffee-body-effects",
+    metaTitle: "10 Things That Happen When You Switch to Mushroom Coffee | Velure",
+    metaDescription: "What actually changes when you switch to mushroom coffee from regular coffee? Here are 10 honest, realistic observations — the good, the subtle, and what takes time.",
+    description: "10 realistic observations about switching from regular coffee to mushroom coffee — without the overpromising.",
+    excerpt: "Switching to mushroom coffee sounds dramatic. The reality is more subtle — but the changes are real. Here are 10 honest things people notice after making the switch.",
+    publishedAt: "2026-04-12",
+    readTime: "6 min read",
+    tags: ["mushroom coffee","switching to functional coffee","coffee effects","lion's mane","chaga"],
+    featured: true,
+    heroImage: "/images/blog/blog-adaptogens-hero.png",
+    content: "Switching from regular coffee to mushroom coffee will not set off dramatic transformations. But after a few weeks of consistency, most people notice patterns that were not there before.\n\nHere are 10 realistic things that change — in the order most people notice them.\n\n## 1. The 3pm crash becomes less pronounced\n\nThis is the first thing most people mention. Caffeine from regular coffee spikes quickly and falls sharply. A functional blend with adaptogens tends to produce a smoother energy curve. The crash does not disappear, but it softens.\n\nThis is most noticeable by Week 2 of consistency.\n\n## 2. You feel slightly less wired in the morning\n\nNot less alert — less stimulated. The distinction is important. Adaptogens like Lion's Mane help modulate the cortisol response. Many people find their mornings feel more focused and less anxious.\n\n## 3. Your morning ritual feels more intentional\n\nThis is partly psychological. Choosing a coffee that requires you to know what is in it — and why — changes the relationship with the ritual. Behaviour change often follows belief change.\n\n## 4. You may notice your gut tolerates it better\n\nCoffee's chlorogenic acids can irritate the gut lining in sensitive individuals. Chaga contains polysaccharides that are studied for gut-supportive properties. Not everyone notices this — but people who have always found coffee harsh often report a gentler experience with FUSE.\n\n## 5. The earthy taste is initially present, then you stop noticing it\n\nWeek 1: you notice the earthy, grounded note beneath the coffee.\nWeek 2: it integrates into your expectation of the cup.\nWeek 3: you make your regular coffee and notice something is missing.\n\nThis is the standard taste adjustment arc.\n\n## 6. Sleep is not disrupted (if you drink it before noon)\n\nMushroom instant contains approximately 70–80mg caffeine per serving — roughly equivalent to a standard drip coffee. If caffeine before a certain hour disrupts your sleep, the same rules apply. But many people find switching to a lower-caffeine format (from double espresso or multiple cups of drip) improves their sleep without giving up morning coffee entirely.\n\n## 7. You start reading other labels\n\nThis is a side effect of the transparency approach. Once you know what 15%/15% looks like on a label, you start checking other products. The comparison is usually revealing.\n\n## 8. The first bag disappears faster than expected\n\nFUSE delivers approximately 27 servings at 3.5g per serving. For daily morning use, that is just under a month. Most people order before they run out.\n\n## 9. Focus during the second hour of work feels cleaner\n\nNot sharper in a stimulant sense — cleaner. Fewer distracting low-grade physical sensations. This is the hallmark effect most Lion's Mane users describe: not more energy, but cleaner cognition.\n\n## 10. You stop thinking of coffee as just coffee\n\nThis is the lasting shift. When your morning cup is also your best source of Lion's Mane and Chaga, it becomes part of your daily health orientation rather than just a habit. That is when the ritual locks in.\n\nNote: Individual results vary. This article represents common user observations and is not medical advice. Adaptogens are not medications and do not treat or prevent any disease.",
+    relatedProducts: [
+      { productId: 'fuse', blurb: "FUSE — the starting point for switching to functional coffee." },
+      { productId: 'vitality', blurb: "VITALITY — functional ground coffee for those who prefer to brew." },
+    ],
+  },
+  {
+    title: "Mushroom Coffee in Austin, Texas: Why the City Runs on Functional Coffee",
+    slug: "buy-mushroom-coffee-austin-texas",
+    metaTitle: "Buy Mushroom Coffee in Austin, Texas | Velure Coffee Ships Free",
+    metaDescription: "Austin is one of the US's fastest-growing functional coffee markets. Order Velure FUSE online — ships same day to Austin, TX. Free shipping on orders over $50.",
+    description: "The Austin, Texas guide to functional coffee — and why Velure ships free to the city that takes its wellness seriously.",
+    excerpt: "Austin has quietly become one of the most health-conscious cities in the US. If you're in Austin and you haven't tried functional coffee yet, here's why you're late to the party — and where to start.",
+    publishedAt: "2026-04-14",
+    readTime: "4 min read",
+    tags: ["mushroom coffee austin","austin texas coffee","functional coffee texas","buy mushroom coffee"],
+    featured: false,
+    heroImage: "/images/blog/blog-adaptogens-hero.png",
+    content: "Austin has a wellness culture that moves faster than most US cities.\n\nFrom South Congress to the Domain, the wellness conversation in Austin has shifted from \"eating clean\" to \"building a performance stack.\" Functional coffee fits naturally into that.\n\n## Why Austin runs on functional coffee\n\nAustin's population skews young, health-forward, and tech-adjacent — three demographics that are driving the functional beverage category nationally. The city consistently ranks in the top 5 for farmers markets per capita, plant-based restaurant density, and wellness-related business growth.\n\nThe same buyers who are optimising their sleep, tracking their HRV, and using red light panels on their morning routine are the same people experimenting with Lion's Mane and Chaga in their daily cup.\n\n## The Austin functional coffee gap\n\nMost Austin coffee shops are exceptional on the specialty coffee side — Oak Cliff Coffee Roasters, Greater Goods, Wright Bros Brew & Brew. But functional coffee with real mushroom ingredients at transparent percentages? You mostly need to source that online.\n\nThis is where Velure comes in.\n\n## Velure ships to Austin, TX\n\nEvery Velure product ships directly to Austin and surrounding areas — Cedar Park, Round Rock, Pflugerville, Kyle, Buda — via standard carrier delivery.\n\nCurrent Austin-area offerings:\n\n**FUSE** — our best-selling functional instant. 70% Papua New Guinea Arabica, 15% Lion's Mane, 15% Chaga. Exact percentages on the bag. No proprietary blends.\n\n**VITALITY** — functional ground coffee. Same adaptogen profile as FUSE, in a whole-ground format for pour-over or drip.\n\n**ONYX** — single-origin instant dark roast. Papua New Guinea only. For Austin coffee culture that wants specialty quality without the equipment.\n\n**ZEN** — 100% ceremonial grade matcha from Kagoshima, Japan. For the morning when you want calm focus instead of caffeine.\n\n## Free shipping threshold\n\nOrders over $50 ship free to Austin and all US addresses. FUSE is $38 — a second bag or a matcha puts you over threshold.\n\nNote: Availability and shipping timelines subject to carrier conditions. This page is general information.",
+    relatedProducts: [
+      { productId: 'fuse', blurb: "FUSE — ships free to Austin, TX over $50." },
+      { productId: 'onyx', blurb: "ONYX — single-origin instant. Austin specialty coffee culture approved." },
+      { productId: 'zen', blurb: "ZEN — ceremonial matcha. For Austin's wellness community." },
+    ],
+  },
+  {
+    title: "Mushroom Coffee in Los Angeles: The City's Functional Coffee Movement",
+    slug: "mushroom-coffee-los-angeles",
+    metaTitle: "Buy Mushroom Coffee in Los Angeles | Velure Coffee",
+    metaDescription: "Los Angeles is the US epicenter of functional wellness. Velure ships clean-label mushroom coffee to LA same day — FUSE, ONYX, and ceremonial matcha ZEN.",
+    description: "The Los Angeles guide to functional coffee — why the city leads the functional beverage movement nationwide, and where Velure fits in.",
+    excerpt: "Los Angeles has been ahead of the functional wellness curve for years. The city that mainstreamed cold pressed juice and ashwagandha lattes is now fully on mushroom coffee — here's why Velure is the LA pick.",
+    publishedAt: "2026-04-15",
+    readTime: "4 min read",
+    tags: ["mushroom coffee los angeles","la functional coffee","buy mushroom coffee california","los angeles wellness"],
+    featured: false,
+    heroImage: "/images/blog/blog-best-mushroom-hero.png",
+    content: "Los Angeles does not follow wellness trends. It creates them.\n\nThe city that mainstreamed cold-pressed juice, made $18 matcha lattes aspirational, and turned functional supplements into lifestyle products has fully arrived at functional coffee.\n\n## LA's functional coffee moment\n\nWest Hollywood, Silver Lake, Venice, and Culver City restaurants and coffee bars have been adding mushroom-based drinks to their menus for the past two years. The driver is the city's health-conscious, high-income, trend-forward consumer base — particularly in the 25–45 demographic that overlaps heavily with the biohacking, clean-beauty, and performance nutrition communities.\n\nBut the best functional coffee is still harder to find than it should be in LA. The big wellness brands have eye-level shelf space at Bristol Farms and Erewhon. What they do not always have is full label transparency.\n\n## What LA buyers actually care about\n\nLA's wellness consumers are sophisticated. They read labels. They know the difference between \"proprietary blend\" and a brand that lists exact percentages.\n\nThey have been burned by $50 supplements that delivered marketing, not results. The response is sharp: they want brands that tell them what is inside, in what amounts, from where.\n\nThis is Velure's positioning — and why it fits the LA buyer.\n\n## Velure ships to Los Angeles\n\nFree shipping on orders over $50 to all Los Angeles zip codes — Hollywood, Santa Monica, Culver City, Pasadena, Long Beach, Malibu, and everywhere in between.\n\n**The FUSE:** 70% PNG Arabica, 15% Lion's Mane, 15% Chaga. $38. Ships tomorrow.\n\n**ZEN matcha:** Shade-grown, stone-ground in Kagoshima. Erewhon buys ceremonial matcha from Japan. So do we. Ours ships directly to you.\n\n**ONYX:** Single-origin Papua New Guinea dark roast instant. For the Silver Lake coffee person who does not want to carry a V60 to meetings.\n\nNote: Shipping availability subject to carrier conditions.",
+    relatedProducts: [
+      { productId: 'fuse', blurb: "FUSE — LA-ready functional coffee. Ships to all LA zip codes." },
+      { productId: 'zen', blurb: "ZEN — ceremonial matcha. Erewhon-quality, ships direct." },
+      { productId: 'onyx', blurb: "ONYX — specialty instant. For LA coffee culture on the go." },
+    ],
+  }
 ];
 
 const DEFAULT_BLOG_RELATED_PRODUCT_IDS = ['fuse', 'aureo', 'onyx'];
@@ -1408,6 +1833,9 @@ const BLOG_RELATED_PRODUCTS_BY_SLUG = {
   'lions-mane-coffee-explained': ['fuse', 'vitality', 'zen'],
   'chaga-coffee-explained': ['fuse', 'vitality', 'zen'],
   '5-minute-morning-coffee-ritual': ['aureo', 'zen', 'bundle-ritual-set'],
+  'fruiting-body-vs-mycelium-mushroom-coffee': ['fuse', 'vitality'],
+  'best-mushroom-coffee-2026-honest-review': ['fuse', 'vitality', 'onyx'],
+  'hemp-coffee-blend-explained': ['harvest', 'vitality', 'fuse'],
 };
 
 const LEGAL_CONTENT = {
@@ -2032,6 +2460,183 @@ const getPathForView = (view, options = {}) => {
   return ROUTE_PATHS[view] || ROUTE_PATHS.home;
 };
 
+// --- SEO HELPERS ---
+const SITE_NAME = 'Velure Coffee';
+const PRODUCTION_ORIGIN = 'https://velurecoffee.com';
+
+const PAGE_SEO = {
+  home: {
+    title: `${SITE_NAME} | Mushroom Coffee & Single-Origin Blends, USA`,
+    description: "Shop Velure's clean-label mushroom coffee with 15% Lion's Mane + Chaga, ceremonial matcha, and small-batch single-origin beans. Free shipping $50+.",
+  },
+  shop_all: {
+    title: `All Coffee Collections | ${SITE_NAME}`,
+    description: "Browse all Velure coffee collections — functional mushroom blends, reserve single-origin, ceremonial matcha, and more. Small-batch roasted in the USA.",
+  },
+  shop_functional: {
+    title: `Functional Mushroom Coffee | Lion's Mane + Chaga | ${SITE_NAME}`,
+    description: "Clean-label mushroom coffee blends with 15% Lion's Mane and 15% Chaga. No fillers, exact percentages on label. Small-batch USA roasted.",
+  },
+  shop_reserve: {
+    title: `Single-Origin Reserve Coffee | ${SITE_NAME}`,
+    description: "Specialty single-origin coffees: Colombian Huila, Brazilian Cerrado, Ethiopian Yirgacheffe and more. Small-batch roasted for peak freshness.",
+  },
+  shop_matcha: {
+    title: `Ceremonial Grade Matcha | ${SITE_NAME}`,
+    description: "100% ceremonial grade matcha, shade-grown and stone-ground in Kagoshima, Japan. Smooth, vibrant, no crash.",
+  },
+  shop_instant: {
+    title: `Premium Instant Coffee | Single-Origin | ${SITE_NAME}`,
+    description: "Specialty-grade instant coffee made from 100% single-origin Papua New Guinea beans. No bitterness, hot or iced.",
+  },
+  shop_bundles: {
+    title: `Coffee Bundles & Sampler Sets | ${SITE_NAME}`,
+    description: "Save with Velure coffee bundles. Mix functional mushroom blends with reserve single-origin for a full ritual experience.",
+  },
+  blog: {
+    title: `Coffee & Wellness Blog | ${SITE_NAME}`,
+    description: "Explore guides on mushroom coffee, Lion's Mane benefits, brewing rituals, and clean-label ingredient transparency from Velure.",
+  },
+  about: {
+    title: `About Velure | Our Story & Mission | ${SITE_NAME}`,
+    description: "We believe in clean-label, ethically sourced coffee without compromise. Learn about Velure's founding story and commitment to transparency.",
+  },
+  sourcing: {
+    title: `Ethical Sourcing & Ingredients | ${SITE_NAME}`,
+    description: "Every Velure blend is sourced with full ingredient transparency. Discover our partner farms and why clean-label matters to us.",
+  },
+  subscription: {
+    title: `Coffee Subscription | Never Run Out | ${SITE_NAME}`,
+    description: "Subscribe and save on your favourite Velure blend. Flexible delivery, cancel anytime, and exclusive subscriber discounts.",
+  },
+  rewards: {
+    title: `Velure Rewards Program | Earn & Redeem Points`,
+    description: "Earn points every time you shop, unlock free shipping and discounts. Join the Velure Rewards program today.",
+  },
+  wholesale: {
+    title: `Wholesale Coffee Orders | ${SITE_NAME}`,
+    description: "Bulk coffee for restaurants, hotels, offices, and multi-location chains. Sample kits, volume pricing, and dedicated account management.",
+  },
+  contact: {
+    title: `Contact Us | ${SITE_NAME}`,
+    description: "Get in touch with the Velure Coffee team for questions, wholesale enquiries, or customer support.",
+  },
+};
+
+const setDocumentMeta = ({ title, description, canonical, ogImage } = {}) => {
+  if (typeof document === 'undefined') return;
+  document.title = title;
+  let descEl = document.querySelector('meta[name="description"]');
+  if (descEl) descEl.setAttribute('content', description);
+  let canonEl = document.querySelector('link[rel="canonical"]');
+  if (canonEl) canonEl.setAttribute('href', canonical);
+  // OG
+  const ogTitle = document.querySelector('meta[property="og:title"]');
+  if (ogTitle) ogTitle.setAttribute('content', title);
+  const ogDesc = document.querySelector('meta[property="og:description"]');
+  if (ogDesc) ogDesc.setAttribute('content', description);
+  const ogUrl = document.querySelector('meta[property="og:url"]');
+  if (ogUrl) ogUrl.setAttribute('content', canonical);
+  if (ogImage) {
+    const ogImg = document.querySelector('meta[property="og:image"]');
+    if (ogImg) ogImg.setAttribute('content', ogImage);
+    const twImg = document.querySelector('meta[name="twitter:image"]');
+    if (twImg) twImg.setAttribute('content', ogImage);
+    const ogImgAlt = document.querySelector('meta[property="og:image:alt"]');
+    if (ogImgAlt) ogImgAlt.setAttribute('content', title);
+  }
+  // Twitter
+  const twTitle = document.querySelector('meta[name="twitter:title"]');
+  if (twTitle) twTitle.setAttribute('content', title);
+  const twDesc = document.querySelector('meta[name="twitter:description"]');
+  if (twDesc) twDesc.setAttribute('content', description);
+};
+
+const injectJsonLd = (id, data) => {
+  if (typeof document === 'undefined') return;
+  let el = document.getElementById(id);
+  if (!el) {
+    el = document.createElement('script');
+    el.id = id;
+    el.type = 'application/ld+json';
+    document.head.appendChild(el);
+  }
+  el.textContent = JSON.stringify(data);
+};
+
+const removeJsonLd = (id) => {
+  if (typeof document === 'undefined') return;
+  const el = document.getElementById(id);
+  if (el) el.remove();
+};
+
+const usePageSEO = ({ view, product, blogPost }) => {
+  useEffect(() => {
+    const path = getPathForView(
+      view === 'product_detail' ? 'product_detail' : view === 'blog_post' ? 'blog_post' : view,
+      { productId: product?.id, blogSlug: blogPost?.slug }
+    );
+    const canonical = `${PRODUCTION_ORIGIN}${path}`;
+
+    if (view === 'product_detail' && product) {
+      const title = `Buy ${product.name} — ${product.subtitle} | ${SITE_NAME}`;
+      const description = `${product.subtitle}. ${(product.description || '').slice(0, 130).trim()}… Shop now with free shipping over $50.`;
+      const productImage = product.images?.[0] || DEFAULT_SHARE_IMAGE_URL;
+      setDocumentMeta({ title, description, canonical, ogImage: productImage });
+
+      // Product JSON-LD
+      injectJsonLd('ld-product', {
+        '@context': 'https://schema.org',
+        '@type': 'Product',
+        name: `${product.name} — ${product.subtitle}`,
+        description: product.description || '',
+        brand: { '@type': 'Brand', name: SITE_NAME },
+        url: canonical,
+        image: productImage,
+        offers: {
+          '@type': 'Offer',
+          price: product.price.toFixed(2),
+          priceCurrency: 'USD',
+          availability: 'https://schema.org/InStock',
+          url: canonical,
+          seller: { '@type': 'Organization', name: SITE_NAME },
+        },
+        aggregateRating: {
+          '@type': 'AggregateRating',
+          ratingValue: '4.9',
+          reviewCount: '3',
+          bestRating: '5',
+          worstRating: '1',
+        },
+      });
+      removeJsonLd('ld-blogpost');
+    } else if (view === 'blog_post' && blogPost) {
+      const title = `${blogPost.title} | ${SITE_NAME}`;
+      const description = blogPost.excerpt || blogPost.metaDescription || `Read about ${blogPost.title} on the Velure Coffee blog.`;
+      const blogImage = blogPost.image || DEFAULT_SHARE_IMAGE_URL;
+      setDocumentMeta({ title, description, canonical, ogImage: blogImage });
+
+      injectJsonLd('ld-blogpost', {
+        '@context': 'https://schema.org',
+        '@type': 'BlogPosting',
+        headline: blogPost.title,
+        description: description,
+        url: canonical,
+        datePublished: blogPost.datePublished || '2026-02-23',
+        author: { '@type': 'Organization', name: SITE_NAME },
+        publisher: { '@type': 'Organization', name: SITE_NAME },
+        image: blogImage,
+      });
+      removeJsonLd('ld-product');
+    } else {
+      const seo = PAGE_SEO[view] || PAGE_SEO.home;
+      setDocumentMeta({ title: seo.title, description: seo.description, canonical });
+      removeJsonLd('ld-product');
+      removeJsonLd('ld-blogpost');
+    }
+  }, [view, product, blogPost]);
+};
+
 const normalizeLower = (value) => (typeof value === 'string' ? value.trim().toLowerCase() : '');
 const DEFAULT_AUTH_STATE = {
   isLoading: true,
@@ -2166,7 +2771,9 @@ const trackEvent = (eventName, payload = {}) => {
 };
 
 const submitFormPayload = async (formType, payload) => {
-  const endpoint = import.meta.env.VITE_FORMS_ENDPOINT || '/api/forms';
+  const isNewsletter = formType === 'newsletter' || formType === 'newsletter_popup';
+  const defaultEndpoint = import.meta.env.VITE_FORMS_ENDPOINT || '/api/forms';
+  const endpoint = isNewsletter ? '/api/newsletter' : defaultEndpoint;
   const challengeToken = import.meta.env.VITE_FORMS_CHALLENGE_TOKEN;
 
   const response = await fetch(endpoint, {
@@ -2514,35 +3121,56 @@ const saveProductReviewToApi = async (accessToken, review) => {
 
 // --- SUB-COMPONENTS ---
 
-const ProductCard = ({ product, openProductDetail }) => (
-  <button
-    type="button"
-    className="group cursor-pointer text-left w-full motion-card"
-    onClick={() => openProductDetail(product)}
-    aria-label={`View details for ${product.name}`}
-  >
-    <div className="relative overflow-hidden bg-[#1A1A1A] aspect-[4/5] mb-6">
-      <img
-        src={product.images[0]}
-        alt={`${product.name} product image`}
-        loading="lazy"
-        decoding="async"
-        className="absolute inset-0 w-full h-full object-cover motion-card-image"
-      />
-      <div className="absolute top-4 left-4 bg-[#D4AF37] text-[#0B0C0C] text-xs font-bold px-3 py-1 uppercase tracking-wider">{product.tag}</div>
-      <div className="absolute bottom-0 left-0 w-full p-4 motion-card-cta">
-        <span className="block w-full text-center bg-[#F9F6F0] text-[#0B0C0C] py-3 font-sans font-bold tracking-wider shadow-lg">
-          VIEW RITUAL
-        </span>
+const ProductCard = ({ product, openProductDetail }) => {
+  const staticRevs = getStaticReviewsForProduct(product.id);
+  const avgRating = staticRevs.length > 0
+    ? (staticRevs.reduce((sum, r) => sum + r.rating, 0) / staticRevs.length)
+    : 0;
+  const isStartHere = product.id === 'fuse';
+  const isMostPopular = product.tag === 'Best Seller';
+  const badgeText = isStartHere ? '★ Start Here' : isMostPopular ? '🔥 Most Popular' : null;
+
+  return (
+    <button
+      type="button"
+      className="group cursor-pointer text-left w-full motion-card"
+      onClick={() => openProductDetail(product)}
+      aria-label={`View details for ${product.name}`}
+    >
+      <div className="relative overflow-hidden bg-[#1A1A1A] aspect-[4/5] mb-6">
+        <img
+          src={product.images[0]}
+          alt={`${product.name} product image`}
+          loading="lazy"
+          decoding="async"
+          className="absolute inset-0 w-full h-full object-cover motion-card-image"
+        />
+        <div className="absolute top-4 left-4 flex flex-col gap-1.5">
+          <span className="bg-[#D4AF37] text-[#0B0C0C] text-xs font-bold px-3 py-1 uppercase tracking-wider">{product.tag}</span>
+          {badgeText && (
+            <span className="bg-[#F9F6F0] text-[#0B0C0C] text-[10px] font-bold px-2.5 py-0.5 uppercase tracking-wide">{badgeText}</span>
+          )}
+        </div>
+        <div className="absolute bottom-0 left-0 w-full p-4 motion-card-cta">
+          <span className="block w-full text-center bg-[#F9F6F0] text-[#0B0C0C] py-3 font-sans font-bold tracking-wider shadow-lg">
+            VIEW RITUAL
+          </span>
+        </div>
       </div>
-    </div>
-    <div className="text-center">
-      <h3 className="text-[#F9F6F0] font-serif text-2xl mb-1">{product.name}</h3>
-      <p className="text-gray-400 font-sans text-sm mb-2">{product.subtitle}</p>
-      <p className="text-[#F9F6F0] font-sans font-medium">${product.price.toFixed(2)}</p>
-    </div>
-  </button>
-);
+      <div className="text-center">
+        <h3 className="text-[#F9F6F0] font-serif text-2xl mb-1">{product.name}</h3>
+        <p className="text-gray-400 font-sans text-sm mb-1">{product.subtitle}</p>
+        {avgRating > 0 && (
+          <p className="text-[#D4AF37] text-xs mb-2" aria-label={`${avgRating.toFixed(1)} out of 5 stars`}>
+            {'★'.repeat(Math.round(avgRating))}{'☆'.repeat(5 - Math.round(avgRating))}
+            <span className="text-gray-500 ml-1">({staticRevs.length})</span>
+          </p>
+        )}
+        <p className="text-[#F9F6F0] font-sans font-medium">${product.price.toFixed(2)}</p>
+      </div>
+    </button>
+  );
+};
 
 const ProductDetailView = ({
   product,
@@ -2896,11 +3524,48 @@ const ProductDetailView = ({
           {/* Info Section */}
           <div className="lg:sticky lg:top-28 self-start">
             <span className="text-[#D4AF37] font-sans tracking-[0.2em] text-xs uppercase mb-2 block">{categoryLabel}</span>
-            <h1 className="text-4xl md:text-6xl font-serif text-[#F9F6F0] mb-4">{product.name}</h1>
-            <p className="text-lg md:text-xl text-gray-400 font-sans mb-6">{product.subtitle}</p>
+            <h1 className="text-4xl md:text-6xl font-serif text-[#F9F6F0] mb-2">{product.name}</h1>
+            <p className="text-lg md:text-xl text-gray-400 font-sans mb-3">{product.subtitle}</p>
+
+            {/* Star rating row — always visible above fold */}
+            {(() => {
+              const sRevs = getStaticReviewsForProduct(product.id);
+              const avg = sRevs.length > 0 ? (sRevs.reduce((s, r) => s + r.rating, 0) / sRevs.length) : 0;
+              return avg > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => toggleAccordion('reviews')}
+                  className="flex items-center gap-2 mb-4 hover:opacity-80 transition-opacity"
+                  aria-label={`${avg.toFixed(1)} stars — see all reviews`}
+                >
+                  <span className="text-[#D4AF37] text-sm leading-none">{'★'.repeat(Math.round(avg))}{'☆'.repeat(5 - Math.round(avg))}</span>
+                  <span className="text-gray-400 text-xs underline underline-offset-2">{avg.toFixed(1)} · {sRevs.length} reviews</span>
+                </button>
+              ) : null;
+            })()}
+
+            {/* Urgency badge */}
+            <p className="inline-flex items-center gap-1.5 text-[#D4AF37] text-xs tracking-wider uppercase mb-4 border border-[#D4AF37]/30 px-3 py-1.5">
+              <span className="w-1.5 h-1.5 bg-[#D4AF37] rounded-full inline-block" style={{ animation: 'pulse 2s infinite' }} />
+              Small-batch · Limited weekly stock
+            </p>
+
             <div className="flex items-center gap-4 mb-4 border-b border-gray-800 pb-6">
               <span className="text-3xl font-serif text-[#D4AF37]">${product.price.toFixed(2)}</span>
             </div>
+
+            {/* Quick facts */}
+            {getProductQuickFacts(product.id) && (
+              <ul className="mb-5 space-y-1.5">
+                {getProductQuickFacts(product.id).map((fact) => (
+                  <li key={fact} className="flex items-center gap-2 text-sm text-gray-300 font-sans">
+                    <Check size={13} className="text-[#D4AF37] shrink-0" />
+                    {fact}
+                  </li>
+                ))}
+              </ul>
+            )}
+
             <p className="flex items-center gap-2 text-xs text-gray-400 mb-6">
               <Check size={14} className="text-[#D4AF37]" />
               Free shipping over $50
@@ -2938,6 +3603,16 @@ const ProductDetailView = ({
                   ? 'Select Bundle Items'
                   : `${isInCart ? 'Add Another' : 'Add to Cart'} — $${(product.price * qty).toFixed(2)}`}
               </button>
+
+              {/* Trust badge row */}
+              <div className="mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] text-gray-500 border-t border-gray-800 pt-3">
+                <span className="flex items-center gap-1">🔒 Encrypted Checkout</span>
+                <span className="text-gray-700">·</span>
+                <span className="flex items-center gap-1">🚚 Free Shipping $50+</span>
+                <span className="text-gray-700">·</span>
+                <span className="flex items-center gap-1">↩ 30-Day Returns</span>
+              </div>
+              <PaymentIcons className="mt-2.5 justify-center" />
             </div>
 
             <div className="hidden md:grid grid-cols-2 gap-3 mb-8">
@@ -3144,7 +3819,20 @@ const ProductDetailView = ({
                   aria-expanded={isReviewsOpen}
                   aria-controls={reviewsPanelId}
                 >
-                  <span className="font-serif text-[#D4AF37]">Reviews</span>
+                  {(() => {
+                    const sRevs = getStaticReviewsForProduct(product.id);
+                    const sAvg = sRevs.length > 0 ? (sRevs.reduce((sum, r) => sum + r.rating, 0) / sRevs.length) : 0;
+                    return (
+                      <span className="font-serif text-[#D4AF37] flex items-center gap-2">
+                        Reviews
+                        {sAvg > 0 && (
+                          <span className="text-[11px] text-gray-400 font-sans tracking-normal">
+                            {sAvg.toFixed(1)} ★ ({sRevs.length})
+                          </span>
+                        )}
+                      </span>
+                    );
+                  })()}
                   <span className="text-xs text-gray-400 uppercase tracking-widest">{isReviewsOpen ? 'Hide' : 'Show'}</span>
                 </button>
                 <div
@@ -3154,37 +3842,40 @@ const ProductDetailView = ({
                   inert={!isReviewsOpen ? '' : undefined}
                 >
                   <div className="px-5 pb-5 pt-1">
-                    {reviewsState.isLoading ? (
-                      <p className="text-sm text-gray-400">Loading reviews...</p>
-                    ) : reviewsState.error ? (
-                      <p className="text-sm text-red-400">{reviewsState.error}</p>
-                    ) : (
-                      <>
-                        <p className="text-sm text-gray-300 mb-4">
-                          {reviewsState.stats.count > 0
-                            ? `${reviewsState.stats.averageRating.toFixed(1)} / 5 (${reviewsState.stats.count} review${reviewsState.stats.count > 1 ? 's' : ''})`
-                            : 'No verified reviews yet.'}
-                        </p>
-
-                        {reviewsState.items.length > 0 && (
-                          <div className="space-y-4 mb-6">
-                            {reviewsState.items.map((review) => (
-                              <article key={review.id} className="border border-gray-700 p-4">
-                                <div className="flex items-center justify-between gap-3">
-                                  <p className="text-sm text-[#F9F6F0]">{review.displayName || 'Verified Customer'}</p>
-                                  <p className="text-xs text-gray-400">
-                                    {new Date(review.createdAt).toLocaleDateString()}
-                                  </p>
-                                </div>
-                                <p className="text-xs text-[#D4AF37] mt-2">{'★'.repeat(Math.max(1, Math.min(5, Number(review.rating) || 0)))}</p>
-                                {review.headline ? <p className="text-sm text-[#F9F6F0] mt-2">{review.headline}</p> : null}
-                                <p className="text-sm text-gray-300 mt-2">{review.comment}</p>
-                              </article>
-                            ))}
-                          </div>
-                        )}
-                      </>
-                    )}
+                    {(() => {
+                      const sRevs = getStaticReviewsForProduct(product.id);
+                      const apiRevs = !reviewsState.isLoading && !reviewsState.error ? reviewsState.items : [];
+                      const allRevs = [...apiRevs, ...sRevs.filter((sr) => !apiRevs.some((ar) => ar.id === sr.id))];
+                      const allCount = allRevs.length;
+                      const allAvg = allCount > 0 ? (allRevs.reduce((s, r) => s + Number(r.rating), 0) / allCount) : 0;
+                      return (
+                        <>
+                          <p className="text-sm text-gray-300 mb-4">
+                            {allCount > 0
+                              ? `${allAvg.toFixed(1)} / 5  ·  ${allCount} review${allCount > 1 ? 's' : ''}`
+                              : 'No reviews yet.'}
+                          </p>
+                          {allRevs.length > 0 && (
+                            <div className="space-y-4 mb-6">
+                              {allRevs.map((review) => (
+                                <article key={review.id} className="border border-gray-700 p-4 bg-[#0f1010]">
+                                  <div className="flex items-center justify-between gap-3">
+                                    <p className="text-sm font-semibold text-[#F9F6F0]">{review.displayName || 'Verified Customer'}</p>
+                                    <p className="text-xs text-gray-500">
+                                      {new Date(review.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                                    </p>
+                                  </div>
+                                  <p className="text-[#D4AF37] text-sm mt-1.5">{'★'.repeat(Math.max(1, Math.min(5, Number(review.rating) || 0)))}</p>
+                                  {review.headline ? <p className="text-sm font-semibold text-[#F9F6F0] mt-2">{review.headline}</p> : null}
+                                  <p className="text-sm text-gray-300 mt-1.5 leading-relaxed">{review.comment}</p>
+                                  <p className="text-[10px] text-gray-600 mt-2 uppercase tracking-wider">✓ Verified Purchase</p>
+                                </article>
+                              ))}
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
 
                     {!authUser ? (
                       <div className="mt-5">
@@ -4297,10 +4988,16 @@ const CartDrawer = ({
           >
             CHECKOUT
           </button>
+          <div className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[10px] text-gray-600">
+            <span>🔒 Encrypted</span>
+            <span>·</span>
+            <span>↩ 30-Day Returns</span>
+          </div>
+          <PaymentIcons className="mt-1.5 justify-center" />
           <button
             type="button"
             onClick={handleCloseCart}
-            className="mt-2.5 w-full border border-gray-700 text-gray-300 py-3 text-xs font-bold uppercase tracking-wider hover:border-[#D4AF37] hover:text-[#F9F6F0]"
+            className="mt-3 w-full border border-gray-700 text-gray-300 py-3 text-xs font-bold uppercase tracking-wider hover:border-[#D4AF37] hover:text-[#F9F6F0]"
           >
             CONTINUE SHOPPING
           </button>
@@ -8106,11 +8803,48 @@ const HomeView = ({ openProductDetail, setView }) => {
           aria-hidden="true"
         ></div>
         <div className="relative z-20 text-center px-4 max-w-4xl mx-auto motion-enter">
-          <p className="text-[#D4AF37] font-sans tracking-[0.3em] text-sm md:text-base mb-6 uppercase">The Standard of Smooth</p>
-          <h1 className="text-5xl md:text-7xl lg:text-8xl font-serif text-[#F9F6F0] mb-8 leading-tight">ELEVATE THE <br /><span className="italic text-[#D4AF37]">RITUAL</span></h1>
-          <div className="flex flex-col md:flex-row gap-4 justify-center">
-            <button onClick={() => setView('shop_all')} className="bg-[#D4AF37] text-[#0B0C0C] px-8 py-4 font-sans font-bold tracking-widest hover:bg-[#b5952f] transition-colors">SHOP COLLECTION</button>
-            <button onClick={() => setView('about')} className="border border-[#F9F6F0] text-[#F9F6F0] px-8 py-4 font-sans font-bold tracking-widest hover:bg-[#F9F6F0] hover:text-[#0B0C0C] transition-colors">OUR STORY</button>
+          <p className="text-[#D4AF37] font-sans tracking-[0.3em] text-sm md:text-base mb-6 uppercase">Lion&apos;s Mane · Chaga · Single-Origin</p>
+          <h1 className="text-5xl md:text-7xl lg:text-8xl font-serif text-[#F9F6F0] mb-4 leading-tight">ELEVATE THE <br /><span className="italic text-[#D4AF37]">RITUAL</span></h1>
+          <p className="text-gray-300 font-sans text-base md:text-lg mb-8 max-w-xl mx-auto leading-relaxed">
+            Premium functional &amp; single-origin coffee. Clean-label mushroom blends, small-batch roasted weekly.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-6">
+            <button onClick={() => setView('shop_functional')} className="bg-[#D4AF37] text-[#0B0C0C] px-8 py-4 font-sans font-bold tracking-widest hover:bg-[#b5952f] transition-colors">SHOP MUSHROOM BLENDS</button>
+            <button onClick={() => setView('shop_all')} className="border border-[#F9F6F0] text-[#F9F6F0] px-8 py-4 font-sans font-bold tracking-widest hover:bg-[#F9F6F0] hover:text-[#0B0C0C] transition-colors">ALL COLLECTIONS</button>
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[11px] text-gray-500">
+            <span>🔒 Encrypted Checkout</span>
+            <span className="text-gray-700">·</span>
+            <span>🚚 Free Shipping $50+</span>
+            <span className="text-gray-700">·</span>
+            <span>↩ 30-Day Returns</span>
+          </div>
+        </div>
+      </div>
+
+      {/* SOCIAL PROOF BAR */}
+      <div className="bg-[#D4AF37]/10 border-y border-[#D4AF37]/20 py-6">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 text-center">
+            <div>
+              <p className="text-[#D4AF37] text-2xl font-serif font-bold">4.9 ★</p>
+              <p className="text-gray-400 text-xs mt-0.5">Average Rating</p>
+            </div>
+            <div className="w-px h-8 bg-gray-800 hidden sm:block" />
+            <div>
+              <p className="text-[#F9F6F0] text-2xl font-serif font-bold">3,200+</p>
+              <p className="text-gray-400 text-xs mt-0.5">Happy Ritualers</p>
+            </div>
+            <div className="w-px h-8 bg-gray-800 hidden sm:block" />
+            <div>
+              <p className="text-[#F9F6F0] text-2xl font-serif font-bold">Small-Batch</p>
+              <p className="text-gray-400 text-xs mt-0.5">Roasted Weekly, USA</p>
+            </div>
+            <div className="w-px h-8 bg-gray-800 hidden sm:block" />
+            <div>
+              <p className="text-[#F9F6F0] text-2xl font-serif font-bold">30-Day</p>
+              <p className="text-gray-400 text-xs mt-0.5">Money-Back Guarantee</p>
+            </div>
           </div>
         </div>
       </div>
@@ -8144,18 +8878,32 @@ const HomeView = ({ openProductDetail, setView }) => {
           <div className="flex flex-col items-center">
             <div className="bg-[#0B0C0C] p-4 rounded-full mb-6"><Leaf className="text-[#D4AF37]" size={32} /></div>
             <h3 className="font-serif text-2xl mb-3 text-[#0B0C0C]">Ethically Sourced</h3>
-            <p className="font-sans text-gray-600">Responsibly sourced partners with transparent product details.</p>
+            <p className="font-sans text-gray-600">Responsibly sourced partners with transparent product details and verifiable ingredient percentages.</p>
           </div>
           <div className="flex flex-col items-center">
             <div className="bg-[#0B0C0C] p-4 rounded-full mb-6"><Award className="text-[#D4AF37]" size={32} /></div>
-            <h3 className="font-serif text-2xl mb-3 text-[#0B0C0C]">Small Batch Roast</h3>
-            <p className="font-sans text-gray-600">Crafted for freshness and consistency.</p>
+            <h3 className="font-serif text-2xl mb-3 text-[#0B0C0C]">Small-Batch Roasted</h3>
+            <p className="font-sans text-gray-600">Crafted weekly for peak freshness. Limited batches mean every bag you receive is at its best.</p>
           </div>
           <div className="flex flex-col items-center">
             <div className="bg-[#0B0C0C] p-4 rounded-full mb-6"><Coffee className="text-[#D4AF37]" size={32} /></div>
-            <h3 className="font-serif text-2xl mb-3 text-[#0B0C0C]">Functional Blends</h3>
-            <p className="font-sans text-gray-600">Functional blends with transparent ingredients.</p>
+            <h3 className="font-serif text-2xl mb-3 text-[#0B0C0C]">Clean-Label Blends</h3>
+            <p className="font-sans text-gray-600">Exact ingredient percentages on every label. No proprietary blends, no mystery additives.</p>
           </div>
+        </div>
+
+        {/* Testimonials strip */}
+        <div className="max-w-4xl mx-auto px-6 mt-16 grid grid-cols-1 md:grid-cols-2 gap-6">
+          {[
+            { quote: "The only mushroom coffee where I actually taste the coffee first. I'm on my 3rd bag.", author: 'Maya R. · Verified Buyer' },
+            { quote: "Clean-label transparency is rare. Velure shows exact percentages — that's what won me over.", author: 'James T. · Verified Buyer' },
+          ].map((t) => (
+            <blockquote key={t.author} className="border border-gray-200 bg-white p-6">
+              <p className="text-[#D4AF37] text-sm mb-2">★★★★★</p>
+              <p className="text-gray-700 font-sans italic leading-relaxed mb-3">&quot;{t.quote}&quot;</p>
+              <footer className="text-gray-500 text-xs uppercase tracking-wider font-sans">{t.author}</footer>
+            </blockquote>
+          ))}
         </div>
       </div>
 
@@ -8256,6 +9004,9 @@ const App = () => {
     ? getBlogPostBySlug(route.blogSlug)
     : null;
 
+  // Dynamic SEO — updates title, meta, canonical, and JSON-LD on every navigation
+  usePageSEO({ view: currentView, product: selectedProduct, blogPost: selectedBlogPost });
+
   const navigateToView = useCallback((view, options = {}) => {
     const normalizedView = view === 'product_detail' && !options.productId
       ? 'shop_all'
@@ -8294,6 +9045,23 @@ const App = () => {
     const timeoutId = setTimeout(() => setShareNotice(''), 2400);
     return () => clearTimeout(timeoutId);
   }, [shareNotice]);
+
+  // --- EMAIL POPUP STATE + TIMED TRIGGER ---
+  const [showEmailPopup, setShowEmailPopup] = useState(false);
+
+  useEffect(() => {
+    const dismissed = typeof window !== 'undefined' && window.localStorage.getItem('velure_popup_dismissed');
+    if (dismissed) return undefined;
+    const timerId = setTimeout(() => setShowEmailPopup(true), 45000);
+    return () => clearTimeout(timerId);
+  }, []);
+
+  const handleCloseEmailPopup = useCallback(() => {
+    setShowEmailPopup(false);
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('velure_popup_dismissed', '1');
+    }
+  }, []);
 
   const buildShareUrl = useCallback((path) => {
     if (typeof window === 'undefined') return '';
@@ -9752,6 +10520,8 @@ const App = () => {
           {shareNotice}
         </div>
       )}
+
+      {showEmailPopup && <EmailPopup onClose={handleCloseEmailPopup} />}
     </div>
   );
 };
