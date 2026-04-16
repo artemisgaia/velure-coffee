@@ -3,11 +3,19 @@
   "rewrites": [
     {
       "source": "/sitemap.xml",
-      "destination": "/api/sitemap"
+      "destination": "/api/utils?action=sitemap"
+    },
+    {
+      "source": "/api/sitemap",
+      "destination": "/api/utils?action=sitemap"
     },
     {
       "source": "/api/og-image",
-      "destination": "/api/og-image"
+      "destination": "/api/utils?action=og-image"
+    },
+    {
+      "source": "/api/newsletter",
+      "destination": "/api/utils?action=newsletter"
     },
     {
       "source": "/checkout",

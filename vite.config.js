@@ -11,9 +11,7 @@ import stripeConfigHandler from './api/stripe-config.js'
 import createPaymentIntentHandler from './api/create-payment-intent.js'
 import createSubscriptionSessionHandler from './api/create-subscription-session.js'
 
-import sitemapHandler from './api/sitemap.js'
-import newsletterHandler from './api/newsletter.js'
-import ogImageHandler from './api/og-image.js'
+import utilsHandler from './api/utils.js'
 
 const formsApiPlugin = () => ({
   name: 'forms-api-dev-middleware',
@@ -28,29 +26,27 @@ const formsApiPlugin = () => ({
 
     server.middlewares.use('/api/newsletter', async (req, res, next) => {
       try {
-        await newsletterHandler(req, res)
-      } catch (error) {
-        next(error)
-      }
+        req.query = req.query || Object.fromEntries(new URL(req.url || '', 'http://localhost').searchParams.entries());
+        req.query.action = 'newsletter';
+        await utilsHandler(req, res)
+      } catch (error) { next(error) }
     })
 
     server.middlewares.use('/api/sitemap', async (req, res, next) => {
       try {
-        await sitemapHandler(req, res)
-      } catch (error) {
-        next(error)
-      }
+        req.query = req.query || {};
+        req.query.action = 'sitemap';
+        await utilsHandler(req, res)
+      } catch (error) { next(error) }
     })
 
     server.middlewares.use('/api/og-image', async (req, res, next) => {
       try {
-        // Parse query params from URL for local dev (Vercel injects req.query automatically)
         const url = new URL(req.url || '', 'http://localhost');
         req.query = Object.fromEntries(url.searchParams.entries());
-        await ogImageHandler(req, res)
-      } catch (error) {
-        next(error)
-      }
+        req.query.action = 'og-image';
+        await utilsHandler(req, res)
+      } catch (error) { next(error) }
     })
 
     server.middlewares.use('/api/checkout', async (req, res, next) => {
