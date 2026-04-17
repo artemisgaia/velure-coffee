@@ -8801,7 +8801,7 @@ const HomeView = ({ openProductDetail, setView }) => {
           style={{ backgroundImage: `url('${HOME_HERO_IMAGE_URL}')` }}
           aria-hidden="true"
         ></div>
-        <div className="relative z-20 text-center px-4 max-w-4xl mx-auto motion-enter">
+        <div className="relative z-20 text-center px-4 max-w-4xl mx-auto motion-enter pt-24 md:pt-0">
           <p className="text-[#D4AF37] font-sans tracking-[0.3em] text-sm md:text-base mb-6 uppercase">Lion&apos;s Mane · Chaga · Single-Origin</p>
           <h1 className="text-5xl md:text-7xl lg:text-8xl font-serif text-[#F9F6F0] mb-4 leading-tight">ELEVATE THE <br /><span className="italic text-[#D4AF37]">RITUAL</span></h1>
           <p className="text-gray-300 font-sans text-base md:text-lg mb-8 max-w-xl mx-auto leading-relaxed">
