@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { ShoppingBag, Menu, X, ChevronDown, Coffee, Leaf, Award, Check, Mail, MapPin, Phone, ArrowLeft, User, Share2, Link2 } from 'lucide-react';
+import { Analytics } from '@vercel/analytics/react';
 import { supabase } from './lib/supabaseClient';
 import { SHIPPING_ZONES, SUPPORTED_COUNTRY_CODES } from '../shared/shipping.js';
 
@@ -10521,6 +10522,7 @@ const App = () => {
       )}
 
       {showEmailPopup && <EmailPopup onClose={handleCloseEmailPopup} />}
+      <Analytics />
     </div>
   );
 };
